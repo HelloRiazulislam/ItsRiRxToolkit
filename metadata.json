@@ -1,0 +1,6 @@
+{
+  "name": "ItsRiRx Windows Tool Kit",
+  "description": "Cloud-hosted PowerShell Windows administration toolkit for system repair, network diagnostics, cleanup, and software deployment.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
