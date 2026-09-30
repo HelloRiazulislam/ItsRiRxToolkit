@@ -1,17 +1,20 @@
 # ============================================================================
-# ITS RIRX WINDOWS TOOL KIT
-# Short Name: ItsRiRx Toolkit
-# Remote PowerShell Administration Toolkit
-# Compatibility: Windows PowerShell 5.1+, PowerShell 7+
+#  ██╗████████╗███████╗██████╗ ██╗██████╗ ██╗  ██╗
+#  ██║╚══██╔══╝██╔════╝██╔══██╗██║██╔══██╗╚██╗██╔╝
+#  ██║   ██║   ███████╗██████╔╝██║██████╔╝ ╚███╔╝   WINDOWS TOOL KIT
+#  ██║   ██║   ╚════██║██╔══██╗██║██╔══██╗ ██╔██╗   Version 1.0.0
+#  ██║   ██║   ███████║██║  ██║██║██║  ██║██╔╝ ██╗
+#  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
+#  Remotely Hosted Windows Administration Suite
+#  Compatibility: Windows PowerShell 5.1+, PowerShell 7+
 # ============================================================================
 
 [CmdletBinding()]
 param()
 
-# Ensure standard error handling preference
 $ErrorActionPreference = "Continue"
 
-# Toolkit Constants
+# Toolkit Metadata
 $ToolkitName    = "ItsRiRx Windows Tool Kit"
 $ToolkitShort   = "ItsRiRx Toolkit"
 $ToolkitVersion = "1.0.0"
@@ -26,22 +29,25 @@ if ($MyInvocation.Line -match "https?://[^\s|/]+(?:/[^\s|]+)*") {
 
 # Software Whitelist Definitions
 $Script:SoftwareCatalog = [ordered]@{
-    "Notepad++"     = @{ Id = "Notepad++.Notepad++"; Name = "Notepad++"; Category = "Utility/Dev" }
-    "Google Chrome" = @{ Id = "Google.Chrome"; Name = "Google Chrome"; Category = "Browser" }
-    "Python"        = @{ Id = "Python.Python.3.14"; Name = "Python 3.14"; Category = "Developer" }
-    "Mozilla Firefox"= @{ Id = "Mozilla.Firefox"; Name = "Mozilla Firefox"; Category = "Browser" }
-    "WinRAR"        = @{ Id = "RARLab.WinRAR"; Name = "WinRAR"; Category = "Utility" }
-    "VLC"           = @{ Id = "VideoLAN.VLC"; Name = "VLC Media Player"; Category = "Multimedia" }
-    "Avro Keyboard" = @{ Id = "OmicronLab.Avro"; Name = "Avro Keyboard"; Category = "Language/Utility" }
+    "Notepad++"       = @{ Id = "Notepad++.Notepad++"; Name = "Notepad++"; Category = "Utility/Editor" }
+    "Google Chrome"   = @{ Id = "Google.Chrome"; Name = "Google Chrome"; Category = "Browser" }
+    "Python"          = @{ Id = "Python.Python.3.14"; Name = "Python 3.14"; Category = "Developer" }
+    "Mozilla Firefox" = @{ Id = "Mozilla.Firefox"; Name = "Mozilla Firefox"; Category = "Browser" }
+    "WinRAR"          = @{ Id = "RARLab.WinRAR"; Name = "WinRAR"; Category = "Utility" }
+    "VLC"             = @{ Id = "VideoLAN.VLC"; Name = "VLC Media Player"; Category = "Multimedia" }
+    "Avro Keyboard"   = @{ Id = "OmicronLab.Avro"; Name = "Avro Keyboard"; Category = "Language/Utility" }
+    "VS Code"         = @{ Id = "Microsoft.VisualStudioCode"; Name = "Visual Studio Code"; Category = "Developer" }
+    "7-Zip"           = @{ Id = "7zip.7zip"; Name = "7-Zip Archiver"; Category = "Utility" }
+    "Git"             = @{ Id = "Git.Git"; Name = "Git for Windows"; Category = "Developer" }
 }
 
 # Configurable Package Groups
 $Script:PackageGroups = [ordered]@{
     "Essential"  = @("Notepad++", "Google Chrome", "Mozilla Firefox", "Python", "WinRAR", "VLC", "Avro Keyboard")
     "Browser"    = @("Google Chrome", "Mozilla Firefox")
-    "Developer"  = @("Python", "Notepad++")
+    "Developer"  = @("Python", "VS Code", "Git", "Notepad++")
     "Multimedia" = @("VLC")
-    "Utility"    = @("WinRAR", "Notepad++")
+    "Utility"    = @("WinRAR", "7-Zip", "Notepad++", "Avro Keyboard")
 }
 
 # DNS Provider Presets
@@ -52,45 +58,51 @@ $Script:DnsPresets = [ordered]@{
     "4" = @{ Name = "Automatic (DHCP - Restore Default)"; Primary = "DHCP"; Secondary = "" }
 }
 
+# Cache for installed packages to prevent repeated slow winget queries
+$Script:InstalledCache = @{}
+
 # ============================================================================
 # HELPER FUNCTIONS: UI & CONSOLE
 # ============================================================================
 
 function Write-Success {
     param([string]$Message)
-    Write-Host "  [OK]   $Message" -ForegroundColor Green
+    Write-Host "  ✔  [OK]   $Message" -ForegroundColor Green
 }
 
 function Write-InfoMessage {
     param([string]$Message)
-    Write-Host "  [INFO] $Message" -ForegroundColor Cyan
+    Write-Host "  ℹ  [INFO] $Message" -ForegroundColor Cyan
 }
 
 function Write-WarningMessage {
     param([string]$Message)
-    Write-Host "  [WARN] $Message" -ForegroundColor Yellow
+    Write-Host "  ▲  [WARN] $Message" -ForegroundColor Yellow
 }
 
 function Write-ErrorMessage {
     param([string]$Message)
-    Write-Host "  [FAIL] $Message" -ForegroundColor Red
+    Write-Host "  ✖  [FAIL] $Message" -ForegroundColor Red
 }
 
 function Write-SkipMessage {
     param([string]$Message)
-    Write-Host "  [SKIP] $Message" -ForegroundColor DarkGray
+    Write-Host "  ↷  [SKIP] $Message" -ForegroundColor DarkGray
 }
 
 function Write-Section {
     param([string]$Title)
     Write-Host ""
-    Write-Host "--- $Title ---" -ForegroundColor Cyan
+    Write-Host "┌──────────────────────────────────────────────────────────────────────┐" -ForegroundColor Cyan
+    Write-Host "│ $Title" -ForegroundColor White
+    Write-Host "└──────────────────────────────────────────────────────────────────────┘" -ForegroundColor Cyan
     Write-Host ""
 }
 
 function Pause-Toolkit {
     Write-Host ""
-    Write-Host "Press any key to return to menu..." -ForegroundColor DarkGray -NoNewline
+    Write-Host "  ────────────────────────────────────────────────────────────────────" -ForegroundColor DarkGray
+    Write-Host "  Press any key to return to menu..." -ForegroundColor DarkCyan -NoNewline
     [void][System.Console]::ReadKey($true)
     Write-Host ""
 }
@@ -102,9 +114,10 @@ function Confirm-Action {
     )
     if ($Warning) {
         Write-Host ""
-        Write-Host "  WARNING: $Warning" -ForegroundColor Yellow
+        Write-Host "  ⚠️  WARNING: $Warning" -ForegroundColor Yellow
     }
-    Write-Host "  $Prompt [Y/N]: " -ForegroundColor Cyan -NoNewline
+    Write-Host ""
+    Write-Host "  👉 $Prompt [Y/N]: " -ForegroundColor Cyan -NoNewline
     $response = Read-Host
     if ($response -match "^[Yy]$") {
         return $true
@@ -154,54 +167,61 @@ function Request-Admin {
 }
 
 # ============================================================================
-# BANNERS & MENUS
+# GORGEOUS BANNER & MAIN MENU
 # ============================================================================
 
 function Show-Banner {
     Clear-Host
     $isAdmin = Test-IsAdmin
-    $adminStatus = if ($isAdmin) { "Administrator [ELEVATED]" } else { "Standard User [RESTRICTED]" }
+    $adminStatus = if ($isAdmin) { "ADMINISTRATOR [ELEVATED]" } else { "STANDARD USER [LIMITED]" }
     $adminColor  = if ($isAdmin) { "Green" } else { "Yellow" }
-
+    
     Write-Host ""
-    Write-Host "╔══════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-    Write-Host "║                  ITS RIRX WINDOWS TOOL KIT                       ║" -ForegroundColor Cyan
-    Write-Host "║                         Version 1.0.0                            ║" -ForegroundColor Cyan
-    Write-Host "╠══════════════════════════════════════════════════════════════════╣" -ForegroundColor Cyan
-    Write-Host "║  Status: " -NoNewline -ForegroundColor Cyan
-    Write-Host "$adminStatus" -NoNewline -ForegroundColor $adminColor
-    $padding = 64 - ("  Status: " + $adminStatus).Length
-    Write-Host (" " * [Math]::Max(1, $padding) + "║") -ForegroundColor Cyan
-    Write-Host "║  Host:   $env:COMPUTERNAME | User: $env:USERNAME" -NoNewline -ForegroundColor Cyan
-    $pad2 = 64 - ("  Host:   $env:COMPUTERNAME | User: $env:USERNAME").Length
-    Write-Host (" " * [Math]::Max(1, $pad2) + "║") -ForegroundColor Cyan
-    Write-Host "╚══════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+    Write-Host "  ██╗████████╗███████╗██████╗ ██╗██████╗ ██╗  ██╗" -ForegroundColor Cyan
+    Write-Host "  ██║╚══██╔══╝██╔════╝██╔══██╗██║██╔══██╗╚██╗██╔╝" -ForegroundColor Cyan
+    Write-Host "  ██║   ██║   ███████╗██████╔╝██║██████╔╝ ╚███╔╝   WINDOWS TOOL KIT" -ForegroundColor White
+    Write-Host "  ██║   ██║   ╚════██║██╔══██╗██║██╔══██╗ ██╔██╗   Version 1.0.0" -ForegroundColor White
+    Write-Host "  ██║   ██║   ███████║██║  ██║██║██║  ██║██╔╝ ██╗" -ForegroundColor Cyan
+    Write-Host "  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝" -ForegroundColor Cyan
+    Write-Host "  ══════════════════════════════════════════════════════════════════════" -ForegroundColor DarkCyan
+    
+    Write-Host "  🛡️  STATUS : " -NoNewline -ForegroundColor DarkGray
+    Write-Host "$adminStatus" -ForegroundColor $adminColor
+    Write-Host "  💻 HOST   : $env:COMPUTERNAME | 👤 USER: $env:USERNAME" -ForegroundColor DarkGray
+    Write-Host "  ══════════════════════════════════════════════════════════════════════" -ForegroundColor DarkCyan
     Write-Host ""
 }
 
 function Show-MainMenu {
     Show-Banner
-    Write-Host "  [1] Software Installer       (Winget App Deployments)" -ForegroundColor White
-    Write-Host "  [2] Network Tools            (IP, DNS, WiFi, Ping, Trace)" -ForegroundColor White
-    Write-Host "  [3] Windows Repair           (SFC, DISM, CHKDSK, WinUpdate)" -ForegroundColor White
-    Write-Host "  [4] Cleanup Tools            (Temp Files, Recycle Bin, Caches)" -ForegroundColor White
-    Write-Host "  [5] System Information       (CPU, RAM, Disks, GPU, Motherboard)" -ForegroundColor White
-    Write-Host "  [6] Windows Utilities        (Task Manager, Regedit, Services)" -ForegroundColor White
-    Write-Host "  [7] Windows Configuration    (Hostname, TimeZone, License, Power)" -ForegroundColor White
-    Write-Host "  [8] Quick Actions            (One-Click Diagnostic Routines)" -ForegroundColor White
-    Write-Host "  [0] Exit Toolkit" -ForegroundColor DarkGray
+    Write-Host "  ╔════════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+    Write-Host "  ║                     SYSTEM CONTROL DASHBOARD                       ║" -ForegroundColor Cyan
+    Write-Host "  ╠════════════════════════════════════════════════════════════════════╣" -ForegroundColor Cyan
+    Write-Host "  ║                                                                    ║" -ForegroundColor Cyan
+    Write-Host "  ║   [1] 📦 Software Installer       • Interactive Winget Deployment  ║" -ForegroundColor White
+    Write-Host "  ║   [2] 🌐 Network Tools            • Ping, DNS, WiFi, Stack Reset   ║" -ForegroundColor White
+    Write-Host "  ║   [3] 🔧 Windows System Repair    • SFC, DISM Image & Update Fix   ║" -ForegroundColor White
+    Write-Host "  ║   [4] 🧹 Deep Disk Cleanup        • User Temp, System & Caches     ║" -ForegroundColor White
+    Write-Host "  ║   [5] 💻 System Information       • CIM CPU, RAM, GPU, Disk Audit  ║" -ForegroundColor White
+    Write-Host "  ║   [6] ⚙️ Built-In Utilities       • TaskMgr, DevMgmt, Regedit      ║" -ForegroundColor White
+    Write-Host "  ║   [7] 🎛️ Windows Configuration    • Hostname, Timezone, License    ║" -ForegroundColor White
+    Write-Host "  ║   [8] ⚡ Instant Quick Actions    • One-Click System Maintenance   ║" -ForegroundColor White
+    Write-Host "  ║                                                                    ║" -ForegroundColor Cyan
+    Write-Host "  ║   [0] 🚪 Exit Toolkit             • Return to PowerShell Prompt    ║" -ForegroundColor DarkGray
+    Write-Host "  ║                                                                    ║" -ForegroundColor Cyan
+    Write-Host "  ╚════════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
     Write-Host ""
 }
 
 # ============================================================================
-# MODULE 1: SOFTWARE INSTALLER
+# MODULE 1: SOFTWARE SELECTOR & INSTALLER (WITH CHECKBOXES & FINAL CONFIRMATION)
 # ============================================================================
 
 function Test-Winget {
     $cmd = Get-Command winget -ErrorAction SilentlyContinue
     if (-not $cmd) {
         Write-ErrorMessage "Winget is not available on this computer."
-        Write-InfoMessage "App Installer is required. Install it from Microsoft Store or GitHub:"
+        Write-InfoMessage "App Installer from Microsoft Store or GitHub is required:"
         Write-InfoMessage "https://github.com/microsoft/winget-cli/releases"
         return $false
     }
@@ -210,157 +230,258 @@ function Test-Winget {
 
 function Get-InstalledPackage {
     param([string]$PackageId)
+    
+    if ($Script:InstalledCache.ContainsKey($PackageId)) {
+        return $Script:InstalledCache[$PackageId]
+    }
+
     try {
         $result = & winget list --id $PackageId --exact --accept-source-agreements 2>$null
         if ($LASTEXITCODE -eq 0 -and ($result -match [regex]::Escape($PackageId))) {
+            $Script:InstalledCache[$PackageId] = $true
             return $true
         }
     }
     catch {}
+
+    $Script:InstalledCache[$PackageId] = $false
     return $false
 }
 
-function Install-WingetPackage {
+# Dedicated 'Software Selector' UI with Checkboxes & Explicit Confirmation
+function Show-SoftwareSelector {
     param(
-        [string]$PackageKey,
-        [ref]$SuccessCount,
-        [ref]$SkipCount,
-        [ref]$FailCount
+        [string[]]$PackageKeys,
+        [string]$GroupTitle = "Software Selector"
     )
 
-    if (-not $Script:SoftwareCatalog.Contains($PackageKey)) {
-        Write-ErrorMessage "Package key '$PackageKey' is not in the whitelist."
-        $FailCount.Value++
-        return
-    }
-
-    $pkg = $Script:SoftwareCatalog[$PackageKey]
-    $pkgId = $pkg.Id
-    $pkgName = $pkg.Name
-
-    Write-Host ""
-    Write-InfoMessage "Checking: $pkgName ($pkgId)..."
-
-    $isInstalled = Get-InstalledPackage -PackageId $pkgId
-    if ($isInstalled) {
-        Write-SkipMessage "$pkgName - Already installed"
-        $SkipCount.Value++
-        return
-    }
-
-    Write-InfoMessage "Installing $pkgName via Winget..."
-    try {
-        # Execute winget install with strict whitelist ID
-        $process = Start-Process -FilePath "winget" `
-            -ArgumentList @("install", "--id=$pkgId", "-e", "--silent", "--accept-package-agreements", "--accept-source-agreements") `
-            -NoNewWindow -Wait -PassThru
-
-        if ($process.ExitCode -eq 0) {
-            Write-Success "$pkgName - Installed successfully"
-            $SuccessCount.Value++
-        } else {
-            Write-ErrorMessage "$pkgName - Installation failed (Exit code: $($process.ExitCode))"
-            $FailCount.Value++
-        }
-    }
-    catch {
-        Write-ErrorMessage "$pkgName - Installation error: $($_.Exception.Message)"
-        $FailCount.Value++
-    }
-}
-
-function Install-SoftwareGroup {
-    param([string]$GroupName)
-    
     if (-not (Test-Winget)) {
         Pause-Toolkit
         return
     }
 
-    $packages = $Script:PackageGroups[$GroupName]
-    if (-not $packages) {
-        Write-ErrorMessage "Unknown package group '$GroupName'."
+    Show-Banner
+    Write-Host "  ╔════════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+    Write-Host "  ║  📋 SOFTWARE SELECTOR: $GroupTitle".PadRight(71) + "║" -ForegroundColor Cyan
+    Write-Host "  ╚════════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+    Write-Host ""
+    Write-InfoMessage "Scanning system status and preparing application checkboxes..."
+    Write-Host ""
+
+    # Build application list with checkboxes
+    $appsData = @()
+    $idx = 1
+
+    Write-Host "  ┌─────┬───────┬──────────────┬────────────────────────┬─────────────────────┐" -ForegroundColor Cyan
+    Write-Host "  │ #   │ SELECT│ STATUS       │ APPLICATION NAME       │ WINGET PACKAGE ID   │" -ForegroundColor Cyan
+    Write-Host "  ├─────┼───────┼──────────────┼────────────────────────┼─────────────────────┤" -ForegroundColor Cyan
+
+    foreach ($key in $PackageKeys) {
+        if ($Script:SoftwareCatalog.Contains($key)) {
+            $pkg = $Script:SoftwareCatalog[$key]
+            $isInstalled = Get-InstalledPackage -PackageId $pkg.Id
+            
+            $boxSymbol  = if ($isInstalled) { "[✔]" } else { "[ ]" }
+            $boxColor   = if ($isInstalled) { "DarkGray" } else { "Yellow" }
+            $statusText = if ($isInstalled) { "INSTALLED" } else { "AVAILABLE" }
+            $statusColor = if ($isInstalled) { "Green" } else { "Cyan" }
+            
+            $numPad = "[$idx]".PadRight(4)
+            $namePad = $pkg.Name.PadRight(22)
+            $idPad = $pkg.Id.PadRight(19)
+
+            Write-Host "  │ $numPad│ " -NoNewline -ForegroundColor Cyan
+            Write-Host "$boxSymbol" -NoNewline -ForegroundColor $boxColor
+            Write-Host "   │ " -NoNewline -ForegroundColor Cyan
+            Write-Host "$statusText".PadRight(13) -NoNewline -ForegroundColor $statusColor
+            Write-Host "│ $namePad │ $idPad │" -ForegroundColor White
+
+            $appsData += [PSCustomObject]@{
+                Index       = $idx
+                Key         = $key
+                Name        = $pkg.Name
+                Id          = $pkg.Id
+                IsInstalled = $isInstalled
+            }
+            $idx++
+        }
+    }
+    Write-Host "  └─────┴───────┴──────────────┴────────────────────────┴─────────────────────┘" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "  📝 INSTRUCTIONS:" -ForegroundColor Yellow
+    Write-Host "     • Type the numbers of the apps you want to install (e.g. 1, 3, 5 or 2 4)" -ForegroundColor White
+    Write-Host "     • Type 'A' or 'ALL' to select all available uninstalled applications" -ForegroundColor White
+    Write-Host "     • Type '0' to Cancel and return without installing anything" -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host "  👉 Enter app numbers to install: " -ForegroundColor Cyan -NoNewline
+    $inputRaw = Read-Host
+
+    if ([string]::IsNullOrWhiteSpace($inputRaw) -or $inputRaw -eq "0") {
+        Write-Host ""
+        Write-InfoMessage "No applications selected. Returning to menu."
         Pause-Toolkit
         return
     }
 
-    Write-Section "Installing $GroupName Software Package ($($packages.Count) items)"
-    
-    $success = 0
-    $skipped = 0
-    $failed  = 0
+    # Parse selected indices
+    $selectedApps = @()
 
-    foreach ($key in $packages) {
-        Install-WingetPackage -PackageKey $key -SuccessCount ([ref]$success) -SkipCount ([ref]$skipped) -FailCount ([ref]$failed)
+    if ($inputRaw.Trim().ToUpper() -in @("A", "ALL")) {
+        $selectedApps = $appsData | Where-Object { -not $_.IsInstalled }
+        if ($selectedApps.Count -eq 0) {
+            Write-Success "All applications in this list are already installed on this machine!"
+            Pause-Toolkit
+            return
+        }
+    } else {
+        $numbers = [regex]::Split($inputRaw, "[,\s]+") | Where-Object { $_ -match "^\d+$" } | ForEach-Object { [int]$_ }
+        foreach ($n in $numbers) {
+            $match = $appsData | Where-Object { $_.Index -eq $n }
+            if ($match -and ($selectedApps -notcontains $match)) {
+                $selectedApps += $match
+            }
+        }
     }
 
+    if ($selectedApps.Count -eq 0) {
+        Write-WarningMessage "No valid application numbers were entered."
+        Pause-Toolkit
+        return
+    }
+
+    # Build readable list of selected app names
+    $appNamesList = ($selectedApps | ForEach-Object { $_.Name }) -join ", "
+
+    # FINAL CONFIRMATION SCREEN
+    Show-Banner
     Write-Host ""
-    Write-Host "════════════════════════════════════════" -ForegroundColor Cyan
-    Write-Host " Installation Summary: $GroupName Pack" -ForegroundColor Cyan
-    Write-Host "════════════════════════════════════════" -ForegroundColor Cyan
-    Write-Host "  Successful : $success" -ForegroundColor Green
-    Write-Host "  Skipped    : $skipped" -ForegroundColor Gray
-    Write-Host "  Failed     : $failed"  -ForegroundColor $(if ($failed -gt 0) { "Red" } else { "Green" })
-    Write-Host "════════════════════════════════════════" -ForegroundColor Cyan
+    Write-Host "  ╔════════════════════════════════════════════════════════════════════╗" -ForegroundColor Yellow
+    Write-Host "  ║                 FINAL INSTALLATION CONFIRMATION                    ║" -ForegroundColor Yellow
+    Write-Host "  ╠════════════════════════════════════════════════════════════════════╣" -ForegroundColor Yellow
+    Write-Host "  ║                                                                    ║" -ForegroundColor Yellow
+    
+    $confirmLine = "  Installing: $appNamesList"
+    if ($confirmLine.Length -gt 66) { 
+        # Wrap line nicely if many apps selected
+        Write-Host ("  ║  Installing:".PadRight(71) + "║") -ForegroundColor White
+        foreach ($item in $selectedApps) {
+            $subLine = "     [✔] $($item.Name) [$($item.Id)]"
+            if ($subLine.Length -gt 66) { $subLine = $subLine.Substring(0, 63) + "..." }
+            Write-Host ("  ║" + $subLine.PadRight(68) + "║") -ForegroundColor Cyan
+        }
+    } else {
+        Write-Host ("  ║" + $confirmLine.PadRight(68) + "║") -ForegroundColor Cyan
+    }
+
+    Write-Host "  ║                                                                    ║" -ForegroundColor Yellow
+    Write-Host "  ║  Total: $($selectedApps.Count) application(s) will be installed via Winget.       ║" -ForegroundColor White
+    Write-Host "  ║  No files will be installed unless you confirm below.              ║" -ForegroundColor Yellow
+    Write-Host "  ╚════════════════════════════════════════════════════════════════════╝" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "  👉 Installing: $appNamesList. Proceed? [Y/N]: " -ForegroundColor Green -NoNewline
+    $finalProceed = Read-Host
+
+    if ($finalProceed -notmatch "^[Yy]$") {
+        Write-Host ""
+        Write-InfoMessage "Installation aborted by user. Zero changes made to system."
+        Pause-Toolkit
+        return
+    }
+
+    # USER APPROVED - EXECUTE WINGET INSTALL
+    Write-Host ""
+    Write-Section "Installing $($selectedApps.Count) Selected Application(s) via Winget..."
+
+    $successCount = 0
+    $skipCount    = 0
+    $failCount    = 0
+
+    foreach ($item in $selectedApps) {
+        Write-Host ""
+        Write-InfoMessage "Starting: $($item.Name) ($($item.Id))..."
+        
+        $isInstalled = Get-InstalledPackage -PackageId $item.Id
+        if ($isInstalled) {
+            Write-SkipMessage "$($item.Name) - Already installed"
+            $skipCount++
+            continue
+        }
+
+        Write-Host "  ⚡ Invoking winget install --id=$($item.Id)..." -ForegroundColor DarkCyan
+        try {
+            $process = Start-Process -FilePath "winget" `
+                -ArgumentList @("install", "--id=$($item.Id)", "-e", "--silent", "--accept-package-agreements", "--accept-source-agreements") `
+                -NoNewWindow -Wait -PassThru
+
+            if ($process.ExitCode -eq 0) {
+                Write-Success "$($item.Name) - Installed successfully!"
+                $Script:InstalledCache[$item.Id] = $true
+                $successCount++
+            } else {
+                Write-ErrorMessage "$($item.Name) - Installation failed (Exit code: $($process.ExitCode))"
+                $failCount++
+            }
+        }
+        catch {
+            Write-ErrorMessage "$($item.Name) - Error: $($_.Exception.Message)"
+            $failCount++
+        }
+    }
+
+    # FINAL SUMMARY REPORT
+    Write-Host ""
+    Write-Host "  ╔════════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+    Write-Host "  ║                     INSTALLATION REPORT SUMMARY                    ║" -ForegroundColor Cyan
+    Write-Host "  ╠════════════════════════════════════════════════════════════════════╣" -ForegroundColor Cyan
+    Write-Host "  ║  ✔ Successful : $successCount".PadRight(71) + "║" -ForegroundColor Green
+    Write-Host "  ║  ↷ Skipped    : $skipCount".PadRight(71) + "║" -ForegroundColor DarkGray
+    Write-Host "  ║  ✖ Failed     : $failCount".PadRight(71) + "║" -ForegroundColor $(if ($failCount -gt 0) { "Red" } else { "Green" })
+    Write-Host "  ╚════════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
     Pause-Toolkit
 }
 
 function Show-SoftwareMenu {
     do {
         Show-Banner
-        Write-Host "--- MODULE 1: SOFTWARE INSTALLER (WINGET) ---" -ForegroundColor Cyan
+        Write-Host "  ╔════════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+        Write-Host "  ║             MODULE 1: SOFTWARE INSTALLER (WINGET)                  ║" -ForegroundColor Cyan
+        Write-Host "  ╠════════════════════════════════════════════════════════════════════╣" -ForegroundColor Cyan
+        Write-Host "  ║  * Opening any pack launches the Software Selector with checkboxes.║" -ForegroundColor Yellow
+        Write-Host "  ║    No software is installed until you pick numbers and confirm 'Y'.║" -ForegroundColor Yellow
+        Write-Host "  ╠════════════════════════════════════════════════════════════════════╣" -ForegroundColor Cyan
+        Write-Host "  ║   [1] 📋 Software Selector       • Full interactive checkbox list  ║" -ForegroundColor White
+        Write-Host "  ║   [2] 🌟 Essential Pack          • Chrome, Firefox, Notepad++, etc ║" -ForegroundColor White
+        Write-Host "  ║   [3] 🌐 Web Browser Pack        • Google Chrome, Mozilla Firefox  ║" -ForegroundColor White
+        Write-Host "  ║   [4] 💻 Developer Suite         • Python 3.14, VS Code, Git, N++  ║" -ForegroundColor White
+        Write-Host "  ║   [5] 🎬 Multimedia Pack         • VLC Media Player                ║" -ForegroundColor White
+        Write-Host "  ║   [6] 🛠️ Utility Pack            • WinRAR, 7-Zip, Notepad++, Avro  ║" -ForegroundColor White
+        Write-Host "  ║   [7] 🔍 Installed Status Check  • Scan all catalog apps on PC     ║" -ForegroundColor White
+        Write-Host "  ║   [8] 🔄 Refresh Winget Sources  • winget source update            ║" -ForegroundColor White
+        Write-Host "  ║                                                                    ║" -ForegroundColor Cyan
+        Write-Host "  ║   [0] ↩ Back to Main Menu                                          ║" -ForegroundColor DarkGray
+        Write-Host "  ╚════════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
         Write-Host ""
-        Write-Host "  [1] Install Essential Software  (Notepad++, Chrome, Firefox, Python, WinRAR, VLC, Avro)" -ForegroundColor White
-        Write-Host "  [2] Browser Pack                (Chrome, Firefox)" -ForegroundColor White
-        Write-Host "  [3] Developer Pack              (Python 3.14, Notepad++)" -ForegroundColor White
-        Write-Host "  [4] Multimedia Pack             (VLC Media Player)" -ForegroundColor White
-        Write-Host "  [5] Utility Pack                (WinRAR, Notepad++)" -ForegroundColor White
-        Write-Host "  [6] Install Selected Apps       (Choose individually from catalog)" -ForegroundColor White
-        Write-Host "  [7] Show Installed Status       (Check catalog apps on this machine)" -ForegroundColor White
-        Write-Host "  [8] Refresh Winget Sources      (winget source update)" -ForegroundColor White
-        Write-Host "  [0] Back to Main Menu" -ForegroundColor DarkGray
-        Write-Host ""
-        Write-Host "Select an option: " -ForegroundColor Cyan -NoNewline
+        Write-Host "  👉 Select option [0-8]: " -ForegroundColor Cyan -NoNewline
         $choice = Read-Host
 
         switch ($choice) {
-            "1" { Install-SoftwareGroup -GroupName "Essential" }
-            "2" { Install-SoftwareGroup -GroupName "Browser" }
-            "3" { Install-SoftwareGroup -GroupName "Developer" }
-            "4" { Install-SoftwareGroup -GroupName "Multimedia" }
-            "5" { Install-SoftwareGroup -GroupName "Utility" }
-            "6" {
-                if (-not (Test-Winget)) { Pause-Toolkit; break }
-                Show-Banner
-                Write-Section "Select Application to Install"
-                $keys = @($Script:SoftwareCatalog.Keys)
-                for ($i = 0; $i -lt $keys.Count; $i++) {
-                    $k = $keys[$i]
-                    $p = $Script:SoftwareCatalog[$k]
-                    Write-Host "  [$($i + 1)] $($p.Name) [$($p.Id)]"
-                }
-                Write-Host "  [0] Cancel" -ForegroundColor DarkGray
-                Write-Host ""
-                Write-Host "Enter number: " -ForegroundColor Cyan -NoNewline
-                $num = Read-Host
-                if ($num -match "^\d+$" -and [int]$num -ge 1 -and [int]$num -le $keys.Count) {
-                    $selectedKey = $keys[[int]$num - 1]
-                    $s = 0; $sk = 0; $f = 0
-                    Install-WingetPackage -PackageKey $selectedKey -SuccessCount ([ref]$s) -SkipCount ([ref]$sk) -FailCount ([ref]$f)
-                    Pause-Toolkit
-                }
-            }
+            "1" { Show-SoftwareSelector -PackageKeys @($Script:SoftwareCatalog.Keys) -GroupTitle "Full Software Catalog" }
+            "2" { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Essential"] -GroupTitle "Essential Software Pack" }
+            "3" { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Browser"] -GroupTitle "Web Browser Pack" }
+            "4" { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Developer"] -GroupTitle "Developer Tools Pack" }
+            "5" { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Multimedia"] -GroupTitle "Multimedia Pack" }
+            "6" { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Utility"] -GroupTitle "Utility Tools Pack" }
             "7" {
                 if (-not (Test-Winget)) { Pause-Toolkit; break }
                 Show-Banner
-                Write-Section "Checking Installation Status of Catalog Apps"
+                Write-Section "Installed Status of Catalog Applications"
                 foreach ($k in $Script:SoftwareCatalog.Keys) {
                     $pkg = $Script:SoftwareCatalog[$k]
                     $installed = Get-InstalledPackage -PackageId $pkg.Id
                     if ($installed) {
                         Write-Host "  [INSTALLED] " -ForegroundColor Green -NoNewline
                     } else {
-                        Write-Host "  [MISSING]   " -ForegroundColor Gray -NoNewline
+                        Write-Host "  [MISSING]   " -ForegroundColor DarkGray -NoNewline
                     }
                     Write-Host "$($pkg.Name) ($($pkg.Id))"
                 }
@@ -368,9 +489,9 @@ function Show-SoftwareMenu {
             }
             "8" {
                 if (-not (Test-Winget)) { Pause-Toolkit; break }
-                Write-Section "Refreshing Winget Sources"
+                Write-Section "Refreshing Winget Package Sources"
                 & winget source update
-                Write-Success "Winget sources refreshed."
+                Write-Success "Winget sources updated successfully."
                 Pause-Toolkit
             }
         }
@@ -382,14 +503,13 @@ function Show-SoftwareMenu {
 # ============================================================================
 
 function Test-Internet {
-    Write-InfoMessage "Testing internet connectivity..."
+    Write-InfoMessage "Testing internet connectivity across 3 independent checkpoints..."
     $results = @{
         Gateway = $false
         DNS     = $false
         HTTP    = $false
     }
 
-    # 1. Gateway Check
     try {
         $gw = (Get-NetRoute -DestinationPrefix "0.0.0.0/0" -ErrorAction SilentlyContinue | Select-Object -First 1).NextHop
         if ($gw) {
@@ -398,13 +518,11 @@ function Test-Internet {
         }
     } catch {}
 
-    # 2. DNS Check
     try {
         $dnsRes = [System.Net.Dns]::GetHostAddresses("google.com")
         if ($dnsRes.Count -gt 0) { $results.DNS = $true }
     } catch {}
 
-    # 3. HTTPS Check
     try {
         $req = [System.Net.WebRequest]::Create("https://1.1.1.1")
         $req.Timeout = 4000
@@ -417,9 +535,9 @@ function Test-Internet {
     } catch {}
 
     Write-Host ""
-    if ($results.Gateway) { Write-Success "Default Gateway Reachable" } else { Write-WarningMessage "Default Gateway unreachable or ICMP blocked" }
-    if ($results.DNS)     { Write-Success "DNS Resolution Functional" } else { Write-ErrorMessage "DNS Resolution failed" }
-    if ($results.HTTP)    { Write-Success "HTTPS Connectivity Active" } else { Write-ErrorMessage "HTTPS connection failed" }
+    if ($results.Gateway) { Write-Success "Default Gateway : Reachable" } else { Write-WarningMessage "Default Gateway : Unreachable or ICMP disabled" }
+    if ($results.DNS)     { Write-Success "DNS Resolution  : Operational" } else { Write-ErrorMessage "DNS Resolution  : Failed" }
+    if ($results.HTTP)    { Write-Success "HTTPS Web Link  : Active" } else { Write-ErrorMessage "HTTPS Web Link  : Connection timed out" }
     
     Write-Host ""
     if ($results.DNS -and $results.HTTP) {
@@ -434,24 +552,27 @@ function Test-Internet {
 function Show-NetworkMenu {
     do {
         Show-Banner
-        Write-Host "--- MODULE 2: NETWORK TOOLS ---" -ForegroundColor Cyan
+        Write-Host "  ╔════════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+        Write-Host "  ║                 MODULE 2: NETWORK DIAGNOSTICS & TOOLS              ║" -ForegroundColor Cyan
+        Write-Host "  ╠════════════════════════════════════════════════════════════════════╣" -ForegroundColor Cyan
+        Write-Host "  ║   [1] 📋 Show IP Configuration       • IPv4, IPv6, Gateway, DNS   ║" -ForegroundColor White
+        Write-Host "  ║   [2] 🏓 Ping Test                   • ICMP packet response time   ║" -ForegroundColor White
+        Write-Host "  ║   [3] 🌐 Internet Connectivity Test  • 3-Point Diagnostic check    ║" -ForegroundColor White
+        Write-Host "  ║   [4] 🔍 DNS Lookup                  • Resolve domain IP addresses ║" -ForegroundColor White
+        Write-Host "  ║   [5] 📡 Traceroute Diagnostic       • Trace hops to destination   ║" -ForegroundColor White
+        Write-Host "  ║   [6] 🧹 Flush DNS Resolver Cache    • Clear-DnsClientCache        ║" -ForegroundColor White
+        Write-Host "  ║   [7] 🔌 Release DHCP IP Address     • ipconfig /release           ║" -ForegroundColor White
+        Write-Host "  ║   [8] 🔄 Renew DHCP IP Address       • ipconfig /renew             ║" -ForegroundColor White
+        Write-Host "  ║   [9] 📶 Show Network Adapters       • Status, Speed, MAC address  ║" -ForegroundColor White
+        Write-Host "  ║   [10] 📡 Show WiFi Interface Info   • SSID, Channel, Signal %     ║" -ForegroundColor White
+        Write-Host "  ║   [11] 🔑 Show Saved WiFi Profiles   • Profile list (Safe display) ║" -ForegroundColor White
+        Write-Host "  ║   [12] ⚠️ Full Network Stack Reset   • Winsock, IP, DNS (Confirm)  ║" -ForegroundColor White
+        Write-Host "  ║   [13] ⚙️ Change DNS Server          • Cloudflare, Google, Quad9   ║" -ForegroundColor White
+        Write-Host "  ║                                                                    ║" -ForegroundColor Cyan
+        Write-Host "  ║   [0] ↩ Back to Main Menu                                          ║" -ForegroundColor DarkGray
+        Write-Host "  ╚════════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
         Write-Host ""
-        Write-Host "  [1] Show IP Configuration       (IPv4, IPv6, Gateway, Adapters)" -ForegroundColor White
-        Write-Host "  [2] Ping Test                   (Test ICMP response to host/IP)" -ForegroundColor White
-        Write-Host "  [3] Internet Connectivity Test  (Gateway, DNS, and HTTPS validation)" -ForegroundColor White
-        Write-Host "  [4] DNS Lookup                  (Resolve domain names and records)" -ForegroundColor White
-        Write-Host "  [5] Traceroute                  (Trace route hops to remote host)" -ForegroundColor White
-        Write-Host "  [6] Flush DNS Cache             (Clear-DnsClientCache / ipconfig)" -ForegroundColor White
-        Write-Host "  [7] Release IP Address          (ipconfig /release)" -ForegroundColor White
-        Write-Host "  [8] Renew IP Address            (ipconfig /renew)" -ForegroundColor White
-        Write-Host "  [9] Show Network Adapters       (Status, link speed, MAC)" -ForegroundColor White
-        Write-Host "  [10] Show WiFi Information      (Interfaces, SSID, Signal)" -ForegroundColor White
-        Write-Host "  [11] Show Saved WiFi Profiles   (Profile names safely listed)" -ForegroundColor White
-        Write-Host "  [12] Reset Network Stack        (Disruptive: Winsock, IP, DNS flush)" -ForegroundColor White
-        Write-Host "  [13] Change DNS Server          (Google, Cloudflare, Quad9, DHCP)" -ForegroundColor White
-        Write-Host "  [0] Back to Main Menu" -ForegroundColor DarkGray
-        Write-Host ""
-        Write-Host "Select an option: " -ForegroundColor Cyan -NoNewline
+        Write-Host "  👉 Select an option: " -ForegroundColor Cyan -NoNewline
         $choice = Read-Host
 
         switch ($choice) {
@@ -460,12 +581,12 @@ function Show-NetworkMenu {
                 Write-Section "Active Network IP Configuration"
                 try {
                     Get-NetIPConfiguration | ForEach-Object {
-                        Write-Host "Adapter: $($_.InterfaceAlias) ($($_.InterfaceDescription))" -ForegroundColor Cyan
-                        Write-Host "  IPv4 Address : $($_.IPv4Address.IPAddress -join ', ')"
-                        Write-Host "  IPv6 Address : $($_.IPv6Address.IPAddress -join ', ')"
-                        Write-Host "  IPv4 Gateway : $($_.IPv4DefaultGateway.NextHop -join ', ')"
-                        Write-Host "  DNS Servers  : $($_.DNSServer.ServerAddresses -join ', ')"
-                        Write-Host "  Status       : $($_.NetAdapter.Status)"
+                        Write-Host "  Adapter: $($_.InterfaceAlias) ($($_.InterfaceDescription))" -ForegroundColor Cyan
+                        Write-Host "    IPv4 Address : $($_.IPv4Address.IPAddress -join ', ')"
+                        Write-Host "    IPv6 Address : $($_.IPv6Address.IPAddress -join ', ')"
+                        Write-Host "    IPv4 Gateway : $($_.IPv4DefaultGateway.NextHop -join ', ')"
+                        Write-Host "    DNS Servers  : $($_.DNSServer.ServerAddresses -join ', ')"
+                        Write-Host "    Status       : $($_.NetAdapter.Status)"
                         Write-Host ""
                     }
                 }
@@ -476,12 +597,11 @@ function Show-NetworkMenu {
             }
             "2" {
                 Show-Banner
-                Write-Section "Ping Test"
-                Write-Host "Enter hostname or IP (default: 8.8.8.8): " -ForegroundColor Cyan -NoNewline
+                Write-Section "ICMP Ping Response Test"
+                Write-Host "  Enter hostname or IP (default: 8.8.8.8): " -ForegroundColor Cyan -NoNewline
                 $target = Read-Host
                 if ([string]::IsNullOrWhiteSpace($target)) { $target = "8.8.8.8" }
                 
-                # Sanitize input: only valid hostname/IP characters
                 if ($target -notmatch "^[a-zA-Z0-9.-]+$") {
                     Write-ErrorMessage "Invalid hostname or IP address format."
                 } else {
@@ -498,8 +618,8 @@ function Show-NetworkMenu {
             }
             "4" {
                 Show-Banner
-                Write-Section "DNS Lookup"
-                Write-Host "Enter domain name to resolve (e.g. google.com): " -ForegroundColor Cyan -NoNewline
+                Write-Section "Domain Name System (DNS) Lookup"
+                Write-Host "  Enter domain to resolve (e.g. google.com): " -ForegroundColor Cyan -NoNewline
                 $domain = Read-Host
                 if ($domain -match "^[a-zA-Z0-9.-]+$") {
                     Write-InfoMessage "Resolving $domain..."
@@ -511,8 +631,8 @@ function Show-NetworkMenu {
             }
             "5" {
                 Show-Banner
-                Write-Section "Traceroute"
-                Write-Host "Enter target hostname or IP (e.g. 1.1.1.1): " -ForegroundColor Cyan -NoNewline
+                Write-Section "Network Route Trace (Traceroute)"
+                Write-Host "  Enter target hostname or IP (e.g. 1.1.1.1): " -ForegroundColor Cyan -NoNewline
                 $dest = Read-Host
                 if ($dest -match "^[a-zA-Z0-9.-]+$") {
                     Write-InfoMessage "Tracing route to $dest (Max 15 hops)..."
@@ -523,7 +643,7 @@ function Show-NetworkMenu {
                 Pause-Toolkit
             }
             "6" {
-                Write-Section "Flushing DNS Cache"
+                Write-Section "Flushing DNS Client Cache"
                 try {
                     Clear-DnsClientCache
                     Write-Success "DNS Client Cache flushed successfully."
@@ -534,7 +654,7 @@ function Show-NetworkMenu {
             }
             "7" {
                 if (-not (Request-Admin "Releasing IP requires administrator privileges.")) { break }
-                if (Confirm-Action "Release current IP address?" "Your network will disconnect until renewed.") {
+                if (Confirm-Action "Release current DHCP IP address?" "Your network will disconnect until renewed.") {
                     & ipconfig /release
                     Write-Success "IP addresses released."
                 }
@@ -542,34 +662,34 @@ function Show-NetworkMenu {
             }
             "8" {
                 if (-not (Request-Admin "Renewing IP requires administrator privileges.")) { break }
-                Write-InfoMessage "Renewing IP configuration from DHCP..."
+                Write-InfoMessage "Requesting new DHCP lease..."
                 & ipconfig /renew
-                Write-Success "IP addresses renewed."
+                Write-Success "IP addresses renewed successfully."
                 Pause-Toolkit
             }
             "9" {
                 Show-Banner
-                Write-Section "Network Adapters"
+                Write-Section "Hardware Network Adapters"
                 Get-NetAdapter | Format-Table Name, InterfaceDescription, Status, LinkSpeed, MacAddress -AutoSize
                 Pause-Toolkit
             }
             "10" {
                 Show-Banner
-                Write-Section "WiFi Interface Information"
+                Write-Section "WiFi Interface & Signal Status"
                 & netsh wlan show interfaces
                 Pause-Toolkit
             }
             "11" {
                 Show-Banner
-                Write-Section "Saved WiFi Profiles"
+                Write-Section "Saved WiFi Connection Profiles"
                 & netsh wlan show profiles
                 Write-Host ""
-                Write-InfoMessage "Note: Passwords are not displayed by default to protect local credentials."
+                Write-InfoMessage "Passwords are hidden by default to protect local credentials."
                 Write-Host "  View specific saved key? Requires Admin & Confirmation [Y/N]: " -ForegroundColor Cyan -NoNewline
                 $viewKey = Read-Host
                 if ($viewKey -match "^[Yy]$") {
                     if (Request-Admin "Viewing stored WiFi keys requires elevation.") {
-                        Write-Host "Enter exact Profile Name: " -ForegroundColor Cyan -NoNewline
+                        Write-Host "  Enter exact Profile Name: " -ForegroundColor Cyan -NoNewline
                         $pname = Read-Host
                         if ($pname -match "^[a-zA-Z0-9 _.-]+$") {
                             & netsh wlan show profile name="$pname" key=clear
@@ -596,13 +716,13 @@ function Show-NetworkMenu {
             "13" {
                 if (-not (Request-Admin "Changing DNS servers requires administrative privileges.")) { break }
                 Show-Banner
-                Write-Section "Predefined DNS Providers"
+                Write-Section "Select Predefined DNS Provider"
                 foreach ($k in $Script:DnsPresets.Keys) {
                     Write-Host "  [$k] $($Script:DnsPresets[$k].Name)"
                 }
                 Write-Host "  [0] Cancel" -ForegroundColor DarkGray
                 Write-Host ""
-                Write-Host "Select provider [1-4]: " -ForegroundColor Cyan -NoNewline
+                Write-Host "  👉 Select provider [1-4]: " -ForegroundColor Cyan -NoNewline
                 $dnsChoice = Read-Host
                 if ($Script:DnsPresets.Contains($dnsChoice)) {
                     $selectedDns = $Script:DnsPresets[$dnsChoice]
@@ -637,18 +757,21 @@ function Show-NetworkMenu {
 function Show-RepairMenu {
     do {
         Show-Banner
-        Write-Host "--- MODULE 3: WINDOWS REPAIR ---" -ForegroundColor Cyan
+        Write-Host "  ╔════════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+        Write-Host "  ║                   MODULE 3: WINDOWS SYSTEM REPAIR                  ║" -ForegroundColor Cyan
+        Write-Host "  ╠════════════════════════════════════════════════════════════════════╣" -ForegroundColor Cyan
+        Write-Host "  ║   [1] 🛡️ System File Checker (SFC)   • sfc /scannow repair files   ║" -ForegroundColor White
+        Write-Host "  ║   [2] 🔍 DISM Health Inspection      • CheckHealth & ScanHealth    ║" -ForegroundColor White
+        Write-Host "  ║   [3] 🩹 DISM Restore Health         • Download & Repair Image     ║" -ForegroundColor White
+        Write-Host "  ║   [4] 💿 CHKDSK Inspection           • Read-only file system check ║" -ForegroundColor White
+        Write-Host "  ║   [5] 🔄 Windows Update Repair       • Purge Update Cache & Reset  ║" -ForegroundColor White
+        Write-Host "  ║   [6] 🌐 Comprehensive Net Repair    • Reset IP, Winsock & DNS reg ║" -ForegroundColor White
+        Write-Host "  ║   [7] 🗃️ Component Store Cleanup     • DISM StartComponentCleanup  ║" -ForegroundColor White
+        Write-Host "  ║                                                                    ║" -ForegroundColor Cyan
+        Write-Host "  ║   [0] ↩ Back to Main Menu                                          ║" -ForegroundColor DarkGray
+        Write-Host "  ╚════════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
         Write-Host ""
-        Write-Host "  [1] System File Checker (SFC)     (sfc /scannow - checks and fixes corrupted system files)" -ForegroundColor White
-        Write-Host "  [2] DISM Health Check             (DISM CheckHealth & ScanHealth - safe read-only)" -ForegroundColor White
-        Write-Host "  [3] DISM Restore Health           (DISM RestoreHealth - repairs Windows image)" -ForegroundColor White
-        Write-Host "  [4] CHKDSK Disk Inspection        (Read-only volume check on C:)" -ForegroundColor White
-        Write-Host "  [5] Windows Update Repair         (Safely stops services, purges update cache, restarts)" -ForegroundColor White
-        Write-Host "  [6] Full Network Repair           (DNS flush, register, winsock reset, release/renew)" -ForegroundColor White
-        Write-Host "  [7] Component Store Cleanup       (DISM StartComponentCleanup)" -ForegroundColor White
-        Write-Host "  [0] Back to Main Menu" -ForegroundColor DarkGray
-        Write-Host ""
-        Write-Host "Select an option: " -ForegroundColor Cyan -NoNewline
+        Write-Host "  👉 Select an option: " -ForegroundColor Cyan -NoNewline
         $choice = Read-Host
 
         switch ($choice) {
@@ -773,7 +896,6 @@ function Remove-FolderContentsSafely {
             $deleted++
         }
         catch [System.IO.IOException] {
-            # File is locked by an active process
             $skipped++
         }
         catch [System.UnauthorizedAccessException] {
@@ -790,19 +912,22 @@ function Remove-FolderContentsSafely {
 function Show-CleanupMenu {
     do {
         Show-Banner
-        Write-Host "--- MODULE 4: CLEANUP TOOLS ---" -ForegroundColor Cyan
+        Write-Host "  ╔════════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+        Write-Host "  ║                 MODULE 4: DISK & CACHE CLEANUP                     ║" -ForegroundColor Cyan
+        Write-Host "  ╠════════════════════════════════════════════════════════════════════╣" -ForegroundColor Cyan
+        Write-Host "  ║   [1] 🧹 User Temp Directory         • $env:TEMP                   ║" -ForegroundColor White
+        Write-Host "  ║   [2] 🧹 Windows System Temp         • $env:SystemRoot\Temp (Admin)║" -ForegroundColor White
+        Write-Host "  ║   [3] 🗑️ Empty Recycle Bin           • Clear all drive bins        ║" -ForegroundColor White
+        Write-Host "  ║   [4] 🌐 DNS Resolver Cache          • Clear resolver cache        ║" -ForegroundColor White
+        Write-Host "  ║   [5] 📦 Windows Update Cache        • Purge download folder       ║" -ForegroundColor White
+        Write-Host "  ║   [6] 💽 Windows Disk Cleanup Tool   • Launch cleanmgr.exe         ║" -ForegroundColor White
+        Write-Host "  ║   [7] 🌐 Web Browser Cache           • Chrome, Edge, Firefox       ║" -ForegroundColor White
+        Write-Host "  ║   [8] 📊 Temporary File Analysis     • Total estimated junk space  ║" -ForegroundColor White
+        Write-Host "  ║                                                                    ║" -ForegroundColor Cyan
+        Write-Host "  ║   [0] ↩ Back to Main Menu                                          ║" -ForegroundColor DarkGray
+        Write-Host "  ╚════════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
         Write-Host ""
-        Write-Host "  [1] User Temp Cleanup            ($env:TEMP)" -ForegroundColor White
-        Write-Host "  [2] Windows Temp Cleanup         ($env:SystemRoot\Temp - Requires Admin)" -ForegroundColor White
-        Write-Host "  [3] Recycle Bin Cleanup          (Clear all recycle bins)" -ForegroundColor White
-        Write-Host "  [4] DNS Cache Cleanup            (Flush resolver cache)" -ForegroundColor White
-        Write-Host "  [5] Windows Update Cache         ($env:SystemRoot\SoftwareDistribution\Download)" -ForegroundColor White
-        Write-Host "  [6] Launch Windows Disk Cleanup  (cleanmgr.exe)" -ForegroundColor White
-        Write-Host "  [7] Browser Cache Cleanup        (User cache folders for Chrome, Edge, Firefox)" -ForegroundColor White
-        Write-Host "  [8] Show Temporary File Sizes    (Analyze total junk disk usage)" -ForegroundColor White
-        Write-Host "  [0] Back to Main Menu" -ForegroundColor DarkGray
-        Write-Host ""
-        Write-Host "Select an option: " -ForegroundColor Cyan -NoNewline
+        Write-Host "  👉 Select an option: " -ForegroundColor Cyan -NoNewline
         $choice = Read-Host
 
         switch ($choice) {
@@ -878,16 +1003,16 @@ function Show-CleanupMenu {
                         if (-not $size) { $size = 0 }
                         $mb = [Math]::Round($size / 1MB, 2)
                         $totalBytes += $size
-                        Write-Host "  $($t.Name.PadRight(25)) : $mb MB"
+                        Write-Host "    $($t.Name.PadRight(25)) : $mb MB"
                     } else {
-                        Write-Host "  $($t.Name.PadRight(25)) : Not Found" -ForegroundColor DarkGray
+                        Write-Host "    $($t.Name.PadRight(25)) : Not Found" -ForegroundColor DarkGray
                     }
                 }
 
                 $totalMB = [Math]::Round($totalBytes / 1MB, 2)
                 $totalGB = [Math]::Round($totalBytes / 1GB, 2)
-                Write-Host "  -------------------------------------------"
-                Write-Host "  Total Estimated Junk       : $totalMB MB ($totalGB GB)" -ForegroundColor Cyan
+                Write-Host "  ────────────────────────────────────────────────────────────"
+                Write-Host "    Total Estimated Junk Space : $totalMB MB ($totalGB GB)" -ForegroundColor Cyan
                 Pause-Toolkit
             }
         }
@@ -901,21 +1026,24 @@ function Show-CleanupMenu {
 function Show-SystemMenu {
     do {
         Show-Banner
-        Write-Host "--- MODULE 5: SYSTEM INFORMATION ---" -ForegroundColor Cyan
+        Write-Host "  ╔════════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+        Write-Host "  ║                 MODULE 5: SYSTEM & HARDWARE INFO                   ║" -ForegroundColor Cyan
+        Write-Host "  ╠════════════════════════════════════════════════════════════════════╣" -ForegroundColor Cyan
+        Write-Host "  ║   [1] 🖥️ Windows OS Information      • Edition, Build, Uptime      ║" -ForegroundColor White
+        Write-Host "  ║   [2] 💻 Computer System Hardware    • Model, Manufacturer, Domain ║" -ForegroundColor White
+        Write-Host "  ║   [3] ⚡ Central Processor (CPU)     • Cores, Clock, Threads       ║" -ForegroundColor White
+        Write-Host "  ║   [4] 🧠 Physical Memory (RAM)       • Module slots, Speed, Total  ║" -ForegroundColor White
+        Write-Host "  ║   [5] 💽 Storage Disks & Volumes     • Physical drives & Volumes   ║" -ForegroundColor White
+        Write-Host "  ║   [6] 🎮 Graphics Adapters (GPU)     • Display adapters & VRAM     ║" -ForegroundColor White
+        Write-Host "  ║   [7] 🔌 BIOS & Firmware Details     • Vendor, SMBIOS Version      ║" -ForegroundColor White
+        Write-Host "  ║   [8] 🖧 Motherboard (Baseboard)     • Model, Serial number        ║" -ForegroundColor White
+        Write-Host "  ║   [9] 📶 Active Network Adapters     • Speed, Status, MAC address  ║" -ForegroundColor White
+        Write-Host "  ║   [10] 📋 Comprehensive Audit Report • Complete diagnostic summary ║" -ForegroundColor White
+        Write-Host "  ║                                                                    ║" -ForegroundColor Cyan
+        Write-Host "  ║   [0] ↩ Back to Main Menu                                          ║" -ForegroundColor DarkGray
+        Write-Host "  ╚════════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
         Write-Host ""
-        Write-Host "  [1] Windows OS Information      (Edition, Version, Build, Uptime)" -ForegroundColor White
-        Write-Host "  [2] Computer System Info        (Model, Manufacturer, Hostname)" -ForegroundColor White
-        Write-Host "  [3] Processor (CPU) Info        (Cores, Threads, Base Clock)" -ForegroundColor White
-        Write-Host "  [4] Memory (RAM) Info           (Module sizes, Speed, Slots)" -ForegroundColor White
-        Write-Host "  [5] Disk & Storage Info         (Physical drives and logical volumes)" -ForegroundColor White
-        Write-Host "  [6] Graphics (GPU) Info         (Display adapters, Video RAM, Driver)" -ForegroundColor White
-        Write-Host "  [7] BIOS / UEFI Info            (Vendor, Version, Release Date)" -ForegroundColor White
-        Write-Host "  [8] Motherboard Info            (Manufacturer, Product, Serial)" -ForegroundColor White
-        Write-Host "  [9] Active Network Adapters     (IPs, MAC, Speed, Status)" -ForegroundColor White
-        Write-Host "  [10] Full System Audit Report   (Comprehensive diagnostic overview)" -ForegroundColor White
-        Write-Host "  [0] Back to Main Menu" -ForegroundColor DarkGray
-        Write-Host ""
-        Write-Host "Select an option: " -ForegroundColor Cyan -NoNewline
+        Write-Host "  👉 Select an option: " -ForegroundColor Cyan -NoNewline
         $choice = Read-Host
 
         switch ($choice) {
@@ -924,38 +1052,38 @@ function Show-SystemMenu {
                 Write-Section "Windows Operating System Information"
                 $os = Get-CimInstance Win32_OperatingSystem
                 $uptime = (Get-Date) - $os.LastBootUpTime
-                Write-Host "  OS Name        : $($os.Caption)"
-                Write-Host "  Version        : $($os.Version)"
-                Write-Host "  Build Number   : $($os.BuildNumber)"
-                Write-Host "  Architecture   : $($os.OSArchitecture)"
-                Write-Host "  Installed On   : $($os.InstallDate)"
-                Write-Host "  Last Boot Time : $($os.LastBootUpTime)"
-                Write-Host "  System Uptime  : $($uptime.Days)d $($uptime.Hours)h $($uptime.Minutes)m $($uptime.Seconds)s"
-                Write-Host "  System Drive   : $($os.SystemDrive)"
+                Write-Host "    OS Name        : $($os.Caption)"
+                Write-Host "    Version        : $($os.Version)"
+                Write-Host "    Build Number   : $($os.BuildNumber)"
+                Write-Host "    Architecture   : $($os.OSArchitecture)"
+                Write-Host "    Installed On   : $($os.InstallDate)"
+                Write-Host "    Last Boot Time : $($os.LastBootUpTime)"
+                Write-Host "    System Uptime  : $($uptime.Days)d $($uptime.Hours)h $($uptime.Minutes)m $($uptime.Seconds)s"
+                Write-Host "    System Drive   : $($os.SystemDrive)"
                 Pause-Toolkit
             }
             "2" {
                 Show-Banner
                 Write-Section "Computer Hardware Identification"
                 $cs = Get-CimInstance Win32_ComputerSystem
-                Write-Host "  Hostname       : $($cs.Name)"
-                Write-Host "  Manufacturer   : $($cs.Manufacturer)"
-                Write-Host "  Model          : $($cs.Model)"
-                Write-Host "  System Type    : $($cs.SystemType)"
-                Write-Host "  Domain/Workgrp : $($cs.Domain)"
-                Write-Host "  Total Memory   : $([Math]::Round($cs.TotalPhysicalMemory / 1GB, 2)) GB"
+                Write-Host "    Hostname       : $($cs.Name)"
+                Write-Host "    Manufacturer   : $($cs.Manufacturer)"
+                Write-Host "    Model          : $($cs.Model)"
+                Write-Host "    System Type    : $($cs.SystemType)"
+                Write-Host "    Domain/Workgrp : $($cs.Domain)"
+                Write-Host "    Total Memory   : $([Math]::Round($cs.TotalPhysicalMemory / 1GB, 2)) GB"
                 Pause-Toolkit
             }
             "3" {
                 Show-Banner
                 Write-Section "Processor (CPU) Details"
                 Get-CimInstance Win32_Processor | ForEach-Object {
-                    Write-Host "  Device ID      : $($_.DeviceID)"
-                    Write-Host "  Processor Name : $($_.Name.Trim())"
-                    Write-Host "  Physical Cores : $($_.NumberOfCores)"
-                    Write-Host "  Logical Threads: $($_.NumberOfLogicalProcessors)"
-                    Write-Host "  Max Clock Speed: $($_.MaxClockSpeed) MHz"
-                    Write-Host "  Socket Type    : $($_.SocketDesignation)"
+                    Write-Host "    Device ID      : $($_.DeviceID)"
+                    Write-Host "    Processor Name : $($_.Name.Trim())"
+                    Write-Host "    Physical Cores : $($_.NumberOfCores)"
+                    Write-Host "    Logical Threads: $($_.NumberOfLogicalProcessors)"
+                    Write-Host "    Max Clock Speed: $($_.MaxClockSpeed) MHz"
+                    Write-Host "    Socket Type    : $($_.SocketDesignation)"
                     Write-Host ""
                 }
                 Pause-Toolkit
@@ -968,22 +1096,22 @@ function Show-SystemMenu {
                 foreach ($m in $sticks) {
                     $gb = [Math]::Round($m.Capacity / 1GB, 2)
                     $totalRam += $m.Capacity
-                    Write-Host "  Bank: $($m.DeviceLocator) | Size: $gb GB | Speed: $($m.Speed) MHz | Vendor: $($m.Manufacturer.Trim()) | Part: $($m.PartNumber.Trim())"
+                    Write-Host "    Bank: $($m.DeviceLocator) | Size: $gb GB | Speed: $($m.Speed) MHz | Vendor: $($m.Manufacturer.Trim()) | Part: $($m.PartNumber.Trim())"
                 }
-                Write-Host "  ------------------------------------------------------------------"
-                Write-Host "  Total Installed RAM: $([Math]::Round($totalRam / 1GB, 2)) GB across $($sticks.Count) module(s)" -ForegroundColor Cyan
+                Write-Host "  ────────────────────────────────────────────────────────────"
+                Write-Host "    Total Installed RAM: $([Math]::Round($totalRam / 1GB, 2)) GB across $($sticks.Count) module(s)" -ForegroundColor Cyan
                 Pause-Toolkit
             }
             "5" {
                 Show-Banner
                 Write-Section "Storage Disks & Volumes"
-                Write-Host "Physical Disk Drives:" -ForegroundColor Cyan
+                Write-Host "  Physical Disk Drives:" -ForegroundColor Cyan
                 Get-CimInstance Win32_DiskDrive | ForEach-Object {
                     $sizeGb = [Math]::Round($_.Size / 1GB, 2)
-                    Write-Host "  [$($_.Index)] $($_.Model) ($sizeGb GB, Interface: $($_.InterfaceType))"
+                    Write-Host "    [$($_.Index)] $($_.Model) ($sizeGb GB, Interface: $($_.InterfaceType))"
                 }
                 Write-Host ""
-                Write-Host "Logical Drive Volumes:" -ForegroundColor Cyan
+                Write-Host "  Logical Drive Volumes:" -ForegroundColor Cyan
                 Get-Volume | Where-Object { $_.DriveLetter } | Format-Table DriveLetter, FileSystemLabel, FileSystem, @{Name="Size(GB)";Expression={[Math]::Round($_.Size/1GB,2)}}, @{Name="Free(GB)";Expression={[Math]::Round($_.SizeRemaining/1GB,2)}}, HealthStatus -AutoSize
                 Pause-Toolkit
             }
@@ -992,10 +1120,10 @@ function Show-SystemMenu {
                 Write-Section "Graphics Controllers (GPU)"
                 Get-CimInstance Win32_VideoController | ForEach-Object {
                     $vram = if ($_.AdapterRAM) { [Math]::Round($_.AdapterRAM / 1MB, 0) } else { "N/A" }
-                    Write-Host "  GPU Name       : $($_.Name)"
-                    Write-Host "  Driver Version : $($_.DriverVersion)"
-                    Write-Host "  Resolution     : $($_.CurrentHorizontalResolution) x $($_.CurrentVerticalResolution) @ $($_.CurrentRefreshRate)Hz"
-                    Write-Host "  Adapter VRAM   : $vram MB"
+                    Write-Host "    GPU Name       : $($_.Name)"
+                    Write-Host "    Driver Version : $($_.DriverVersion)"
+                    Write-Host "    Resolution     : $($_.CurrentHorizontalResolution) x $($_.CurrentVerticalResolution) @ $($_.CurrentRefreshRate)Hz"
+                    Write-Host "    Adapter VRAM   : $vram MB"
                     Write-Host ""
                 }
                 Pause-Toolkit
@@ -1004,20 +1132,20 @@ function Show-SystemMenu {
                 Show-Banner
                 Write-Section "BIOS / Firmware Information"
                 $bios = Get-CimInstance Win32_BIOS
-                Write-Host "  BIOS Vendor    : $($bios.Manufacturer)"
-                Write-Host "  Version        : $($bios.SMBIOSBIOSVersion)"
-                Write-Host "  Release Date   : $($bios.ReleaseDate)"
-                Write-Host "  Serial Number  : $($bios.SerialNumber)"
+                Write-Host "    BIOS Vendor    : $($bios.Manufacturer)"
+                Write-Host "    Version        : $($bios.SMBIOSBIOSVersion)"
+                Write-Host "    Release Date   : $($bios.ReleaseDate)"
+                Write-Host "    Serial Number  : $($bios.SerialNumber)"
                 Pause-Toolkit
             }
             "8" {
                 Show-Banner
                 Write-Section "Motherboard (BaseBoard)"
                 $mb = Get-CimInstance Win32_BaseBoard
-                Write-Host "  Manufacturer   : $($mb.Manufacturer)"
-                Write-Host "  Product Model  : $($mb.Product)"
-                Write-Host "  Serial Number  : $($mb.SerialNumber)"
-                Write-Host "  Version        : $($mb.Version)"
+                Write-Host "    Manufacturer   : $($mb.Manufacturer)"
+                Write-Host "    Product Model  : $($mb.Product)"
+                Write-Host "    Serial Number  : $($mb.SerialNumber)"
+                Write-Host "    Version        : $($mb.Version)"
                 Pause-Toolkit
             }
             "9" {
@@ -1035,17 +1163,17 @@ function Show-SystemMenu {
                 $ram = [Math]::Round($cs.TotalPhysicalMemory / 1GB, 2)
                 $bios = Get-CimInstance Win32_BIOS
 
-                Write-Host "  Device Name    : $($cs.Name)" -ForegroundColor Cyan
-                Write-Host "  OS             : $($os.Caption) (Build $($os.BuildNumber))"
-                Write-Host "  Motherboard    : $($cs.Manufacturer) $($cs.Model)"
-                Write-Host "  BIOS           : $($bios.SMBIOSBIOSVersion) ($($bios.Manufacturer))"
-                Write-Host "  CPU            : $($cpu.Name.Trim())"
-                Write-Host "  Memory         : $ram GB RAM"
-                Write-Host "  Disks Summary  :"
+                Write-Host "    Device Name    : $($cs.Name)" -ForegroundColor Cyan
+                Write-Host "    OS             : $($os.Caption) (Build $($os.BuildNumber))"
+                Write-Host "    Motherboard    : $($cs.Manufacturer) $($cs.Model)"
+                Write-Host "    BIOS           : $($bios.SMBIOSBIOSVersion) ($($bios.Manufacturer))"
+                Write-Host "    CPU            : $($cpu.Name.Trim())"
+                Write-Host "    Memory         : $ram GB RAM"
+                Write-Host "    Disks Summary  :"
                 Get-Volume | Where-Object { $_.DriveLetter } | ForEach-Object {
                     $freeGb = [Math]::Round($_.SizeRemaining / 1GB, 1)
                     $totalGb = [Math]::Round($_.Size / 1GB, 1)
-                    Write-Host "    - $($_.DriveLetter): [$($_.FileSystemLabel)] $freeGb GB free of $totalGb GB"
+                    Write-Host "      - $($_.DriveLetter): [$($_.FileSystemLabel)] $freeGb GB free of $totalGb GB"
                 }
                 Pause-Toolkit
             }
@@ -1060,23 +1188,26 @@ function Show-SystemMenu {
 function Show-UtilityMenu {
     do {
         Show-Banner
-        Write-Host "--- MODULE 6: WINDOWS BUILT-IN UTILITIES ---" -ForegroundColor Cyan
+        Write-Host "  ╔════════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+        Write-Host "  ║                 MODULE 6: BUILT-IN WINDOWS UTILITIES               ║" -ForegroundColor Cyan
+        Write-Host "  ╠════════════════════════════════════════════════════════════════════╣" -ForegroundColor Cyan
+        Write-Host "  ║   [1] 📊 Task Manager               • taskmgr.exe                  ║" -ForegroundColor White
+        Write-Host "  ║   [2] 🔌 Device Manager             • devmgmt.msc                  ║" -ForegroundColor White
+        Write-Host "  ║   [3] ⚙️ Windows Services Console    • services.msc                 ║" -ForegroundColor White
+        Write-Host "  ║   [4] 💻 Computer Management        • compmgmt.msc                 ║" -ForegroundColor White
+        Write-Host "  ║   [5] 📝 Registry Editor            • regedit.exe                  ║" -ForegroundColor White
+        Write-Host "  ║   [6] 🎛️ Classic Control Panel      • control.exe                  ║" -ForegroundColor White
+        Write-Host "  ║   [7] ⚙️ Windows Modern Settings    • ms-settings:                 ║" -ForegroundColor White
+        Write-Host "  ║   [8] 💻 Command Prompt (CMD)       • cmd.exe                      ║" -ForegroundColor White
+        Write-Host "  ║   [9] 💻 Windows PowerShell         • powershell.exe               ║" -ForegroundColor White
+        Write-Host "  ║   [10] 📜 Windows Event Viewer      • eventvwr.msc                 ║" -ForegroundColor White
+        Write-Host "  ║   [11] 💽 Disk Management Console   • diskmgmt.msc                 ║" -ForegroundColor White
+        Write-Host "  ║   [12] ℹ️ System Properties Dialog  • sysdm.cpl                    ║" -ForegroundColor White
+        Write-Host "  ║                                                                    ║" -ForegroundColor Cyan
+        Write-Host "  ║   [0] ↩ Back to Main Menu                                          ║" -ForegroundColor DarkGray
+        Write-Host "  ╚════════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
         Write-Host ""
-        Write-Host "  [1] Task Manager               (taskmgr.exe)" -ForegroundColor White
-        Write-Host "  [2] Device Manager             (devmgmt.msc)" -ForegroundColor White
-        Write-Host "  [3] Windows Services           (services.msc)" -ForegroundColor White
-        Write-Host "  [4] Computer Management        (compmgmt.msc)" -ForegroundColor White
-        Write-Host "  [5] Registry Editor            (regedit.exe)" -ForegroundColor White
-        Write-Host "  [6] Classic Control Panel      (control.exe)" -ForegroundColor White
-        Write-Host "  [7] Windows Modern Settings    (ms-settings:)" -ForegroundColor White
-        Write-Host "  [8] Open Command Prompt        (cmd.exe)" -ForegroundColor White
-        Write-Host "  [9] Open New PowerShell        (powershell.exe)" -ForegroundColor White
-        Write-Host "  [10] Event Viewer              (eventvwr.msc)" -ForegroundColor White
-        Write-Host "  [11] Disk Management           (diskmgmt.msc)" -ForegroundColor White
-        Write-Host "  [12] System Properties         (sysdm.cpl)" -ForegroundColor White
-        Write-Host "  [0] Back to Main Menu" -ForegroundColor DarkGray
-        Write-Host ""
-        Write-Host "Select an option: " -ForegroundColor Cyan -NoNewline
+        Write-Host "  👉 Select an option: " -ForegroundColor Cyan -NoNewline
         $choice = Read-Host
 
         switch ($choice) {
@@ -1103,27 +1234,30 @@ function Show-UtilityMenu {
 function Show-ConfigurationMenu {
     do {
         Show-Banner
-        Write-Host "--- MODULE 7: WINDOWS CONFIGURATION ---" -ForegroundColor Cyan
+        Write-Host "  ╔════════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+        Write-Host "  ║                 MODULE 7: WINDOWS CONFIGURATION                    ║" -ForegroundColor Cyan
+        Write-Host "  ╠════════════════════════════════════════════════════════════════════╣" -ForegroundColor Cyan
+        Write-Host "  ║   [1] 💻 Set Computer Hostname       • Rename-Computer (Reboot req)║" -ForegroundColor White
+        Write-Host "  ║   [2] 🕒 Show Current Time Zone      • Get-TimeZone                ║" -ForegroundColor White
+        Write-Host "  ║   [3] 🌍 Change System Time Zone     • Popular global zones list   ║" -ForegroundColor White
+        Write-Host "  ║   [4] 🔑 Windows Activation Status   • Official licensing query    ║" -ForegroundColor White
+        Write-Host "  ║   [5] 🔄 Windows Update Settings     • Launch update configuration ║" -ForegroundColor White
+        Write-Host "  ║   [6] ⚡ Power Plan Scheme           • High Performance, Balanced  ║" -ForegroundColor White
+        Write-Host "  ║   [7] 🌐 Default Browser Info        • Read HTTP protocol handler  ║" -ForegroundColor White
+        Write-Host "  ║                                                                    ║" -ForegroundColor Cyan
+        Write-Host "  ║   [0] ↩ Back to Main Menu                                          ║" -ForegroundColor DarkGray
+        Write-Host "  ╚════════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
         Write-Host ""
-        Write-Host "  [1] Set Computer Name           (Rename-Computer - requires reboot)" -ForegroundColor White
-        Write-Host "  [2] Show Current Time Zone      (Get-TimeZone)" -ForegroundColor White
-        Write-Host "  [3] Change Time Zone            (Set-TimeZone from list)" -ForegroundColor White
-        Write-Host "  [4] Windows Activation Status   (Official licensing query only)" -ForegroundColor White
-        Write-Host "  [5] Windows Update Settings     (Launch update configuration)" -ForegroundColor White
-        Write-Host "  [6] Power Plan Configuration    (List and set active power scheme)" -ForegroundColor White
-        Write-Host "  [7] Default Browser Info        (Read configured default HTTP handler)" -ForegroundColor White
-        Write-Host "  [0] Back to Main Menu" -ForegroundColor DarkGray
-        Write-Host ""
-        Write-Host "Select an option: " -ForegroundColor Cyan -NoNewline
+        Write-Host "  👉 Select an option: " -ForegroundColor Cyan -NoNewline
         $choice = Read-Host
 
         switch ($choice) {
             "1" {
                 if (-not (Request-Admin "Renaming the computer requires administrative privileges.")) { break }
                 Show-Banner
-                Write-Section "Rename Computer"
-                Write-Host "Current Computer Name: $env:COMPUTERNAME" -ForegroundColor Cyan
-                Write-Host "Enter New Computer Name: " -ForegroundColor Cyan -NoNewline
+                Write-Section "Rename Computer Hostname"
+                Write-Host "    Current Computer Name: $env:COMPUTERNAME" -ForegroundColor Cyan
+                Write-Host "    Enter New Hostname: " -ForegroundColor Cyan -NoNewline
                 $newName = Read-Host
                 if ($newName -match "^[a-zA-Z0-9-]{1,15}$") {
                     if (Confirm-Action "Rename computer to '$newName'?" "A restart will be required for the change to take effect.") {
@@ -1162,11 +1296,11 @@ function Show-ConfigurationMenu {
                     "Tokyo Standard Time"
                 )
                 for ($i = 0; $i -lt $zones.Count; $i++) {
-                    Write-Host "  [$($i + 1)] $($zones[$i])"
+                    Write-Host "    [$($i + 1)] $($zones[$i])"
                 }
-                Write-Host "  [0] Cancel" -ForegroundColor DarkGray
+                Write-Host "    [0] Cancel" -ForegroundColor DarkGray
                 Write-Host ""
-                Write-Host "Select time zone [1-$($zones.Count)]: " -ForegroundColor Cyan -NoNewline
+                Write-Host "    👉 Select time zone [1-$($zones.Count)]: " -ForegroundColor Cyan -NoNewline
                 $zIdx = Read-Host
                 if ($zIdx -match "^\d+$" -and [int]$zIdx -ge 1 -and [int]$zIdx -le $zones.Count) {
                     $chosenZone = $zones[[int]$zIdx - 1]
@@ -1196,10 +1330,10 @@ function Show-ConfigurationMenu {
                             6 { "ExtendedGrace" }
                             default { "Unknown ($($lic.LicenseStatus))" }
                         }
-                        Write-Host "  Product Name   : $($lic.Name)"
-                        Write-Host "  Description    : $($lic.Description)"
-                        Write-Host "  License Status : $statusText" -ForegroundColor $(if ($lic.LicenseStatus -eq 1) { "Green" } else { "Yellow" })
-                        Write-Host "  Partial Key    : ...-$($lic.PartialProductKey)"
+                        Write-Host "    Product Name   : $($lic.Name)"
+                        Write-Host "    Description    : $($lic.Description)"
+                        Write-Host "    License Status : $statusText" -ForegroundColor $(if ($lic.LicenseStatus -eq 1) { "Green" } else { "Yellow" })
+                        Write-Host "    Partial Key    : ...-$($lic.PartialProductKey)"
                     } else {
                         Write-InfoMessage "Launching Windows Activation script query..."
                         cscript.exe //nologo "$env:SystemRoot\System32\slmgr.vbs" /xpr
@@ -1218,7 +1352,7 @@ function Show-ConfigurationMenu {
                 Write-Section "Windows Power Schemes"
                 & powercfg /list
                 Write-Host ""
-                Write-Host "Quick Set: [1] High Performance | [2] Balanced | [3] Power Saver | [0] Skip: " -ForegroundColor Cyan -NoNewline
+                Write-Host "  Quick Set: [1] High Performance | [2] Balanced | [3] Power Saver | [0] Skip: " -ForegroundColor Cyan -NoNewline
                 $pChoice = Read-Host
                 switch ($pChoice) {
                     "1" { & powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c; Write-Success "High Performance activated." }
@@ -1232,7 +1366,7 @@ function Show-ConfigurationMenu {
                 Write-Section "Default Browser Information"
                 try {
                     $progId = (Get-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice" -ErrorAction SilentlyContinue).ProgId
-                    Write-Host "  Configured HTTP Protocol Handler (ProgId): $progId" -ForegroundColor Cyan
+                    Write-Host "    Configured HTTP Protocol Handler (ProgId): $progId" -ForegroundColor Cyan
                 } catch {
                     Write-WarningMessage "Unable to query default browser UserChoice registry key."
                 }
@@ -1249,26 +1383,29 @@ function Show-ConfigurationMenu {
 function Show-QuickMenu {
     do {
         Show-Banner
-        Write-Host "--- MODULE 8: QUICK ACTIONS (ONE-CLICK DIAGNOSTICS) ---" -ForegroundColor Cyan
+        Write-Host "  ╔════════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+        Write-Host "  ║                   MODULE 8: INSTANT QUICK ACTIONS                  ║" -ForegroundColor Cyan
+        Write-Host "  ╠════════════════════════════════════════════════════════════════════╣" -ForegroundColor Cyan
+        Write-Host "  ║   [1] 🧹 Flush DNS Resolver Cache                                  ║" -ForegroundColor White
+        Write-Host "  ║   [2] 🌐 Fast Internet Connectivity Test                           ║" -ForegroundColor White
+        Write-Host "  ║   [3] 📋 Show Current Network IP Configuration                     ║" -ForegroundColor White
+        Write-Host "  ║   [4] 🔄 Restart Windows Explorer Process                          ║" -ForegroundColor White
+        Write-Host "  ║   [5] 📊 Open Task Manager                                         ║" -ForegroundColor White
+        Write-Host "  ║   [6] ⚙️ Open Windows Modern Settings                              ║" -ForegroundColor White
+        Write-Host "  ║   [7] 🛡️ Run System File Checker (SFC Scan)                        ║" -ForegroundColor White
+        Write-Host "  ║   [8] 🩹 Run DISM RestoreHealth Image Repair                       ║" -ForegroundColor White
+        Write-Host "  ║   [9] 📦 Install Essential Software (Interactive Selection)        ║" -ForegroundColor White
+        Write-Host "  ║                                                                    ║" -ForegroundColor Cyan
+        Write-Host "  ║   [0] ↩ Back to Main Menu                                          ║" -ForegroundColor DarkGray
+        Write-Host "  ╚════════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
         Write-Host ""
-        Write-Host "  [1] Flush DNS Resolver Cache" -ForegroundColor White
-        Write-Host "  [2] Quick Internet Connectivity Test" -ForegroundColor White
-        Write-Host "  [3] Show Current IP Information" -ForegroundColor White
-        Write-Host "  [4] Restart Windows Explorer" -ForegroundColor White
-        Write-Host "  [5] Open Task Manager" -ForegroundColor White
-        Write-Host "  [6] Open Windows Settings" -ForegroundColor White
-        Write-Host "  [7] Run System File Checker (SFC)" -ForegroundColor White
-        Write-Host "  [8] Run DISM RestoreHealth" -ForegroundColor White
-        Write-Host "  [9] Install Essential Software Pack" -ForegroundColor White
-        Write-Host "  [0] Back to Main Menu" -ForegroundColor DarkGray
-        Write-Host ""
-        Write-Host "Select an option: " -ForegroundColor Cyan -NoNewline
+        Write-Host "  👉 Select an option: " -ForegroundColor Cyan -NoNewline
         $choice = Read-Host
 
         switch ($choice) {
             "1" {
                 Clear-DnsClientCache
-                Write-Success "DNS cache flushed."
+                Write-Success "DNS cache flushed successfully."
                 Pause-Toolkit
             }
             "2" {
@@ -1307,7 +1444,7 @@ function Show-QuickMenu {
                 }
             }
             "9" {
-                Install-SoftwareGroup -GroupName "Essential"
+                Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Essential"] -GroupTitle "Essential Software Pack"
             }
         }
     } while ($choice -ne "0")
@@ -1318,14 +1455,13 @@ function Show-QuickMenu {
 # ============================================================================
 
 function Start-Toolkit {
-    # Set console title if supported
     try {
         $Host.UI.RawUI.WindowTitle = "$ToolkitName v$ToolkitVersion"
     } catch {}
 
     do {
         Show-MainMenu
-        Write-Host "Select an option [0-8]: " -ForegroundColor Cyan -NoNewline
+        Write-Host "  👉 Select an option [0-8]: " -ForegroundColor Cyan -NoNewline
         $mainChoice = Read-Host
 
         switch ($mainChoice) {
@@ -1340,8 +1476,10 @@ function Start-Toolkit {
             "0" {
                 Clear-Host
                 Write-Host ""
-                Write-Host "Thank you for using $ToolkitName!" -ForegroundColor Cyan
-                Write-Host "Author: ItsRiRx | Have a productive day." -ForegroundColor Gray
+                Write-Host "  ╔════════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+                Write-Host "  ║            Thank you for using ItsRiRx Windows Tool Kit!           ║" -ForegroundColor Cyan
+                Write-Host "  ║                 Author: ItsRiRx • Stay Productive                  ║" -ForegroundColor White
+                Write-Host "  ╚════════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
                 Write-Host ""
                 return
             }
