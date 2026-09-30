@@ -17,6 +17,22 @@
     {
       "source": "/info",
       "destination": "/api/index.js"
+    },
+    {
+      "source": "/launcher.bat",
+      "destination": "/api/launcher.js"
+    },
+    {
+      "source": "/setup-rirx.bat",
+      "destination": "/api/setup-rirx.js"
+    },
+    {
+      "source": "/download/launcher.bat",
+      "destination": "/api/launcher.js"
+    },
+    {
+      "source": "/download/setup-rirx.bat",
+      "destination": "/api/setup-rirx.js"
     }
   ]
 }

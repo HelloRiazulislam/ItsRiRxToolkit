@@ -25,11 +25,16 @@ import {
   Film,
   MessageSquare,
   Monitor,
-  FileText
+  FileText,
+  Download,
+  FolderDown,
+  FileCode,
+  MousePointerClick
 } from 'lucide-react';
 
 export default function App() {
   const [copiedType, setCopiedType] = useState<string | null>(null);
+  const [downloadToast, setDownloadToast] = useState<string | null>(null);
   const [hostUrl, setHostUrl] = useState<string>('');
   const [simStep, setSimStep] = useState<string>('main');
   const [simLogs, setSimLogs] = useState<Array<{ text: string; color?: string }>>([]);
@@ -43,10 +48,89 @@ export default function App() {
   const psCommand = `irm ${endpointUrl} | iex`;
   const cmdCommand = `powershell -NoProfile -ExecutionPolicy Bypass -Command "irm ${endpointUrl} | iex"`;
 
+  const batLauncherCode = `@echo off
+:: ============================================================================
+::  ItsRiRx Windows Tool Kit - 1-Click Desktop Launcher
+::  Compatibility: Windows 10, Windows 11 (64-bit)
+:: ============================================================================
+title ItsRiRx Windows Tool Kit
+color 0b
+
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [INFO] Administrator rights required. Requesting elevation...
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process cmd.exe -ArgumentList '/c \\"\\"%~f0\\"\\"' -Verb RunAs"
+    exit /b
+)
+
+cls
+echo ============================================================================
+echo   ItsRiRx Windows Tool Kit - Launching remote suite...
+echo ============================================================================
+echo.
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "irm https://itsrirx-toolkit.vercel.app/i | iex"
+
+echo.
+echo Press any key to exit...
+pause >nul`;
+
+  const setupRirxCode = `@echo off
+:: ============================================================================
+::  ItsRiRx Windows Tool Kit - Permanent 'rirx' Terminal Command Installer
+:: ============================================================================
+title Setup 'rirx' Command
+color 0a
+cls
+echo ============================================================================
+echo   Installing 'rirx' shortcut command into your PowerShell Profile...
+echo ============================================================================
+echo.
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$profileDir = Split-Path $PROFILE; if (!(Test-Path $profileDir)) { New-Item -ItemType Directory -Path $profileDir -Force | Out-Null }; if (!(Test-Path $PROFILE)) { New-Item -ItemType File -Path $PROFILE -Force | Out-Null }; $fn = 'function rirx { irm https://itsrirx-toolkit.vercel.app/i | iex }'; $content = Get-Content $PROFILE -Raw -ErrorAction SilentlyContinue; if ($content -notmatch 'function rirx') { Add-Content -Path $PROFILE -Value \\"\`n# ItsRiRx Windows Tool Kit Shortcut\`n$fn\\" -Force; Write-Host '[OK] Shortcut installed successfully!' -ForegroundColor Green } else { Write-Host '[INFO] ''rirx'' command already configured in your PowerShell Profile.' -ForegroundColor Yellow }; Write-Host ''; Write-Host 'Now you can open any PowerShell terminal and simply type: rirx' -ForegroundColor Cyan"
+
+echo.
+echo ============================================================================
+echo Installation Complete!
+echo You can now open any terminal and type: rirx
+echo ============================================================================
+echo.
+pause`;
+
+  const vbsShortcutCode = `Set oWS = WScript.CreateObject("WScript.Shell")
+sLinkFile = oWS.SpecialFolders("Desktop") & "\\ItsRiRx ToolKit.lnk"
+Set oLink = oWS.CreateShortcut(sLinkFile)
+oLink.TargetPath = "powershell.exe"
+oLink.Arguments = "-NoProfile -ExecutionPolicy Bypass -Command ""irm https://itsrirx-toolkit.vercel.app/i | iex"""
+oLink.Description = "ItsRiRx Windows Tool Kit 1-Click Launcher"
+oLink.WorkingDirectory = "%USERPROFILE%"
+oLink.IconLocation = "powershell.exe, 0"
+oLink.Save
+MsgBox "ItsRiRx ToolKit shortcut has been created on your Desktop!", 64, "ItsRiRx ToolKit"`;
+
+  const ps1ScriptCode = `# ============================================================================
+#  ItsRiRx Windows Tool Kit - 1-Click Local Runner
+# ============================================================================
+irm https://itsrirx-toolkit.vercel.app/i | iex`;
+
   const handleCopy = (text: string, type: string) => {
     navigator.clipboard.writeText(text);
     setCopiedType(type);
     setTimeout(() => setCopiedType(null), 2500);
+  };
+
+  const handleDownload = (filename: string, content: string, label: string) => {
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    setDownloadToast(`Downloaded ${label}!`);
+    setTimeout(() => setDownloadToast(null), 3500);
   };
 
   // Terminal simulator logic
@@ -277,6 +361,14 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-black">
+      {/* Toast Notification */}
+      {downloadToast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-emerald-500 text-black px-4 py-3 rounded-xl font-bold shadow-2xl flex items-center gap-2 border border-emerald-400 animate-bounce">
+          <Check className="w-5 h-5" />
+          <span>{downloadToast}</span>
+        </div>
+      )}
+
       {/* Top Cyber Nav */}
       <header className="border-b border-zinc-800/80 bg-zinc-900/60 backdrop-blur sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
@@ -295,6 +387,13 @@ export default function App() {
 
           <div className="flex items-center gap-4">
             <a
+              href="#downloads"
+              className="text-xs text-cyan-400 hover:text-white transition font-medium flex items-center gap-1 hidden sm:inline-flex"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Download Launchers
+            </a>
+            <a
               href="#how-to-use"
               className="text-xs text-zinc-400 hover:text-white transition hidden sm:inline-block"
             >
@@ -304,13 +403,7 @@ export default function App() {
               href="#apps"
               className="text-xs text-zinc-400 hover:text-white transition hidden sm:inline-block"
             >
-              Application Categories
-            </a>
-            <a
-              href="#features"
-              className="text-xs text-zinc-400 hover:text-white transition hidden sm:inline-block"
-            >
-              All Modules
+              Categories
             </a>
             <a
               href="#preview"
@@ -332,7 +425,7 @@ export default function App() {
           <div className="max-w-3xl space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/90 border border-cyan-600/40 text-cyan-300 text-xs font-mono">
               <ShieldCheck className="w-4 h-4 text-cyan-400" />
-              Pure In-Memory Execution • No Downloads • Windows 10 & 11 Compatible
+              Pure In-Memory Execution • No Installations • Windows 10 & 11 Compatible
             </div>
 
             <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
@@ -344,7 +437,7 @@ export default function App() {
             </p>
           </div>
 
-          {/* 1-CLICK LAUNCHERS */}
+          {/* 1-CLICK LAUNCHERS (COPY COMMANDS) */}
           <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* PowerShell Card */}
             <div className="rounded-2xl border border-cyan-500/40 bg-zinc-950/80 p-5 space-y-3 relative group hover:border-cyan-400 transition shadow-lg">
@@ -414,6 +507,113 @@ export default function App() {
           </div>
         </section>
 
+        {/* 1-CLICK DOWNLOADABLE SHORTCUTS & LAUNCHERS (NEW REQUESTED FEATURE) */}
+        <section id="downloads" className="space-y-6">
+          <div className="border-b border-zinc-800 pb-3 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+                <FolderDown className="w-6 h-6 text-cyan-400" />
+                1-Click Downloadable Shortcuts & Launchers
+              </h2>
+              <p className="text-xs text-zinc-400 mt-1">
+                Don't want to type commands? Download these instant helpers to launch or create permanent desktop shortcuts!
+              </p>
+            </div>
+            <span className="text-xs font-mono px-3 py-1 rounded-full bg-emerald-950 border border-emerald-800 text-emerald-400">
+              No Typing Required
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* Card 1: 1-Click Desktop Launcher .bat */}
+            <div className="rounded-2xl border border-cyan-500/40 bg-zinc-900/60 p-6 space-y-4 hover:border-cyan-400 transition shadow-xl relative flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                    <MousePointerClick className="w-5 h-5" />
+                  </div>
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800">
+                    .BAT File
+                  </span>
+                </div>
+                <h3 className="font-bold text-white text-base">1-Click Desktop Launcher</h3>
+                <p className="text-xs text-zinc-300 leading-relaxed">
+                  Download and simply <strong>double-click</strong>. It auto-elevates to Administrator and launches the toolkit instantly without typing a single word!
+                </p>
+              </div>
+
+              <div className="pt-4 border-t border-zinc-800/80 space-y-2">
+                <button
+                  onClick={() => handleDownload('ItsRiRx-ToolKit.bat', batLauncherCode, 'Desktop Launcher (.bat)')}
+                  className="w-full py-2.5 px-4 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs flex items-center justify-center gap-2 transition shadow-lg shadow-cyan-500/20"
+                >
+                  <Download className="w-4 h-4" />
+                  Download ItsRiRx-ToolKit.bat
+                </button>
+                <span className="text-[11px] text-zinc-500 block text-center">Double-click anytime from your Desktop or USB</span>
+              </div>
+            </div>
+
+            {/* Card 2: Permanent 'rirx' Command Installer */}
+            <div className="rounded-2xl border border-emerald-500/40 bg-zinc-900/60 p-6 space-y-4 hover:border-emerald-400 transition shadow-xl relative flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                    <Zap className="w-5 h-5" />
+                  </div>
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">
+                    Super Fast
+                  </span>
+                </div>
+                <h3 className="font-bold text-white text-base">Setup 'rirx' Command</h3>
+                <p className="text-xs text-zinc-300 leading-relaxed">
+                  Double-click this once. It permanently registers the <strong>`rirx`</strong> command into your PowerShell Profile. Afterward, just type <strong>`rirx`</strong> anywhere!
+                </p>
+              </div>
+
+              <div className="pt-4 border-t border-zinc-800/80 space-y-2">
+                <button
+                  onClick={() => handleDownload('Setup-rirx-Command.bat', setupRirxCode, 'rirx Setup (.bat)')}
+                  className="w-full py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-500/20"
+                >
+                  <Download className="w-4 h-4" />
+                  Download Setup-rirx-Command.bat
+                </button>
+                <span className="text-[11px] text-zinc-500 block text-center">Open terminal & type "rirx" anytime</span>
+              </div>
+            </div>
+
+            {/* Card 3: Create Desktop Shortcut .vbs */}
+            <div className="rounded-2xl border border-purple-500/40 bg-zinc-900/60 p-6 space-y-4 hover:border-purple-400 transition shadow-xl relative flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                    <Monitor className="w-5 h-5" />
+                  </div>
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800">
+                    .VBS Script
+                  </span>
+                </div>
+                <h3 className="font-bold text-white text-base">Create Desktop Icon (.lnk)</h3>
+                <p className="text-xs text-zinc-300 leading-relaxed">
+                  Generates an official Windows Shortcut icon named <strong>"ItsRiRx ToolKit"</strong> directly onto your Windows Desktop with 1 double-click!
+                </p>
+              </div>
+
+              <div className="pt-4 border-t border-zinc-800/80 space-y-2">
+                <button
+                  onClick={() => handleDownload('Create-Desktop-Shortcut.vbs', vbsShortcutCode, 'Desktop Shortcut Creator (.vbs)')}
+                  className="w-full py-2.5 px-4 rounded-xl bg-purple-500 hover:bg-purple-400 text-white font-bold text-xs flex items-center justify-center gap-2 transition shadow-lg shadow-purple-500/20"
+                >
+                  <Download className="w-4 h-4" />
+                  Download Create-Desktop-Shortcut.vbs
+                </button>
+                <span className="text-[11px] text-zinc-500 block text-center">Places an official shortcut icon on your Desktop</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* HOW TO USE */}
         <section id="how-to-use" className="space-y-6">
           <div className="border-b border-zinc-800 pb-3">
@@ -429,9 +629,9 @@ export default function App() {
               <div className="w-8 h-8 rounded-xl bg-cyan-950 border border-cyan-800 flex items-center justify-center text-cyan-400 font-bold text-sm">
                 1
               </div>
-              <h3 className="font-bold text-white text-base">Open Terminal</h3>
+              <h3 className="font-bold text-white text-base">Open Terminal or Download Launcher</h3>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Open <strong>PowerShell</strong> or <strong>CMD</strong> (Run as Administrator is recommended for system tweaks and repairs).
+                Open <strong>PowerShell</strong> as Administrator OR double-click your downloaded <strong>`ItsRiRx-ToolKit.bat`</strong> file.
               </p>
             </div>
 
@@ -439,9 +639,9 @@ export default function App() {
               <div className="w-8 h-8 rounded-xl bg-cyan-950 border border-cyan-800 flex items-center justify-center text-cyan-400 font-bold text-sm">
                 2
               </div>
-              <h3 className="font-bold text-white text-base">Paste Launcher Command</h3>
+              <h3 className="font-bold text-white text-base">Execute in 1 Click</h3>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Click the 1-click copy button above, paste the command into your terminal window, and press <strong>Enter</strong>.
+                If using the command, paste <code className="text-cyan-400 font-mono">irm https://itsrirx-toolkit.vercel.app/i | iex</code> and press Enter.
               </p>
             </div>
 
