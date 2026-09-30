@@ -14,11 +14,13 @@ import {
   Play,
   HelpCircle,
   Sparkles,
+  Gamepad2,
+  ShieldAlert,
+  Code2,
+  BatteryCharging,
+  Layers,
   ArrowRight,
-  MonitorCheck,
-  CheckCircle2,
-  HardDrive,
-  Globe
+  HardDrive
 } from 'lucide-react';
 
 export default function App() {
@@ -49,110 +51,106 @@ export default function App() {
         case '1':
           setSimStep('software');
           setSimLogs([
-            { text: '  ╔════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-400' },
-            { text: '  ║             MODULE 1: SOFTWARE SELECTOR (WINGET)                   ║', color: 'text-cyan-400' },
-            { text: '  ╠════════════════════════════════════════════════════════════════════╣', color: 'text-cyan-400' },
+            { text: '  --- MODULE 1: SOFTWARE INSTALLER (WINGET) ---', color: 'text-cyan-400 font-semibold' },
+            { text: '  All selections show checkboxes. Nothing installs until you approve with Y.', color: 'text-amber-400' },
             { text: '  ┌─────┬───────┬──────────────┬────────────────────────┬─────────────┐', color: 'text-cyan-400' },
             { text: '  │ #   │ SELECT│ STATUS       │ APPLICATION NAME       │ WINGET ID   │', color: 'text-cyan-400' },
             { text: '  ├─────┼───────┼──────────────┼────────────────────────┼─────────────┤', color: 'text-cyan-400' },
             { text: '  │ [1] │ [ ]   │ AVAILABLE    │ Google Chrome          │ Chrome      │', color: 'text-cyan-300' },
-            { text: '  │ [2] │ [✔]   │ INSTALLED    │ Notepad++              │ Notepad++   │', color: 'text-emerald-400' },
-            { text: '  │ [3] │ [ ]   │ AVAILABLE    │ Python 3.14            │ Python      │', color: 'text-cyan-300' },
+            { text: '  │ [2] │ [OK]  │ INSTALLED    │ Notepad++              │ Notepad++   │', color: 'text-emerald-400' },
+            { text: '  │ [3] │ [ ]   │ AVAILABLE    │ Visual Studio Code     │ VSCode      │', color: 'text-cyan-300' },
             { text: '  │ [4] │ [ ]   │ AVAILABLE    │ VLC Media Player       │ VLC         │', color: 'text-cyan-300' },
-            { text: '  │ [5] │ [ ]   │ AVAILABLE    │ WinRAR                 │ WinRAR      │', color: 'text-cyan-300' },
+            { text: '  │ [5] │ [ ]   │ AVAILABLE    │ Discord                │ Discord     │', color: 'text-cyan-300' },
+            { text: '  │ [6] │ [ ]   │ AVAILABLE    │ 7-Zip Archiver         │ 7zip        │', color: 'text-cyan-300' },
             { text: '  └─────┴───────┴──────────────┴────────────────────────┴─────────────┘', color: 'text-cyan-400' },
-            { text: '  👉 User picks numbers: 1, 4', color: 'text-yellow-300' },
-            { text: '  ──────────────────────────────────────────────────────────────────────', color: 'text-zinc-600' },
-            { text: '  ╔════════════════════════════════════════════════════════════════════╗', color: 'text-amber-400' },
-            { text: '  ║                 FINAL INSTALLATION CONFIRMATION                    ║', color: 'text-amber-400' },
-            { text: '  ╠════════════════════════════════════════════════════════════════════╣', color: 'text-amber-400' },
-            { text: '  ║  Installing: Google Chrome, VLC Media Player. Proceed? [Y/N]       ║', color: 'text-white font-bold' },
-            { text: '  ╚════════════════════════════════════════════════════════════════════╝', color: 'text-amber-400' },
-            { text: '  [OK]   Winget only starts after user approves with Y.', color: 'text-emerald-400' }
+            { text: '  User types: 1, 4', color: 'text-yellow-300' },
+            { text: '  ----------------------------------------------------------------------', color: 'text-zinc-600' },
+            { text: '  FINAL CONFIRMATION: Installing: Google Chrome, VLC Media Player.', color: 'text-amber-400 font-semibold' },
+            { text: '  Proceed? [Y/N]: ', color: 'text-emerald-400' },
+            { text: '  [OK] Winget only executes after explicit approval.', color: 'text-emerald-400' }
           ]);
           break;
         case '2':
-          setSimStep('network');
+          setSimStep('debloat');
           setSimLogs([
-            { text: '  ╔════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-400' },
-            { text: '  ║                 MODULE 2: NETWORK DIAGNOSTICS & TOOLS              ║', color: 'text-cyan-400' },
-            { text: '  ╠════════════════════════════════════════════════════════════════════╣', color: 'text-cyan-400' },
-            { text: '  [OK]   Active Adapter: Wi-Fi 6 (Intel AX201) - 1.2 Gbps Link Speed', color: 'text-emerald-400' },
-            { text: '    • IPv4 Address : 192.168.1.145 (Subnet: 255.255.255.0)', color: 'text-zinc-200' },
-            { text: '    • Default GW   : 192.168.1.1 (Reachable, 1ms)', color: 'text-zinc-200' },
-            { text: '    • DNS Servers  : 1.1.1.1, 1.0.0.1 (Cloudflare Ultra-Fast)', color: 'text-cyan-300' },
-            { text: '  ✔ 3-Point Connectivity: Gateway [OK] | DNS [OK] | HTTPS [OK]', color: 'text-emerald-400' }
+            { text: '  --- MODULE 2: DEBLOAT & PRIVACY HARDENING ---', color: 'text-cyan-400 font-semibold' },
+            { text: '  [OK] Telemetry and Diagnostic Tracking services disabled.', color: 'text-emerald-400' },
+            { text: '  [OK] Bing web search results disabled in Start Menu (Local search accelerated).', color: 'text-emerald-400' },
+            { text: '  [OK] Windows 10 Classic Context Menu restored in Windows 11.', color: 'text-emerald-400' }
           ]);
           break;
         case '3':
-          setSimStep('repair');
+          setSimStep('perf');
           setSimLogs([
-            { text: '  ╔════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-400' },
-            { text: '  ║                   MODULE 3: WINDOWS SYSTEM REPAIR                  ║', color: 'text-cyan-400' },
-            { text: '  ╠════════════════════════════════════════════════════════════════════╣', color: 'text-cyan-400' },
-            { text: '  [1] SFC /scannow       - Scans & repairs corrupted Windows system files', color: 'text-zinc-200' },
-            { text: '  [2] DISM RestoreHealth - Downloads & fixes corrupted component store', color: 'text-zinc-200' },
-            { text: '  [3] WinUpdate Fix      - Cleans corrupted SoftwareDistribution download cache', color: 'text-zinc-200' },
-            { text: '  [OK]   All operations require explicit admin confirmation before running.', color: 'text-emerald-400' }
+            { text: '  --- MODULE 3: PERFORMANCE & GAMING ---', color: 'text-cyan-400 font-semibold' },
+            { text: '  [OK] Ultimate Performance Power Scheme GUID unlocked and activated!', color: 'text-emerald-400' },
+            { text: '  [OK] Game DVR background recording disabled (Frame drops eliminated).', color: 'text-emerald-400' },
+            { text: '  [OK] Mouse acceleration disabled (1:1 Raw input precision active).', color: 'text-emerald-400' }
           ]);
           break;
         case '4':
-          setSimStep('cleanup');
+          setSimStep('safety');
           setSimLogs([
-            { text: '  ╔════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-400' },
-            { text: '  ║                 MODULE 4: DISK & CACHE CLEANUP                     ║', color: 'text-cyan-400' },
-            { text: '  ╠════════════════════════════════════════════════════════════════════╣', color: 'text-cyan-400' },
-            { text: '  • User Temp Files   ($env:TEMP)                      : 1,420 MB', color: 'text-zinc-300' },
-            { text: '  • Windows Temp      (C:\\Windows\\Temp)                 : 480 MB', color: 'text-zinc-300' },
-            { text: '  • WinUpdate Cache   (SoftwareDistribution\\Download)   : 2,150 MB', color: 'text-zinc-300' },
-            { text: '  ────────────────────────────────────────────────────────────────────', color: 'text-zinc-700' },
-            { text: '  ✔ Total Reclaimable Disk Space: ~4.05 GB (Safely skips active locked files)', color: 'text-emerald-400' }
+            { text: '  --- MODULE 4: SYSTEM SAFETY & RESTORE ---', color: 'text-cyan-400 font-semibold' },
+            { text: '  [OK] System Restore Point created: ItsRiRx-Toolkit-SafeCheckpoint-2025.', color: 'text-emerald-400' },
+            { text: '  [OK] Active Listening TCP/UDP ports scanned with bound process IDs.', color: 'text-emerald-400' },
+            { text: '  [OK] Microsoft Defender signatures updated to latest build.', color: 'text-emerald-400' }
           ]);
           break;
         case '5':
-          setSimStep('system');
+          setSimStep('dev');
           setSimLogs([
-            { text: '  ╔════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-400' },
-            { text: '  ║                 MODULE 5: SYSTEM & HARDWARE INFO                   ║', color: 'text-cyan-400' },
-            { text: '  ╠════════════════════════════════════════════════════════════════════╣', color: 'text-cyan-400' },
-            { text: '  Host: DESKTOP-IRX01 | User: Administrator', color: 'text-white font-bold' },
-            { text: '  OS   : Microsoft Windows 11 Pro 64-bit (Build 22631.4317)', color: 'text-zinc-200' },
-            { text: '  CPU  : 13th Gen Intel(R) Core(TM) i7-13700H (14 Cores / 20 Threads)', color: 'text-zinc-200' },
-            { text: '  RAM  : 32 GB DDR5 @ 5200 MHz across 2 modules', color: 'text-zinc-200' },
-            { text: '  GPU  : NVIDIA GeForce RTX 4070 (8192 MB VRAM)', color: 'text-zinc-200' },
-            { text: '  Disk : NVMe Samsung 990 PRO 2TB (Drive C: 412 GB free of 1860 GB)', color: 'text-zinc-200' }
+            { text: '  --- MODULE 5: DEVELOPER & VIRTUALIZATION ---', color: 'text-cyan-400 font-semibold' },
+            { text: '  [OK] Windows Subsystem for Linux (WSL2) enabled.', color: 'text-emerald-400' },
+            { text: '  [OK] Windows Sandbox (Disposable VM) enabled.', color: 'text-emerald-400' },
+            { text: '  [OK] Hyper-V and Virtual Machine Platform configured.', color: 'text-emerald-400' }
           ]);
           break;
         case '6':
-          setSimStep('utility');
+          setSimStep('battery');
           setSimLogs([
-            { text: '  ╔════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-400' },
-            { text: '  ║                 MODULE 6: BUILT-IN WINDOWS UTILITIES               ║', color: 'text-cyan-400' },
-            { text: '  ╠════════════════════════════════════════════════════════════════════╣', color: 'text-cyan-400' },
-            { text: '  Instant 1-key launch shortcuts: Task Manager, Device Manager, Regedit,', color: 'text-zinc-200' },
-            { text: '  Services, Event Viewer, Disk Management, Command Prompt, System Info.', color: 'text-zinc-200' }
+            { text: '  --- MODULE 6: BATTERY HEALTH & POWER ---', color: 'text-cyan-400 font-semibold' },
+            { text: '  [OK] Full Battery Report generated: C:\\Users\\Admin\\AppData\\Local\\Temp\\battery-report.html', color: 'text-emerald-400' },
+            { text: '  Estimated Remaining: 98% | Health: Normal | Chemistry: Li-Ion', color: 'text-zinc-200' },
+            { text: '  Sleep Study Standby analysis ready.', color: 'text-zinc-400' }
           ]);
           break;
         case '7':
-          setSimStep('config');
+          setSimStep('repair');
           setSimLogs([
-            { text: '  ╔════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-400' },
-            { text: '  ║                 MODULE 7: WINDOWS CONFIGURATION                    ║', color: 'text-cyan-400' },
-            { text: '  ╠════════════════════════════════════════════════════════════════════╣', color: 'text-cyan-400' },
-            { text: '  Activation : Licensed (Permanently Activated - Official CIM query)', color: 'text-emerald-400 font-bold' },
-            { text: '  Timezone   : Eastern Standard Time (UTC-05:00)', color: 'text-zinc-200' },
-            { text: '  Power Plan : High Performance (Active)', color: 'text-cyan-300' }
+            { text: '  --- MODULE 7: WINDOWS SYSTEM REPAIR ---', color: 'text-cyan-400 font-semibold' },
+            { text: '  [1] SFC /scannow       - Scans & repairs corrupted system files', color: 'text-zinc-200' },
+            { text: '  [2] DISM RestoreHealth - Restores healthy image components from Windows Update', color: 'text-zinc-200' },
+            { text: '  [3] WinUpdate Repair   - Cleans corrupted SoftwareDistribution cache', color: 'text-zinc-200' },
+            { text: '  [OK] All repair routines run under strict administrator safety.', color: 'text-emerald-400' }
           ]);
           break;
         case '8':
-          setSimStep('quick');
+          setSimStep('cleanup');
           setSimLogs([
-            { text: '  ╔════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-400' },
-            { text: '  ║                   MODULE 8: INSTANT QUICK ACTIONS                  ║', color: 'text-cyan-400' },
-            { text: '  ╠════════════════════════════════════════════════════════════════════╣', color: 'text-cyan-400' },
-            { text: '  [OK]   Flushed DNS Resolver Cache in 12ms', color: 'text-emerald-400' },
-            { text: '  [OK]   Restarted explorer.exe cleanly to fix frozen taskbars', color: 'text-emerald-400' },
-            { text: '  [OK]   3-point Internet validation passed with 0 packet loss', color: 'text-emerald-400' }
+            { text: '  --- MODULE 8: DISK CLEANUP & ADVANCED STORAGE ---', color: 'text-cyan-400 font-semibold' },
+            { text: '  [OK] Cleaned User Temp & System Temp files safely.', color: 'text-emerald-400' },
+            { text: '  [OK] Top 15 Largest Files scanned on Drive C: (Identified 18.4 GB ISO & VM images).', color: 'text-emerald-400' },
+            { text: '  [OK] Manual SSD TRIM executed on Drive C: (Storage blocks optimized).', color: 'text-emerald-400' }
+          ]);
+          break;
+        case '9':
+          setSimStep('net');
+          setSimLogs([
+            { text: '  --- MODULE 9: NETWORK DIAGNOSTICS & DNS TOOLS ---', color: 'text-cyan-400 font-semibold' },
+            { text: '  [OK] Active Adapter: Wi-Fi 6 (Intel AX201) - 1.2 Gbps Link Speed', color: 'text-emerald-400' },
+            { text: '  [OK] DNS Switcher: 1-click apply Cloudflare (1.1.1.1) or Google (8.8.8.8)', color: 'text-emerald-400' },
+            { text: '  [OK] 3-point connectivity: Gateway [OK] | DNS [OK] | HTTPS [OK]', color: 'text-emerald-400' }
+          ]);
+          break;
+        case '10':
+          setSimStep('system');
+          setSimLogs([
+            { text: '  --- MODULE 10: SYSTEM INFO & UTILITIES ---', color: 'text-cyan-400 font-semibold' },
+            { text: '  OS   : Microsoft Windows 11 Pro 64-bit (Build 22631)', color: 'text-zinc-200' },
+            { text: '  CPU  : 13th Gen Intel Core i7-13700H (14 Cores / 20 Threads)', color: 'text-zinc-200' },
+            { text: '  RAM  : 32 GB DDR5 @ 5200 MHz across 2 modules', color: 'text-zinc-200' },
+            { text: '  Status: Licensed (Permanently Activated - Official CIM query)', color: 'text-emerald-400 font-bold' }
           ]);
           break;
         case '0':
@@ -179,9 +177,9 @@ export default function App() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-extrabold tracking-tight text-white text-base">ItsRiRx Windows Tool Kit</span>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800 font-mono font-semibold">v1.0.0</span>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800 font-mono font-semibold">v1.1.0 PRO</span>
               </div>
-              <p className="text-xs text-zinc-400 font-mono">Cloud-Hosted Windows Administration Suite</p>
+              <p className="text-xs text-zinc-400 font-mono">Advanced Remote Windows Administration Suite</p>
             </div>
           </div>
 
@@ -193,10 +191,16 @@ export default function App() {
               How to Use
             </a>
             <a
+              href="#apps"
+              className="text-xs text-zinc-400 hover:text-white transition hidden sm:inline-block"
+            >
+              Supported Apps
+            </a>
+            <a
               href="#features"
               className="text-xs text-zinc-400 hover:text-white transition hidden sm:inline-block"
             >
-              Tool Capabilities
+              All Categories
             </a>
             <a
               href="#preview"
@@ -210,7 +214,7 @@ export default function App() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 py-8 sm:py-12 space-y-12">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 py-8 sm:py-12 space-y-14">
         {/* HERO SECTION */}
         <section className="relative overflow-hidden rounded-3xl border border-zinc-800 bg-gradient-to-b from-zinc-900 via-zinc-900/80 to-zinc-950 p-6 sm:p-10 shadow-2xl">
           <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -218,15 +222,15 @@ export default function App() {
           <div className="max-w-3xl space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/90 border border-cyan-600/40 text-cyan-300 text-xs font-mono">
               <ShieldCheck className="w-4 h-4 text-cyan-400" />
-              Zero Downloads • Pure In-Memory Execution • Windows 10 & 11 Compatible
+              Pure In-Memory Execution • No Downloads • Windows 10 & 11 Compatible
             </div>
 
             <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
-              Complete Windows Admin Suite <span className="text-cyan-400">in One Command</span>
+              Advanced Windows Power Toolkit <span className="text-cyan-400">in One Command</span>
             </h1>
 
             <p className="text-zinc-300 text-sm sm:text-base leading-relaxed">
-              A powerful, remotely hosted PowerShell toolkit designed for system maintenance, corrupted Windows repair, deep disk cleanup, network diagnostics, and batch software installation — executed directly in RAM without installing software or saving files.
+              Equip your PC with debloating, privacy tweaks, gaming optimizations (Ultimate Performance plan, Game DVR disable), 1-click restore points, battery reports, and category-wise software selection with interactive checkboxes.
             </p>
           </div>
 
@@ -300,14 +304,14 @@ export default function App() {
           </div>
         </section>
 
-        {/* HOW TO USE SECTION */}
+        {/* HOW TO USE */}
         <section id="how-to-use" className="space-y-6">
           <div className="border-b border-zinc-800 pb-3">
             <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
               <HelpCircle className="w-6 h-6 text-cyan-400" />
               How to Use (3 Simple Steps)
             </h2>
-            <p className="text-xs text-zinc-400 mt-1">Get started in seconds on any Windows 10 or 11 computer</p>
+            <p className="text-xs text-zinc-400 mt-1">Get started in seconds on any Windows computer</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -317,7 +321,7 @@ export default function App() {
               </div>
               <h3 className="font-bold text-white text-base">Open Terminal</h3>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Open <strong>Windows PowerShell</strong> or <strong>Command Prompt</strong> from the Start Menu. Running as Administrator is recommended for full system repairs.
+                Open <strong>PowerShell</strong> or <strong>CMD</strong> (Run as Administrator is recommended for system tweaks and repairs).
               </p>
             </div>
 
@@ -337,117 +341,203 @@ export default function App() {
               </div>
               <h3 className="font-bold text-white text-base">Select & Control Tools</h3>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                An interactive cyberpunk console menu appears. Type the option number to navigate. Pick applications via checkboxes and confirm before anything runs.
+                A clean dashboard appears. Type option numbers (e.g. 1, 2, 3) to configure debloat, gaming power plans, battery reports, or pick apps with checkboxes.
               </p>
             </div>
           </div>
         </section>
 
-        {/* WHAT THE TOOL DOES / FEATURES */}
+        {/* TOP APPLICATIONS SHOWCASE */}
+        <section id="apps" className="space-y-6">
+          <div className="border-b border-zinc-800 pb-3">
+            <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+              <Boxes className="w-6 h-6 text-cyan-400" />
+              Category-Wise Top Applications (Interactive Software Selector)
+            </h2>
+            <p className="text-xs text-zinc-400 mt-1">Browse, select via checkboxes, review confirmation, and install silently via Winget</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              {
+                id: '1',
+                title: '1. Web Browsers',
+                apps: ['Google Chrome', 'Mozilla Firefox', 'Microsoft Edge', 'Brave', 'Opera'],
+                color: 'text-blue-400'
+              },
+              {
+                id: '2',
+                title: '2. Developer & Coding',
+                apps: ['Visual Studio Code', 'Git', 'Python', 'Node.js', 'Notepad++'],
+                color: 'text-emerald-400'
+              },
+              {
+                id: '3',
+                title: '3. Multimedia',
+                apps: ['VLC Media Player', 'Spotify', 'OBS Studio', 'Audacity', 'HandBrake'],
+                color: 'text-amber-400'
+              },
+              {
+                id: '4',
+                title: '4. Utilities & Tools',
+                apps: ['7-Zip', 'WinRAR', 'Everything', 'Microsoft PowerToys', 'Rufus', 'ShareX', 'Avro Keyboard'],
+                color: 'text-purple-400'
+              },
+              {
+                id: '5',
+                title: '5. Communication',
+                apps: ['WhatsApp', 'Telegram', 'Discord', 'Zoom', 'Microsoft Teams'],
+                color: 'text-indigo-400'
+              },
+              {
+                id: '6',
+                title: '6. Gaming Launchers',
+                apps: ['Steam', 'Epic Games', 'EA App', 'Ubisoft Connect', 'Riot Client', 'Xbox'],
+                color: 'text-rose-400'
+              },
+              {
+                id: '7',
+                title: '7. Security & Privacy',
+                apps: ['Bitwarden', 'Malwarebytes', 'Proton VPN'],
+                color: 'text-cyan-400'
+              },
+              {
+                id: '8',
+                title: '8. Remote Access & IT',
+                apps: ['AnyDesk', 'TeamViewer', 'RustDesk', 'PuTTY', 'WinSCP'],
+                color: 'text-teal-400'
+              },
+              {
+                id: '9',
+                title: '9. Office & Productivity',
+                apps: ['Microsoft 365', 'LibreOffice', 'Adobe Acrobat Reader', 'Notion'],
+                color: 'text-yellow-400'
+              }
+            ].map((cat, idx) => (
+              <div key={idx} className="p-4 rounded-2xl border border-zinc-800 bg-zinc-900/40 space-y-2.5 hover:border-zinc-700 transition">
+                <span className={`text-xs font-bold uppercase tracking-wider font-mono ${cat.color}`}>{cat.title}</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {cat.apps.map((app, aIdx) => (
+                    <span key={aIdx} className="text-[11px] px-2 py-0.5 rounded bg-zinc-800/80 text-zinc-300 border border-zinc-700/50">
+                      {app}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ALL CATEGORIES & ADVANCED FEATURES */}
         <section id="features" className="space-y-6">
           <div className="border-b border-zinc-800 pb-3">
             <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
               <Sparkles className="w-6 h-6 text-cyan-400" />
-              What This Toolkit Does (8 Comprehensive Modules)
+              Category-Wise Advanced Features
             </h2>
-            <p className="text-xs text-zinc-400 mt-1">Engineered to handle your entire Windows administration and troubleshooting workflow</p>
+            <p className="text-xs text-zinc-400 mt-1">High-impact Windows administration routines organized cleanly by domain</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Feature 1 */}
-            <div className="p-6 rounded-2xl border border-zinc-800 bg-zinc-900/40 space-y-3 hover:border-zinc-700 transition">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400">
-                  <Boxes className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-white text-base">1. Software Selector & Batch Installer</h3>
-                  <span className="text-[11px] text-blue-400 font-mono">Interactive Checkboxes • Zero Auto-Install</span>
-                </div>
-              </div>
-              <p className="text-xs text-zinc-300 leading-relaxed">
-                Skip manually searching websites for installers. Browse a curated catalog of essentials (Chrome, Firefox, VLC, Python, VS Code, Git, WinRAR, 7-Zip, Avro). Check the boxes for the apps you want, review the selection, and approve with <code>Y</code> before Winget starts installing silently.
-              </p>
-            </div>
-
-            {/* Feature 2 */}
-            <div className="p-6 rounded-2xl border border-zinc-800 bg-zinc-900/40 space-y-3 hover:border-zinc-700 transition">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400">
-                  <Wrench className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-white text-base">2. Windows System & Update Repair</h3>
-                  <span className="text-[11px] text-amber-400 font-mono">SFC Scannow • DISM Image • Update Cache Reset</span>
-                </div>
-              </div>
-              <p className="text-xs text-zinc-300 leading-relaxed">
-                Resolve system crashes and corrupted DLLs using <code>sfc /scannow</code> and <code>DISM RestoreHealth</code>. If Windows Update is stuck or failing, the toolkit stops services, purges corrupted <code>SoftwareDistribution\Download</code> caches, and restarts update components cleanly.
-              </p>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="p-6 rounded-2xl border border-zinc-800 bg-zinc-900/40 space-y-3 hover:border-zinc-700 transition">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400">
-                  <Trash2 className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-white text-base">3. Deep Disk Space & Cache Cleanup</h3>
-                  <span className="text-[11px] text-rose-400 font-mono">User Temp • System Temp • Locked-File Safe</span>
-                </div>
-              </div>
-              <p className="text-xs text-zinc-300 leading-relaxed">
-                Reclaim gigabytes of wasted storage on drive C:. Safely deletes leftover user temporary files (<code>$env:TEMP</code>), Windows system temp, browser cache folders, and empties Recycle Bins without crashing or modifying active locked files.
-              </p>
-            </div>
-
-            {/* Feature 4 */}
-            <div className="p-6 rounded-2xl border border-zinc-800 bg-zinc-900/40 space-y-3 hover:border-zinc-700 transition">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
-                  <Wifi className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-white text-base">4. Network Diagnostics & DNS Switcher</h3>
-                  <span className="text-[11px] text-emerald-400 font-mono">Ping • DNS Flush • Cloudflare / Google Presets</span>
-                </div>
-              </div>
-              <p className="text-xs text-zinc-300 leading-relaxed">
-                Run 3-point connectivity diagnostics (Gateway, DNS, and HTTPS). Flush cached DNS to resolve website connection timeouts. Switch DNS on active adapters to ultra-fast Cloudflare (1.1.1.1) or Google (8.8.8.8) with 1 click, and view saved WiFi connection profiles.
-              </p>
-            </div>
-
-            {/* Feature 5 */}
-            <div className="p-6 rounded-2xl border border-zinc-800 bg-zinc-900/40 space-y-3 hover:border-zinc-700 transition">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
-                  <Cpu className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-white text-base">5. Comprehensive Hardware & CIM Audit</h3>
-                  <span className="text-[11px] text-purple-400 font-mono">Native CIM • CPU • RAM Speeds • GPU • Disks</span>
-                </div>
-              </div>
-              <p className="text-xs text-zinc-300 leading-relaxed">
-                Inspect your hardware specifications instantly without downloading heavy 3rd-party benchmark utilities: CPU core and clock counts, individual RAM module frequencies (MHz) and slots, GPU VRAM, physical SSD capacities, and motherboard model numbers.
-              </p>
-            </div>
-
-            {/* Feature 6 */}
-            <div className="p-6 rounded-2xl border border-zinc-800 bg-zinc-900/40 space-y-3 hover:border-zinc-700 transition">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {/* Category 1 */}
+            <div className="p-5 rounded-2xl border border-zinc-800 bg-zinc-900/40 space-y-3 hover:border-zinc-700 transition">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
-                  <Settings className="w-5 h-5" />
+                  <ShieldCheck className="w-5 h-5" />
                 </div>
-                <div>
-                  <h3 className="font-bold text-white text-base">6. Built-in Utilities & Windows Configuration</h3>
-                  <span className="text-[11px] text-cyan-400 font-mono">TaskMgr • Regedit • Services • Official License</span>
-                </div>
+                <h3 className="font-bold text-white text-base">Debloat & Privacy</h3>
               </div>
-              <p className="text-xs text-zinc-300 leading-relaxed">
-                Instant shortcuts to Task Manager, Registry Editor, Services, Device Manager, and Disk Management. Query official Windows activation status via native WMI licensing APIs, switch system time zones, and activate High Performance power plans.
-              </p>
+              <ul className="text-xs text-zinc-300 space-y-1.5 list-disc list-inside">
+                <li>Disable telemetry and DiagTrack tracking</li>
+                <li>Disable Bing web search in Start Menu</li>
+                <li>Restore Windows 10 Classic Context Menu in Win 11</li>
+                <li>Remove pre-installed UWP bloatware apps</li>
+                <li>Disable Advertising ID & Activity Feeds</li>
+              </ul>
+            </div>
+
+            {/* Category 2 */}
+            <div className="p-5 rounded-2xl border border-zinc-800 bg-zinc-900/40 space-y-3 hover:border-zinc-700 transition">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400">
+                  <Gamepad2 className="w-5 h-5" />
+                </div>
+                <h3 className="font-bold text-white text-base">Gaming & Performance</h3>
+              </div>
+              <ul className="text-xs text-zinc-300 space-y-1.5 list-disc list-inside">
+                <li>Unlock & activate "Ultimate Performance" plan</li>
+                <li>Disable Windows Game DVR background recording</li>
+                <li>Disable Mouse Acceleration (1:1 Raw input)</li>
+                <li>Optimize visual effects for maximum responsiveness</li>
+                <li>Disable continuous search indexing on Drive C:</li>
+              </ul>
+            </div>
+
+            {/* Category 3 */}
+            <div className="p-5 rounded-2xl border border-zinc-800 bg-zinc-900/40 space-y-3 hover:border-zinc-700 transition">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+                  <ShieldAlert className="w-5 h-5" />
+                </div>
+                <h3 className="font-bold text-white text-base">System Safety & Restore</h3>
+              </div>
+              <ul className="text-xs text-zinc-300 space-y-1.5 list-disc list-inside">
+                <li>1-Click System Restore Point snapshot generator</li>
+                <li>Audit and view existing system restore checkpoints</li>
+                <li>Monitor active listening ports & process IDs</li>
+                <li>Update Microsoft Defender definitions on-demand</li>
+                <li>Trigger Microsoft Defender quick malware scan</li>
+              </ul>
+            </div>
+
+            {/* Category 4 */}
+            <div className="p-5 rounded-2xl border border-zinc-800 bg-zinc-900/40 space-y-3 hover:border-zinc-700 transition">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
+                  <Code2 className="w-5 h-5" />
+                </div>
+                <h3 className="font-bold text-white text-base">Developer Virtualization</h3>
+              </div>
+              <ul className="text-xs text-zinc-300 space-y-1.5 list-disc list-inside">
+                <li>Enable Windows Subsystem for Linux (WSL2)</li>
+                <li>Enable Windows Sandbox disposable VM</li>
+                <li>Enable Hyper-V Hypervisor & management tools</li>
+                <li>Enable Virtual Machine Platform components</li>
+                <li>Check status of all virtualization flags</li>
+              </ul>
+            </div>
+
+            {/* Category 5 */}
+            <div className="p-5 rounded-2xl border border-zinc-800 bg-zinc-900/40 space-y-3 hover:border-zinc-700 transition">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-400">
+                  <BatteryCharging className="w-5 h-5" />
+                </div>
+                <h3 className="font-bold text-white text-base">Battery & Power Health</h3>
+              </div>
+              <ul className="text-xs text-zinc-300 space-y-1.5 list-disc list-inside">
+                <li>Generate & launch full HTML Battery Health Report</li>
+                <li>Inspect battery wear level & designed capacity</li>
+                <li>Generate Sleep Study for standby drain analysis</li>
+                <li>List all system power schemes</li>
+              </ul>
+            </div>
+
+            {/* Category 6 */}
+            <div className="p-5 rounded-2xl border border-zinc-800 bg-zinc-900/40 space-y-3 hover:border-zinc-700 transition">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400">
+                  <HardDrive className="w-5 h-5" />
+                </div>
+                <h3 className="font-bold text-white text-base">Disk Cleanup & Storage</h3>
+              </div>
+              <ul className="text-xs text-zinc-300 space-y-1.5 list-disc list-inside">
+                <li>Clean user temporary files & Windows system temp</li>
+                <li>Find Top 15 Largest Files across user profiles</li>
+                <li>Manual SSD TRIM & ReTrim optimization</li>
+                <li>Empty Recycle Bins safely without locking freezes</li>
+                <li>Clean Chrome, Edge, and Firefox browser caches</li>
+              </ul>
             </div>
           </div>
         </section>
@@ -458,9 +548,9 @@ export default function App() {
             <div>
               <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
                 <Terminal className="w-6 h-6 text-cyan-400" />
-                Live Terminal Preview (Interactive Simulator)
+                Live Terminal Preview (Clean Regular Option Typography)
               </h2>
-              <p className="text-xs text-zinc-400 mt-1">Experience the exact console interface and checkbox workflow before running it on your PC</p>
+              <p className="text-xs text-zinc-400 mt-1">Exact replica of the regular, clean console options inside Windows Terminal</p>
             </div>
 
             <button
@@ -490,31 +580,29 @@ export default function App() {
 {`  ██╗████████╗███████╗██████╗ ██╗██████╗ ██╗  ██╗
   ██║╚══██╔══╝██╔════╝██╔══██╗██║██╔══██╗╚██╗██╔╝
   ██║   ██║   ███████╗██████╔╝██║██████╔╝ ╚███╔╝   WINDOWS TOOL KIT
-  ██║   ██║   ╚════██║██╔══██╗██║██╔══██╗ ██╔██╗   Version 1.0.0
+  ██║   ██║   ╚════██║██╔══██╗██║██╔══██╗ ██╔██╗   Version 1.1.0 PRO
   ██║   ██║   ███████║██║  ██║██║██║  ██║██╔╝ ██╗
   ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
   ══════════════════════════════════════════════════════════════════════
-  🛡️  STATUS : ADMINISTRATOR [ELEVATED]
-  💻 HOST   : DESKTOP-IRX01 | 👤 USER: Administrator
+  Status: Administrator [ELEVATED] | Host: DESKTOP-IRX01 | User: Admin
   ══════════════════════════════════════════════════════════════════════`}
               </div>
 
               {simStep === 'main' ? (
-                <div className="space-y-1.5 pt-2">
-                  <div className="text-cyan-400 font-bold">  ╔════════════════════════════════════════════════════════════════════╗</div>
-                  <div className="text-cyan-400 font-bold">  ║                     SYSTEM CONTROL DASHBOARD                       ║</div>
-                  <div className="text-cyan-400 font-bold">  ╠════════════════════════════════════════════════════════════════════╣</div>
-                  <p className="text-white">  ║   [1] 📦 Software Installer       • Interactive Winget Deployment  ║</p>
-                  <p className="text-white">  ║   [2] 🌐 Network Tools            • Ping, DNS, WiFi, Stack Reset   ║</p>
-                  <p className="text-white">  ║   [3] 🔧 Windows System Repair    • SFC, DISM Image & Update Fix   ║</p>
-                  <p className="text-white">  ║   [4] 🧹 Deep Disk Cleanup        • User Temp, System & Caches     ║</p>
-                  <p className="text-white">  ║   [5] 💻 System Information       • CIM CPU, RAM, GPU, Disk Audit  ║</p>
-                  <p className="text-white">  ║   [6] ⚙️ Built-In Utilities       • TaskMgr, DevMgmt, Regedit      ║</p>
-                  <p className="text-white">  ║   [7] 🎛️ Windows Configuration    • Hostname, Timezone, License    ║</p>
-                  <p className="text-white">  ║   [8] ⚡ Instant Quick Actions    • One-Click System Maintenance   ║</p>
-                  <div className="text-cyan-400">  ║                                                                    ║</div>
-                  <p className="text-zinc-400">  ║   [0] 🚪 Exit Toolkit             • Return to PowerShell Prompt    ║</p>
-                  <div className="text-cyan-400 font-bold">  ╚════════════════════════════════════════════════════════════════════╝</div>
+                <div className="space-y-1 pt-2 font-normal">
+                  <p className="text-cyan-400 font-semibold">  --- MAIN NAVIGATION DASHBOARD ---</p>
+                  <p className="text-zinc-200">  [1]  Software Installer        (Winget Top Applications & Checkbox Selector)</p>
+                  <p className="text-zinc-200">  [2]  Debloat & Privacy         (Telemetry, Bing in Start, Classic Context Menu)</p>
+                  <p className="text-zinc-200">  [3]  Performance & Gaming      (Ultimate Power Plan, Game DVR, Mouse Fix)</p>
+                  <p className="text-zinc-200">  [4]  System Safety & Restore   (Restore Point, Active Ports, Defender Scan)</p>
+                  <p className="text-zinc-200">  [5]  Developer & Virtualization(WSL2, Windows Sandbox, Hyper-V)</p>
+                  <p className="text-zinc-200">  [6]  Battery Health & Power    (HTML Battery Report, Wear Level, Sleep Study)</p>
+                  <p className="text-zinc-200">  [7]  Windows System Repair     (SFC Scannow, DISM RestoreHealth, Update Repair)</p>
+                  <p className="text-zinc-200">  [8]  Disk Cleanup & Storage    (Temp Cleaner, Top 15 Largest Files, SSD TRIM)</p>
+                  <p className="text-zinc-200">  [9]  Network Diagnostics & DNS (3-Point Test, DNS Switcher, Flush DNS, WiFi)</p>
+                  <p className="text-zinc-200">  [10] System Info & Utilities   (Hardware Audit, License Status, TaskMgr, CMD)</p>
+                  <p className="text-zinc-200">  [11] Quick Actions             (One-Click Emergency Maintenance)</p>
+                  <p className="text-zinc-500">  [0]  Exit Toolkit</p>
                 </div>
               ) : (
                 <div className="space-y-2 pt-2">
@@ -532,7 +620,7 @@ export default function App() {
               <div className="pt-4 border-t border-zinc-900 flex items-center gap-2">
                 <span className="text-cyan-400 font-bold">PS &gt;</span>
                 <span className="text-zinc-400 text-xs">
-                  {simStep === 'main' ? 'Click any button below to test simulated options:' : 'Press [0] to return to Main Menu:'}
+                  {simStep === 'main' ? 'Click any button below to test simulated regular options:' : 'Press [0] to return to Main Menu:'}
                 </span>
               </div>
             </div>
@@ -545,14 +633,16 @@ export default function App() {
               {simStep === 'main' ? (
                 <>
                   {[
-                    { num: '1', label: '1: Software Selector' },
-                    { num: '2', label: '2: Network Tools' },
-                    { num: '3', label: '3: Windows Repair' },
-                    { num: '4', label: '4: Cache Cleanup' },
-                    { num: '5', label: '5: System Info' },
-                    { num: '6', label: '6: Utilities' },
-                    { num: '7', label: '7: Configuration' },
-                    { num: '8', label: '8: Quick Actions' },
+                    { num: '1', label: '1: Software' },
+                    { num: '2', label: '2: Debloat' },
+                    { num: '3', label: '3: Gaming & Perf' },
+                    { num: '4', label: '4: Safety & Restore' },
+                    { num: '5', label: '5: Developer' },
+                    { num: '6', label: '6: Battery' },
+                    { num: '7', label: '7: Repair' },
+                    { num: '8', label: '8: Storage' },
+                    { num: '9', label: '9: Network' },
+                    { num: '10', label: '10: System Info' },
                     { num: '0', label: '0: Exit' }
                   ].map((btn) => (
                     <button
@@ -593,7 +683,7 @@ export default function App() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span>ItsRiRx Windows Tool Kit v1.0.0</span>
+            <span>ItsRiRx Windows Tool Kit v1.1.0 PRO</span>
           </div>
           <div>
             Launcher: <code className="text-zinc-400">irm {endpointUrl} | iex</code>
