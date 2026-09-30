@@ -247,24 +247,30 @@ function Show-Banner {
     Write-Host ""
 }
 
-# Regular clean typography for menus
+# Beautiful structured main navigation dashboard
 function Show-MainMenu {
     Show-Banner
-    Write-Host "  --- MAIN NAVIGATION DASHBOARD ---" -ForegroundColor Cyan
+    Write-Host "  ╔════════════════════════════════════════════════════════════════════════════════════╗" -ForegroundColor DarkCyan
+    Write-Host "  ║  ⚡ SYSTEM ADMINISTRATION & MAINTENANCE DASHBOARD                                  ║" -ForegroundColor Cyan
+    Write-Host "  ╚════════════════════════════════════════════════════════════════════════════════════╝" -ForegroundColor DarkCyan
     Write-Host ""
-    Write-Host "  [1]  Software Installer        (Winget Top Applications & Checkbox Selector)" -ForegroundColor White
-    Write-Host "  [2]  Debloat & Privacy         (Telemetry, Bing in Start, Classic Context Menu)" -ForegroundColor White
-    Write-Host "  [3]  Performance & Gaming      (Ultimate Power Plan, Game DVR, Mouse Fix)" -ForegroundColor White
-    Write-Host "  [4]  System Safety & Restore   (Restore Point, Active Ports, Defender Scan)" -ForegroundColor White
-    Write-Host "  [5]  Developer & Virtualization(WSL2, Windows Sandbox, Hyper-V)" -ForegroundColor White
-    Write-Host "  [6]  Battery Health & Power    (HTML Battery Report, Wear Level, Sleep Study)" -ForegroundColor White
-    Write-Host "  [7]  Windows System Repair     (SFC Scannow, DISM RestoreHealth, Update Repair)" -ForegroundColor White
-    Write-Host "  [8]  Disk Cleanup & Storage    (Temp Cleaner, Top 15 Largest Files, SSD TRIM)" -ForegroundColor White
-    Write-Host "  [9]  Network Diagnostics & DNS (3-Point Test, DNS Switcher, Flush DNS, WiFi)" -ForegroundColor White
-    Write-Host "  [10] System Info & Utilities   (Hardware Audit, License Status, TaskMgr, CMD)" -ForegroundColor White
-    Write-Host "  [11] Quick Actions             (One-Click Emergency Maintenance)" -ForegroundColor White
+    Write-Host "  ┌──────┬────────────────────────────┬────────────────────────────────────────────────┐" -ForegroundColor DarkCyan
+    Write-Host "  │ NUM  │ MODULE & LOGO              │ DESCRIPTION & CAPABILITIES                     │" -ForegroundColor Cyan
+    Write-Host "  ├──────┼────────────────────────────┼────────────────────────────────────────────────┤" -ForegroundColor DarkCyan
+    Write-Host "  │ [1]  │ 📦 Software Installer      │ 9 Curated categories with Winget checkboxes    │" -ForegroundColor White
+    Write-Host "  │ [2]  │ 🚀 Debloat & Privacy       │ Telemetry, Bing in Start, Classic Context Menu │" -ForegroundColor White
+    Write-Host "  │ [3]  │ ⚡ Performance & Gaming    │ Ultimate Power Plan, Game DVR, Mouse 1:1 Fix   │" -ForegroundColor White
+    Write-Host "  │ [4]  │ 🛡️ Safety & Restore        │ 1-Click Restore Point, Open Ports, Defender    │" -ForegroundColor White
+    Write-Host "  │ [5]  │ 💻 Developer Tools         │ WSL2, Windows Sandbox, Hyper-V Virtualization  │" -ForegroundColor White
+    Write-Host "  │ [6]  │ 🔋 Battery & Power         │ HTML Battery Health Report, Wear Level, Sleep  │" -ForegroundColor White
+    Write-Host "  │ [7]  │ 🔧 Windows System Repair   │ SFC Scannow, DISM RestoreHealth, Update Repair │" -ForegroundColor White
+    Write-Host "  │ [8]  │ 🧹 Disk Cleanup & Storage  │ Temp Cleaner, Top 15 Largest Files, SSD TRIM   │" -ForegroundColor White
+    Write-Host "  │ [9]  │ 🌐 Network Diagnostics     │ 3-Point Connectivity, DNS Switcher, Flush DNS  │" -ForegroundColor White
+    Write-Host "  │ [10] │ 🎛️ System Info & Utilities │ CIM Hardware specs, License status, TaskMgr    │" -ForegroundColor White
+    Write-Host "  │ [11] │ ⚡ Quick Emergency Actions │ 1-Click DNS flush, Explorer restart, ping test │" -ForegroundColor White
+    Write-Host "  └──────┴────────────────────────────┴────────────────────────────────────────────────┘" -ForegroundColor DarkCyan
     Write-Host ""
-    Write-Host "  [0]  Exit Toolkit" -ForegroundColor DarkGray
+    Write-Host "  [0] 🚪 Exit Toolkit (Return to prompt)" -ForegroundColor DarkGray
     Write-Host ""
 }
 
@@ -488,24 +494,31 @@ function Show-SoftwareSelector {
 function Show-SoftwareMenu {
     do {
         Show-Banner
-        Write-Host "  --- MODULE 1: SOFTWARE INSTALLER (WINGET) ---" -ForegroundColor Cyan
-        Write-Host "  All selections show checkboxes. Nothing installs until you approve with 'Y'." -ForegroundColor Yellow
+        Write-Host "  ╔════════════════════════════════════════════════════════════════════════════════════╗" -ForegroundColor DarkCyan
+        Write-Host "  ║  📦 MODULE 1: SOFTWARE INSTALLER (WINGET APPLICATION CATALOG)                      ║" -ForegroundColor Cyan
+        Write-Host "  ║  Interactive Checkboxes • Zero Auto-Install • Safe Approval Flow                   ║" -ForegroundColor DarkGray
+        Write-Host "  ╚════════════════════════════════════════════════════════════════════════════════════╝" -ForegroundColor DarkCyan
         Write-Host ""
-        Write-Host "  [1]  Web Browsers                (Chrome, Firefox, Edge, Brave, Opera)" -ForegroundColor White
-        Write-Host "  [2]  Developer & Coding          (VS Code, Git, Python, Node.js, Notepad++)" -ForegroundColor White
-        Write-Host "  [3]  Multimedia                  (VLC, Spotify, OBS Studio, Audacity, HandBrake)" -ForegroundColor White
-        Write-Host "  [4]  Utilities & Tools           (7-Zip, WinRAR, Everything, PowerToys, Rufus, ShareX, Avro)" -ForegroundColor White
-        Write-Host "  [5]  Communication               (WhatsApp, Telegram, Discord, Zoom, Microsoft Teams)" -ForegroundColor White
-        Write-Host "  [6]  Gaming Launchers            (Steam, Epic Games, EA App, Ubisoft Connect, Riot, Xbox)" -ForegroundColor White
-        Write-Host "  [7]  Security & Privacy          (Bitwarden, Malwarebytes, Proton VPN)" -ForegroundColor White
-        Write-Host "  [8]  Remote Access & IT          (AnyDesk, TeamViewer, RustDesk, PuTTY, WinSCP)" -ForegroundColor White
-        Write-Host "  [9]  Office & Productivity       (Microsoft 365, LibreOffice, Adobe Reader, Notion)" -ForegroundColor White
-        Write-Host "  [10] Essential Applications Pack (Chrome, Firefox, Notepad++, Python, 7-Zip, VLC, Avro)" -ForegroundColor White
-        Write-Host "  [11] Complete Catalog Browser    (Select from all available applications)" -ForegroundColor White
-        Write-Host "  [12] Check Installed Status      (Audit all catalog apps on this PC)" -ForegroundColor White
-        Write-Host "  [13] Refresh Winget Sources      (winget source update)" -ForegroundColor White
+        Write-Host "  ┌──────┬────────────────────────────┬────────────────────────────────────────────────┐" -ForegroundColor DarkCyan
+        Write-Host "  │ NUM  │ CATEGORY & LOGO            │ INCLUDED TOP APPLICATIONS                      │" -ForegroundColor Cyan
+        Write-Host "  ├──────┼────────────────────────────┼────────────────────────────────────────────────┤" -ForegroundColor DarkCyan
+        Write-Host "  │ [1]  │ 🌐 Web Browsers            │ Chrome, Firefox, Edge, Brave, Opera            │" -ForegroundColor White
+        Write-Host "  │ [2]  │ 💻 Developer & Coding      │ VS Code, Git, Python, Node.js, Notepad++       │" -ForegroundColor White
+        Write-Host "  │ [3]  │ 🎬 Multimedia & Creators   │ VLC Media Player, Spotify, OBS, HandBrake      │" -ForegroundColor White
+        Write-Host "  │ [4]  │ 🛠️ Utilities & Tools       │ 7-Zip, WinRAR, Everything, PowerToys, Rufus    │" -ForegroundColor White
+        Write-Host "  │ [5]  │ 💬 Communication & Chat    │ WhatsApp, Telegram, Discord, Zoom, Teams       │" -ForegroundColor White
+        Write-Host "  │ [6]  │ 🎮 Gaming Launchers        │ Steam, Epic Games, EA App, Ubisoft, Riot, Xbox │" -ForegroundColor White
+        Write-Host "  │ [7]  │ 🔐 Security & Privacy      │ Bitwarden, Malwarebytes, Proton VPN            │" -ForegroundColor White
+        Write-Host "  │ [8]  │ 🖥️ Remote Access & IT      │ AnyDesk, TeamViewer, RustDesk, PuTTY, WinSCP   │" -ForegroundColor White
+        Write-Host "  │ [9]  │ 📄 Office & Productivity   │ Microsoft 365, LibreOffice, Adobe, Notion      │" -ForegroundColor White
+        Write-Host "  ├──────┼────────────────────────────┼────────────────────────────────────────────────┤" -ForegroundColor DarkCyan
+        Write-Host "  │ [10] │ 📦 Essential Applications  │ Curated instant pack for fresh Windows setup   │" -ForegroundColor Cyan
+        Write-Host "  │ [11] │ 📚 Complete Catalog (All)  │ Browse and select from all verified packages   │" -ForegroundColor Cyan
+        Write-Host "  │ [12] │ 🔍 Audit Installed Apps    │ Scan current PC for installed vs missing apps  │" -ForegroundColor DarkGray
+        Write-Host "  │ [13] │ 🔄 Refresh Winget Sources  │ Update winget catalog cache definitions        │" -ForegroundColor DarkGray
+        Write-Host "  └──────┴────────────────────────────┴────────────────────────────────────────────────┘" -ForegroundColor DarkCyan
         Write-Host ""
-        Write-Host "  [0]  Back to Main Menu" -ForegroundColor DarkGray
+        Write-Host "  [0] 🚪 Return to Main Dashboard" -ForegroundColor DarkGray
         Write-Host ""
         Write-Host "  Select an option [0-13]: " -ForegroundColor Cyan -NoNewline
         $choice = Read-Host

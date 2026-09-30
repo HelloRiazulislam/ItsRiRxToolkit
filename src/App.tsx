@@ -20,7 +20,12 @@ import {
   BatteryCharging,
   Layers,
   ArrowRight,
-  HardDrive
+  HardDrive,
+  Globe,
+  Film,
+  MessageSquare,
+  Monitor,
+  FileText
 } from 'lucide-react';
 
 export default function App() {
@@ -51,29 +56,36 @@ export default function App() {
         case '1':
           setSimStep('software');
           setSimLogs([
-            { text: '  --- MODULE 1: SOFTWARE INSTALLER (WINGET) ---', color: 'text-cyan-400 font-semibold' },
-            { text: '  All selections show checkboxes. Nothing installs until you approve with Y.', color: 'text-amber-400' },
-            { text: '  ┌─────┬───────┬──────────────┬────────────────────────┬─────────────┐', color: 'text-cyan-400' },
-            { text: '  │ #   │ SELECT│ STATUS       │ APPLICATION NAME       │ WINGET ID   │', color: 'text-cyan-400' },
-            { text: '  ├─────┼───────┼──────────────┼────────────────────────┼─────────────┤', color: 'text-cyan-400' },
-            { text: '  │ [1] │ [ ]   │ AVAILABLE    │ Google Chrome          │ Chrome      │', color: 'text-cyan-300' },
-            { text: '  │ [2] │ [OK]  │ INSTALLED    │ Notepad++              │ Notepad++   │', color: 'text-emerald-400' },
-            { text: '  │ [3] │ [ ]   │ AVAILABLE    │ Visual Studio Code     │ VSCode      │', color: 'text-cyan-300' },
-            { text: '  │ [4] │ [ ]   │ AVAILABLE    │ VLC Media Player       │ VLC         │', color: 'text-cyan-300' },
-            { text: '  │ [5] │ [ ]   │ AVAILABLE    │ Discord                │ Discord     │', color: 'text-cyan-300' },
-            { text: '  │ [6] │ [ ]   │ AVAILABLE    │ 7-Zip Archiver         │ 7zip        │', color: 'text-cyan-300' },
-            { text: '  └─────┴───────┴──────────────┴────────────────────────┴─────────────┘', color: 'text-cyan-400' },
-            { text: '  User types: 1, 4', color: 'text-yellow-300' },
-            { text: '  ----------------------------------------------------------------------', color: 'text-zinc-600' },
-            { text: '  FINAL CONFIRMATION: Installing: Google Chrome, VLC Media Player.', color: 'text-amber-400 font-semibold' },
-            { text: '  Proceed? [Y/N]: ', color: 'text-emerald-400' },
-            { text: '  [OK] Winget only executes after explicit approval.', color: 'text-emerald-400' }
+            { text: '  ╔════════════════════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-500' },
+            { text: '  ║  📦 MODULE 1: SOFTWARE INSTALLER (WINGET APPLICATION CATALOG)                      ║', color: 'text-cyan-400 font-bold' },
+            { text: '  ║  Interactive Checkboxes • Zero Auto-Install • Safe Approval Flow                   ║', color: 'text-zinc-400' },
+            { text: '  ╚════════════════════════════════════════════════════════════════════════════════════╝', color: 'text-cyan-500' },
+            { text: '  ┌──────┬────────────────────────────┬────────────────────────────────────────────────┐', color: 'text-cyan-600' },
+            { text: '  │ NUM  │ CATEGORY & LOGO            │ INCLUDED TOP APPLICATIONS                      │', color: 'text-cyan-400 font-bold' },
+            { text: '  ├──────┼────────────────────────────┼────────────────────────────────────────────────┤', color: 'text-cyan-600' },
+            { text: '  │ [1]  │ 🌐 Web Browsers            │ Chrome, Firefox, Edge, Brave, Opera            │', color: 'text-zinc-200' },
+            { text: '  │ [2]  │ 💻 Developer & Coding      │ VS Code, Git, Python, Node.js, Notepad++       │', color: 'text-zinc-200' },
+            { text: '  │ [3]  │ 🎬 Multimedia & Creators   │ VLC Media Player, Spotify, OBS, HandBrake      │', color: 'text-zinc-200' },
+            { text: '  │ [4]  │ 🛠️ Utilities & Tools       │ 7-Zip, WinRAR, Everything, PowerToys, Rufus    │', color: 'text-zinc-200' },
+            { text: '  │ [5]  │ 💬 Communication & Chat    │ WhatsApp, Telegram, Discord, Zoom, Teams       │', color: 'text-zinc-200' },
+            { text: '  │ [6]  │ 🎮 Gaming Launchers        │ Steam, Epic Games, EA App, Ubisoft, Riot, Xbox │', color: 'text-zinc-200' },
+            { text: '  │ [7]  │ 🔐 Security & Privacy      │ Bitwarden, Malwarebytes, Proton VPN            │', color: 'text-zinc-200' },
+            { text: '  │ [8]  │ 🖥️ Remote Access & IT      │ AnyDesk, TeamViewer, RustDesk, PuTTY, WinSCP   │', color: 'text-zinc-200' },
+            { text: '  │ [9]  │ 📄 Office & Productivity   │ Microsoft 365, LibreOffice, Adobe, Notion      │', color: 'text-zinc-200' },
+            { text: '  ├──────┼────────────────────────────┼────────────────────────────────────────────────┤', color: 'text-cyan-600' },
+            { text: '  │ [10] │ 📦 Essential Applications  │ Curated instant pack for fresh Windows setup   │', color: 'text-cyan-300' },
+            { text: '  │ [11] │ 📚 Complete Catalog (All)  │ Browse and select from all verified packages   │', color: 'text-cyan-300' },
+            { text: '  │ [12] │ 🔍 Audit Installed Apps    │ Scan current PC for installed vs missing apps  │', color: 'text-zinc-400' },
+            { text: '  │ [13] │ 🔄 Refresh Winget Sources  │ Update winget catalog cache definitions        │', color: 'text-zinc-400' },
+            { text: '  └──────┴────────────────────────────┴────────────────────────────────────────────────┘', color: 'text-cyan-600' }
           ]);
           break;
         case '2':
           setSimStep('debloat');
           setSimLogs([
-            { text: '  --- MODULE 2: DEBLOAT & PRIVACY HARDENING ---', color: 'text-cyan-400 font-semibold' },
+            { text: '  ╔════════════════════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-500' },
+            { text: '  ║  🚀 MODULE 2: DEBLOAT & PRIVACY HARDENING                                          ║', color: 'text-cyan-400 font-bold' },
+            { text: '  ╚════════════════════════════════════════════════════════════════════════════════════╝', color: 'text-cyan-500' },
             { text: '  [OK] Telemetry and Diagnostic Tracking services disabled.', color: 'text-emerald-400' },
             { text: '  [OK] Bing web search results disabled in Start Menu (Local search accelerated).', color: 'text-emerald-400' },
             { text: '  [OK] Windows 10 Classic Context Menu restored in Windows 11.', color: 'text-emerald-400' }
@@ -82,7 +94,9 @@ export default function App() {
         case '3':
           setSimStep('perf');
           setSimLogs([
-            { text: '  --- MODULE 3: PERFORMANCE & GAMING ---', color: 'text-cyan-400 font-semibold' },
+            { text: '  ╔════════════════════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-500' },
+            { text: '  ║  ⚡ MODULE 3: PERFORMANCE & GAMING OPTIMIZATION                                    ║', color: 'text-cyan-400 font-bold' },
+            { text: '  ╚════════════════════════════════════════════════════════════════════════════════════╝', color: 'text-cyan-500' },
             { text: '  [OK] Ultimate Performance Power Scheme GUID unlocked and activated!', color: 'text-emerald-400' },
             { text: '  [OK] Game DVR background recording disabled (Frame drops eliminated).', color: 'text-emerald-400' },
             { text: '  [OK] Mouse acceleration disabled (1:1 Raw input precision active).', color: 'text-emerald-400' }
@@ -91,7 +105,9 @@ export default function App() {
         case '4':
           setSimStep('safety');
           setSimLogs([
-            { text: '  --- MODULE 4: SYSTEM SAFETY & RESTORE ---', color: 'text-cyan-400 font-semibold' },
+            { text: '  ╔════════════════════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-500' },
+            { text: '  ║  🛡️ MODULE 4: SYSTEM SAFETY & RESTORE POINTS                                       ║', color: 'text-cyan-400 font-bold' },
+            { text: '  ╚════════════════════════════════════════════════════════════════════════════════════╝', color: 'text-cyan-500' },
             { text: '  [OK] System Restore Point created: ItsRiRx-Toolkit-SafeCheckpoint-2025.', color: 'text-emerald-400' },
             { text: '  [OK] Active Listening TCP/UDP ports scanned with bound process IDs.', color: 'text-emerald-400' },
             { text: '  [OK] Microsoft Defender signatures updated to latest build.', color: 'text-emerald-400' }
@@ -100,7 +116,9 @@ export default function App() {
         case '5':
           setSimStep('dev');
           setSimLogs([
-            { text: '  --- MODULE 5: DEVELOPER & VIRTUALIZATION ---', color: 'text-cyan-400 font-semibold' },
+            { text: '  ╔════════════════════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-500' },
+            { text: '  ║  💻 MODULE 5: DEVELOPER & VIRTUALIZATION FEATURES                                  ║', color: 'text-cyan-400 font-bold' },
+            { text: '  ╚════════════════════════════════════════════════════════════════════════════════════╝', color: 'text-cyan-500' },
             { text: '  [OK] Windows Subsystem for Linux (WSL2) enabled.', color: 'text-emerald-400' },
             { text: '  [OK] Windows Sandbox (Disposable VM) enabled.', color: 'text-emerald-400' },
             { text: '  [OK] Hyper-V and Virtual Machine Platform configured.', color: 'text-emerald-400' }
@@ -109,26 +127,30 @@ export default function App() {
         case '6':
           setSimStep('battery');
           setSimLogs([
-            { text: '  --- MODULE 6: BATTERY HEALTH & POWER ---', color: 'text-cyan-400 font-semibold' },
+            { text: '  ╔════════════════════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-500' },
+            { text: '  ║  🔋 MODULE 6: BATTERY HEALTH & POWER DIAGNOSTICS                                   ║', color: 'text-cyan-400 font-bold' },
+            { text: '  ╚════════════════════════════════════════════════════════════════════════════════════╝', color: 'text-cyan-500' },
             { text: '  [OK] Full Battery Report generated: C:\\Users\\Admin\\AppData\\Local\\Temp\\battery-report.html', color: 'text-emerald-400' },
-            { text: '  Estimated Remaining: 98% | Health: Normal | Chemistry: Li-Ion', color: 'text-zinc-200' },
-            { text: '  Sleep Study Standby analysis ready.', color: 'text-zinc-400' }
+            { text: '  Estimated Remaining: 98% | Health: Normal | Chemistry: Li-Ion', color: 'text-zinc-200' }
           ]);
           break;
         case '7':
           setSimStep('repair');
           setSimLogs([
-            { text: '  --- MODULE 7: WINDOWS SYSTEM REPAIR ---', color: 'text-cyan-400 font-semibold' },
+            { text: '  ╔════════════════════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-500' },
+            { text: '  ║  🔧 MODULE 7: WINDOWS SYSTEM REPAIR                                                ║', color: 'text-cyan-400 font-bold' },
+            { text: '  ╚════════════════════════════════════════════════════════════════════════════════════╝', color: 'text-cyan-500' },
             { text: '  [1] SFC /scannow       - Scans & repairs corrupted system files', color: 'text-zinc-200' },
             { text: '  [2] DISM RestoreHealth - Restores healthy image components from Windows Update', color: 'text-zinc-200' },
-            { text: '  [3] WinUpdate Repair   - Cleans corrupted SoftwareDistribution cache', color: 'text-zinc-200' },
-            { text: '  [OK] All repair routines run under strict administrator safety.', color: 'text-emerald-400' }
+            { text: '  [3] WinUpdate Repair   - Cleans corrupted SoftwareDistribution cache', color: 'text-zinc-200' }
           ]);
           break;
         case '8':
           setSimStep('cleanup');
           setSimLogs([
-            { text: '  --- MODULE 8: DISK CLEANUP & ADVANCED STORAGE ---', color: 'text-cyan-400 font-semibold' },
+            { text: '  ╔════════════════════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-500' },
+            { text: '  ║  🧹 MODULE 8: DISK CLEANUP & ADVANCED STORAGE                                      ║', color: 'text-cyan-400 font-bold' },
+            { text: '  ╚════════════════════════════════════════════════════════════════════════════════════╝', color: 'text-cyan-500' },
             { text: '  [OK] Cleaned User Temp & System Temp files safely.', color: 'text-emerald-400' },
             { text: '  [OK] Top 15 Largest Files scanned on Drive C: (Identified 18.4 GB ISO & VM images).', color: 'text-emerald-400' },
             { text: '  [OK] Manual SSD TRIM executed on Drive C: (Storage blocks optimized).', color: 'text-emerald-400' }
@@ -137,7 +159,9 @@ export default function App() {
         case '9':
           setSimStep('net');
           setSimLogs([
-            { text: '  --- MODULE 9: NETWORK DIAGNOSTICS & DNS TOOLS ---', color: 'text-cyan-400 font-semibold' },
+            { text: '  ╔════════════════════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-500' },
+            { text: '  ║  🌐 MODULE 9: NETWORK DIAGNOSTICS & DNS TOOLS                                      ║', color: 'text-cyan-400 font-bold' },
+            { text: '  ╚════════════════════════════════════════════════════════════════════════════════════╝', color: 'text-cyan-500' },
             { text: '  [OK] Active Adapter: Wi-Fi 6 (Intel AX201) - 1.2 Gbps Link Speed', color: 'text-emerald-400' },
             { text: '  [OK] DNS Switcher: 1-click apply Cloudflare (1.1.1.1) or Google (8.8.8.8)', color: 'text-emerald-400' },
             { text: '  [OK] 3-point connectivity: Gateway [OK] | DNS [OK] | HTTPS [OK]', color: 'text-emerald-400' }
@@ -146,7 +170,9 @@ export default function App() {
         case '10':
           setSimStep('system');
           setSimLogs([
-            { text: '  --- MODULE 10: SYSTEM INFO & UTILITIES ---', color: 'text-cyan-400 font-semibold' },
+            { text: '  ╔════════════════════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-500' },
+            { text: '  ║  🎛️ MODULE 10: SYSTEM INFO & BUILT-IN UTILITIES                                    ║', color: 'text-cyan-400 font-bold' },
+            { text: '  ╚════════════════════════════════════════════════════════════════════════════════════╝', color: 'text-cyan-500' },
             { text: '  OS   : Microsoft Windows 11 Pro 64-bit (Build 22631)', color: 'text-zinc-200' },
             { text: '  CPU  : 13th Gen Intel Core i7-13700H (14 Cores / 20 Threads)', color: 'text-zinc-200' },
             { text: '  RAM  : 32 GB DDR5 @ 5200 MHz across 2 modules', color: 'text-zinc-200' },
@@ -164,6 +190,90 @@ export default function App() {
       setSimLogs([]);
     }
   };
+
+  const categories = [
+    {
+      num: '01',
+      title: 'Web Browsers',
+      logo: '🌐',
+      icon: Globe,
+      color: 'from-blue-500/20 to-blue-900/10 border-blue-500/30 text-blue-400',
+      badgeColor: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
+      apps: ['Google Chrome', 'Mozilla Firefox', 'Microsoft Edge', 'Brave', 'Opera']
+    },
+    {
+      num: '02',
+      title: 'Developer & Coding',
+      logo: '💻',
+      icon: Code2,
+      color: 'from-emerald-500/20 to-emerald-900/10 border-emerald-500/30 text-emerald-400',
+      badgeColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+      apps: ['Visual Studio Code', 'Git', 'Python', 'Node.js', 'Notepad++']
+    },
+    {
+      num: '03',
+      title: 'Multimedia & Creators',
+      logo: '🎬',
+      icon: Film,
+      color: 'from-amber-500/20 to-amber-900/10 border-amber-500/30 text-amber-400',
+      badgeColor: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+      apps: ['VLC Media Player', 'Spotify', 'OBS Studio', 'Audacity', 'HandBrake']
+    },
+    {
+      num: '04',
+      title: 'Utilities & Tools',
+      logo: '🛠️',
+      icon: Wrench,
+      color: 'from-purple-500/20 to-purple-900/10 border-purple-500/30 text-purple-400',
+      badgeColor: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
+      apps: ['7-Zip', 'WinRAR', 'Everything', 'Microsoft PowerToys', 'Rufus', 'ShareX', 'Avro Keyboard']
+    },
+    {
+      num: '05',
+      title: 'Communication & Social',
+      logo: '💬',
+      icon: MessageSquare,
+      color: 'from-indigo-500/20 to-indigo-900/10 border-indigo-500/30 text-indigo-400',
+      badgeColor: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30',
+      apps: ['WhatsApp', 'Telegram', 'Discord', 'Zoom', 'Microsoft Teams']
+    },
+    {
+      num: '06',
+      title: 'Gaming Launchers',
+      logo: '🎮',
+      icon: Gamepad2,
+      color: 'from-rose-500/20 to-rose-900/10 border-rose-500/30 text-rose-400',
+      badgeColor: 'bg-rose-500/10 text-rose-400 border-rose-500/30',
+      apps: ['Steam', 'Epic Games', 'EA App', 'Ubisoft Connect', 'Riot Client', 'Xbox']
+    },
+    {
+      num: '07',
+      title: 'Security & Privacy',
+      logo: '🔐',
+      icon: ShieldCheck,
+      color: 'from-cyan-500/20 to-cyan-900/10 border-cyan-500/30 text-cyan-400',
+      badgeColor: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30',
+      apps: ['Bitwarden', 'Malwarebytes', 'Proton VPN']
+    },
+    {
+      num: '08',
+      title: 'Remote Access & IT',
+      logo: '🖥️',
+      icon: Monitor,
+      color: 'from-teal-500/20 to-teal-900/10 border-teal-500/30 text-teal-400',
+      badgeColor: 'bg-teal-500/10 text-teal-400 border-teal-500/30',
+      apps: ['AnyDesk', 'TeamViewer', 'RustDesk', 'PuTTY', 'WinSCP']
+    },
+    {
+      num: '09',
+      title: 'Office & Productivity',
+      logo: '📄',
+      icon: FileText,
+      color: 'from-yellow-500/20 to-yellow-900/10 border-yellow-500/30 text-yellow-400',
+      badgeColor: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
+      apps: ['Microsoft 365', 'LibreOffice', 'Adobe Acrobat Reader', 'Notion']
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-black">
@@ -194,13 +304,13 @@ export default function App() {
               href="#apps"
               className="text-xs text-zinc-400 hover:text-white transition hidden sm:inline-block"
             >
-              Supported Apps
+              Application Categories
             </a>
             <a
               href="#features"
               className="text-xs text-zinc-400 hover:text-white transition hidden sm:inline-block"
             >
-              All Categories
+              All Modules
             </a>
             <a
               href="#preview"
@@ -230,7 +340,7 @@ export default function App() {
             </h1>
 
             <p className="text-zinc-300 text-sm sm:text-base leading-relaxed">
-              Equip your PC with debloating, privacy tweaks, gaming optimizations (Ultimate Performance plan, Game DVR disable), 1-click restore points, battery reports, and category-wise software selection with interactive checkboxes.
+              Equip your PC with debloating, privacy tweaks, gaming optimizations (Ultimate Performance plan, Game DVR disable), 1-click restore points, battery reports, and 9 curated software categories with interactive checkboxes.
             </p>
           </div>
 
@@ -347,84 +457,60 @@ export default function App() {
           </div>
         </section>
 
-        {/* TOP APPLICATIONS SHOWCASE */}
+        {/* TOP APPLICATIONS SHOWCASE WITH LOGOS & REGULAR FONTS */}
         <section id="apps" className="space-y-6">
-          <div className="border-b border-zinc-800 pb-3">
-            <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
-              <Boxes className="w-6 h-6 text-cyan-400" />
-              Category-Wise Top Applications (Interactive Software Selector)
-            </h2>
-            <p className="text-xs text-zinc-400 mt-1">Browse, select via checkboxes, review confirmation, and install silently via Winget</p>
+          <div className="border-b border-zinc-800 pb-3 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+                <Boxes className="w-6 h-6 text-cyan-400" />
+                Application Categories & Catalog
+              </h2>
+              <p className="text-xs text-zinc-400 mt-1">
+                9 verified categories with direct Winget ID integration and safe approval flow
+              </p>
+            </div>
+            <span className="text-xs font-mono px-3 py-1 rounded-full bg-cyan-950 border border-cyan-800 text-cyan-300">
+              44 Top Applications
+            </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
-              {
-                id: '1',
-                title: '1. Web Browsers',
-                apps: ['Google Chrome', 'Mozilla Firefox', 'Microsoft Edge', 'Brave', 'Opera'],
-                color: 'text-blue-400'
-              },
-              {
-                id: '2',
-                title: '2. Developer & Coding',
-                apps: ['Visual Studio Code', 'Git', 'Python', 'Node.js', 'Notepad++'],
-                color: 'text-emerald-400'
-              },
-              {
-                id: '3',
-                title: '3. Multimedia',
-                apps: ['VLC Media Player', 'Spotify', 'OBS Studio', 'Audacity', 'HandBrake'],
-                color: 'text-amber-400'
-              },
-              {
-                id: '4',
-                title: '4. Utilities & Tools',
-                apps: ['7-Zip', 'WinRAR', 'Everything', 'Microsoft PowerToys', 'Rufus', 'ShareX', 'Avro Keyboard'],
-                color: 'text-purple-400'
-              },
-              {
-                id: '5',
-                title: '5. Communication',
-                apps: ['WhatsApp', 'Telegram', 'Discord', 'Zoom', 'Microsoft Teams'],
-                color: 'text-indigo-400'
-              },
-              {
-                id: '6',
-                title: '6. Gaming Launchers',
-                apps: ['Steam', 'Epic Games', 'EA App', 'Ubisoft Connect', 'Riot Client', 'Xbox'],
-                color: 'text-rose-400'
-              },
-              {
-                id: '7',
-                title: '7. Security & Privacy',
-                apps: ['Bitwarden', 'Malwarebytes', 'Proton VPN'],
-                color: 'text-cyan-400'
-              },
-              {
-                id: '8',
-                title: '8. Remote Access & IT',
-                apps: ['AnyDesk', 'TeamViewer', 'RustDesk', 'PuTTY', 'WinSCP'],
-                color: 'text-teal-400'
-              },
-              {
-                id: '9',
-                title: '9. Office & Productivity',
-                apps: ['Microsoft 365', 'LibreOffice', 'Adobe Acrobat Reader', 'Notion'],
-                color: 'text-yellow-400'
-              }
-            ].map((cat, idx) => (
-              <div key={idx} className="p-4 rounded-2xl border border-zinc-800 bg-zinc-900/40 space-y-2.5 hover:border-zinc-700 transition">
-                <span className={`text-xs font-bold uppercase tracking-wider font-mono ${cat.color}`}>{cat.title}</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {cat.apps.map((app, aIdx) => (
-                    <span key={aIdx} className="text-[11px] px-2 py-0.5 rounded bg-zinc-800/80 text-zinc-300 border border-zinc-700/50">
-                      {app}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {categories.map((cat) => {
+              const IconComponent = cat.icon;
+              return (
+                <div
+                  key={cat.num}
+                  className={`rounded-2xl border bg-gradient-to-br ${cat.color} p-5 space-y-4 hover:border-zinc-500/60 transition-all duration-300 shadow-lg`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-zinc-900/80 border border-white/10 flex items-center justify-center text-xl shadow-inner">
+                        <span>{cat.logo}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">Category {cat.num}</span>
+                        <h3 className="font-bold text-white text-base tracking-tight">{cat.title}</h3>
+                      </div>
+                    </div>
+                    <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full border ${cat.badgeColor}`}>
+                      {cat.apps.length} Apps
                     </span>
-                  ))}
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {cat.apps.map((app, aIdx) => (
+                      <span
+                        key={aIdx}
+                        className="text-xs px-2.5 py-1 rounded-lg bg-zinc-900/80 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/60 flex items-center gap-1.5 transition"
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                        {app}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 
@@ -548,9 +634,9 @@ export default function App() {
             <div>
               <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
                 <Terminal className="w-6 h-6 text-cyan-400" />
-                Live Terminal Preview (Clean Regular Option Typography)
+                Live Terminal Preview (Framed Box Dashboard with Logos)
               </h2>
-              <p className="text-xs text-zinc-400 mt-1">Exact replica of the regular, clean console options inside Windows Terminal</p>
+              <p className="text-xs text-zinc-400 mt-1">Exact replica of the boxed dashboard layout and category logos in Windows Terminal</p>
             </div>
 
             <button
@@ -584,35 +670,41 @@ export default function App() {
   ██║   ██║   ███████║██║  ██║██║██║  ██║██╔╝ ██╗
   ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
   ══════════════════════════════════════════════════════════════════════
-  Status: Administrator [ELEVATED] | Host: DESKTOP-IRX01 | User: Admin
+  Status: Administrator [ELEVATED] | Host: RIAZUL_ISLAM | User: itsri
   ══════════════════════════════════════════════════════════════════════`}
               </div>
 
               {simStep === 'main' ? (
-                <div className="space-y-1 pt-2 font-normal">
-                  <p className="text-cyan-400 font-semibold">  --- MAIN NAVIGATION DASHBOARD ---</p>
-                  <p className="text-zinc-200">  [1]  Software Installer        (Winget Top Applications & Checkbox Selector)</p>
-                  <p className="text-zinc-200">  [2]  Debloat & Privacy         (Telemetry, Bing in Start, Classic Context Menu)</p>
-                  <p className="text-zinc-200">  [3]  Performance & Gaming      (Ultimate Power Plan, Game DVR, Mouse Fix)</p>
-                  <p className="text-zinc-200">  [4]  System Safety & Restore   (Restore Point, Active Ports, Defender Scan)</p>
-                  <p className="text-zinc-200">  [5]  Developer & Virtualization(WSL2, Windows Sandbox, Hyper-V)</p>
-                  <p className="text-zinc-200">  [6]  Battery Health & Power    (HTML Battery Report, Wear Level, Sleep Study)</p>
-                  <p className="text-zinc-200">  [7]  Windows System Repair     (SFC Scannow, DISM RestoreHealth, Update Repair)</p>
-                  <p className="text-zinc-200">  [8]  Disk Cleanup & Storage    (Temp Cleaner, Top 15 Largest Files, SSD TRIM)</p>
-                  <p className="text-zinc-200">  [9]  Network Diagnostics & DNS (3-Point Test, DNS Switcher, Flush DNS, WiFi)</p>
-                  <p className="text-zinc-200">  [10] System Info & Utilities   (Hardware Audit, License Status, TaskMgr, CMD)</p>
-                  <p className="text-zinc-200">  [11] Quick Actions             (One-Click Emergency Maintenance)</p>
-                  <p className="text-zinc-500">  [0]  Exit Toolkit</p>
+                <div className="space-y-0.5 pt-2 font-normal leading-relaxed">
+                  <div className="text-cyan-500">  ╔════════════════════════════════════════════════════════════════════════════════════╗</div>
+                  <div className="text-cyan-400 font-bold">  ║  ⚡ SYSTEM ADMINISTRATION & MAINTENANCE DASHBOARD                                  ║</div>
+                  <div className="text-cyan-500">  ╚════════════════════════════════════════════════════════════════════════════════════╝</div>
+                  <div className="text-cyan-600">  ┌──────┬────────────────────────────┬────────────────────────────────────────────────┐</div>
+                  <div className="text-cyan-400 font-bold">  │ NUM  │ MODULE & LOGO              │ DESCRIPTION & CAPABILITIES                     │</div>
+                  <div className="text-cyan-600">  ├──────┼────────────────────────────┼────────────────────────────────────────────────┤</div>
+                  <div className="text-zinc-200">  │ [1]  │ 📦 Software Installer      │ 9 Curated categories with Winget checkboxes    │</div>
+                  <div className="text-zinc-200">  │ [2]  │ 🚀 Debloat & Privacy       │ Telemetry, Bing in Start, Classic Context Menu │</div>
+                  <div className="text-zinc-200">  │ [3]  │ ⚡ Performance & Gaming    │ Ultimate Power Plan, Game DVR, Mouse 1:1 Fix   │</div>
+                  <div className="text-zinc-200">  │ [4]  │ 🛡️ Safety & Restore        │ 1-Click Restore Point, Open Ports, Defender    │</div>
+                  <div className="text-zinc-200">  │ [5]  │ 💻 Developer Tools         │ WSL2, Windows Sandbox, Hyper-V Virtualization  │</div>
+                  <div className="text-zinc-200">  │ [6]  │ 🔋 Battery & Power         │ HTML Battery Health Report, Wear Level, Sleep  │</div>
+                  <div className="text-zinc-200">  │ [7]  │ 🔧 Windows System Repair   │ SFC Scannow, DISM RestoreHealth, Update Repair │</div>
+                  <div className="text-zinc-200">  │ [8]  │ 🧹 Disk Cleanup & Storage  │ Temp Cleaner, Top 15 Largest Files, SSD TRIM   │</div>
+                  <div className="text-zinc-200">  │ [9]  │ 🌐 Network Diagnostics     │ 3-Point Connectivity, DNS Switcher, Flush DNS  │</div>
+                  <div className="text-zinc-200">  │ [10] │ 🎛️ System Info & Utilities │ CIM Hardware specs, License status, TaskMgr    │</div>
+                  <div className="text-zinc-200">  │ [11] │ ⚡ Quick Emergency Actions │ 1-Click DNS flush, Explorer restart, ping test │</div>
+                  <div className="text-cyan-600">  └──────┴────────────────────────────┴────────────────────────────────────────────────┘</div>
+                  <div className="text-zinc-500 pt-1">  [0] 🚪 Exit Toolkit (Return to prompt)</div>
                 </div>
               ) : (
-                <div className="space-y-2 pt-2">
+                <div className="space-y-1.5 pt-2">
                   {simLogs.map((log, idx) => (
                     <div key={idx} className={log.color || 'text-zinc-200'}>
                       {log.text}
                     </div>
                   ))}
-                  <div className="pt-4">
-                    <p className="text-zinc-400">  [0] Back to Main Menu</p>
+                  <div className="pt-3">
+                    <p className="text-zinc-400">  [0] 🚪 Back to Main Menu</p>
                   </div>
                 </div>
               )}
@@ -620,7 +712,7 @@ export default function App() {
               <div className="pt-4 border-t border-zinc-900 flex items-center gap-2">
                 <span className="text-cyan-400 font-bold">PS &gt;</span>
                 <span className="text-zinc-400 text-xs">
-                  {simStep === 'main' ? 'Click any button below to test simulated regular options:' : 'Press [0] to return to Main Menu:'}
+                  {simStep === 'main' ? 'Click any button below to test simulated dashboard:' : 'Press [0] to return to Main Menu:'}
                 </span>
               </div>
             </div>
@@ -633,17 +725,17 @@ export default function App() {
               {simStep === 'main' ? (
                 <>
                   {[
-                    { num: '1', label: '1: Software' },
-                    { num: '2', label: '2: Debloat' },
-                    { num: '3', label: '3: Gaming & Perf' },
-                    { num: '4', label: '4: Safety & Restore' },
-                    { num: '5', label: '5: Developer' },
-                    { num: '6', label: '6: Battery' },
-                    { num: '7', label: '7: Repair' },
-                    { num: '8', label: '8: Storage' },
-                    { num: '9', label: '9: Network' },
-                    { num: '10', label: '10: System Info' },
-                    { num: '0', label: '0: Exit' }
+                    { num: '1', label: '1: 📦 Software' },
+                    { num: '2', label: '2: 🚀 Debloat' },
+                    { num: '3', label: '3: ⚡ Gaming & Perf' },
+                    { num: '4', label: '4: 🛡️ Safety & Restore' },
+                    { num: '5', label: '5: 💻 Developer' },
+                    { num: '6', label: '6: 🔋 Battery' },
+                    { num: '7', label: '7: 🔧 Repair' },
+                    { num: '8', label: '8: 🧹 Storage' },
+                    { num: '9', label: '9: 🌐 Network' },
+                    { num: '10', label: '10: 🎛️ System Info' },
+                    { num: '0', label: '0: 🚪 Exit' }
                   ].map((btn) => (
                     <button
                       key={btn.num}
@@ -659,7 +751,7 @@ export default function App() {
                   onClick={() => handleTerminalSelect('0')}
                   className="px-4 py-2 rounded-lg bg-cyan-500 text-black text-xs font-mono font-bold transition hover:bg-cyan-400"
                 >
-                  [0] Return to Main Menu
+                  [0] 🚪 Return to Main Menu
                 </button>
               )}
             </div>
