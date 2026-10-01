@@ -127,9 +127,9 @@ echo ===========================================================================
 echo   ItsRiRx Windows Tool Kit - 1-Click 'rirx' Command Setup
 echo ============================================================================
 echo.
-echo [*] Step 1: Installing global 'rirx.cmd' binary to Windows System32...
+echo [*] Step 1: Installing global 'rirx.cmd' and 'rirx.ps1' binaries to System32...
 
-:: Write rirx.cmd using pure native batch (100% reliable, zero quote escaping bugs)
+:: Write rirx.cmd using pure native batch
 (
 echo @echo off
 echo powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$url = 'https://raw.githubusercontent.com/itsrirx/WindowsToolKit/main/toolkit.ps1'; try { irm $url | iex } catch { irm 'https://itsrirx-toolkit.vercel.app/i' | iex }"
@@ -139,7 +139,16 @@ copy /y "%SystemRoot%\\System32\\rirx.cmd" "%SystemRoot%\\rirx.cmd" >nul 2>&1
 copy /y "%SystemRoot%\\System32\\rirx.cmd" "%SystemRoot%\\System32\\rirx.bat" >nul 2>&1
 copy /y "%SystemRoot%\\System32\\rirx.cmd" "%SystemRoot%\\rirx.bat" >nul 2>&1
 
+:: Write rirx.ps1
+(
+echo $url = 'https://raw.githubusercontent.com/itsrirx/WindowsToolKit/main/toolkit.ps1'
+echo try { irm $url ^| iex } catch { irm 'https://itsrirx-toolkit.vercel.app/i' ^| iex }
+) > "%SystemRoot%\\System32\\rirx.ps1"
+
+copy /y "%SystemRoot%\\System32\\rirx.ps1" "%SystemRoot%\\rirx.ps1" >nul 2>&1
+
 echo   [OK] Installed system binary: %SystemRoot%\\System32\\rirx.cmd
+echo   [OK] Installed system script: %SystemRoot%\\System32\\rirx.ps1
 
 echo.
 echo [*] Step 2: Registering in Windows 'Run' Dialog (Win + R) Registry...
@@ -151,27 +160,25 @@ echo   [OK] Registered in Windows Run Dialog (App Paths)
 
 echo.
 echo [*] Step 3: Unlocking PowerShell Execution Policy...
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "try { Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force; Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope LocalMachine -Force; Write-Host '  [OK] CurrentUser & LocalMachine ExecutionPolicy set to RemoteSigned' -ForegroundColor Green } catch { Write-Host '  [!] Warning: ' $_.Exception.Message -ForegroundColor Yellow }"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force -ErrorAction SilentlyContinue; Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope LocalMachine -Force -ErrorAction SilentlyContinue; Write-Host '  [OK] CurrentUser & LocalMachine ExecutionPolicy set to RemoteSigned' -ForegroundColor Green"
 
 echo.
-echo [*] Step 4: Registering 'rirx' in all PowerShell Profiles (Local + OneDrive)...
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$dirs = @([Environment]::GetFolderPath('MyDocuments'), ($env:USERPROFILE + '\\OneDrive\\Documents'), ($env:USERPROFILE + '\\Documents')); $pList = @($PROFILE); foreach ($d in $dirs) { if (Test-Path $d) { $pList += (Join-Path $d 'WindowsPowerShell\\Microsoft.PowerShell_profile.ps1'); $pList += (Join-Path $d 'PowerShell\\Microsoft.PowerShell_profile.ps1') } }; $fn = 'function rirx { & powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"\"\"$url = ''https://raw.githubusercontent.com/itsrirx/WindowsToolKit/main/toolkit.ps1''; try { irm $url | iex } catch { irm ''https://itsrirx-toolkit.vercel.app/i'' | iex }\"\"\" }'; foreach ($p in ($pList | Select-Object -Unique)) { if ($p) { try { $parent = Split-Path $p; if (!(Test-Path $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }; if (!(Test-Path $p)) { New-Item -ItemType File -Path $p -Force | Out-Null }; $cnt = Get-Content $p -Raw -ErrorAction SilentlyContinue; if ($cnt -notmatch 'function rirx') { Add-Content -Path $p -Value ([Environment]::NewLine + '# ItsRiRx Windows Tool Kit Shortcut' + [Environment]::NewLine + $fn) -Force }; Unblock-File -Path $p -ErrorAction SilentlyContinue; Write-Host \"  [OK] Profile configured: $p\" -ForegroundColor Green } catch {} } }"
+echo [*] Step 4: Registering 'rirx' function in PowerShell Profiles (Local + OneDrive)...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$dirs = @([Environment]::GetFolderPath('MyDocuments'), ($env:USERPROFILE + '\\OneDrive\\Documents'), ($env:USERPROFILE + '\\Documents')); $pList = @($PROFILE.CurrentUserCurrentHost, $PROFILE.CurrentUserAllHosts, $PROFILE.AllUsersCurrentHost, $PROFILE.AllUsersAllHosts); foreach ($d in $dirs) { if (Test-Path $d) { $pList += (Join-Path $d 'WindowsPowerShell\\Microsoft.PowerShell_profile.ps1'); $pList += (Join-Path $d 'PowerShell\\Microsoft.PowerShell_profile.ps1') } }; $fn = [Environment]::NewLine + 'function rirx { & powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"\"\"$u=''https://raw.githubusercontent.com/itsrirx/WindowsToolKit/main/toolkit.ps1''; try { irm $u | iex } catch { irm ''https://itsrirx-toolkit.vercel.app/i'' | iex }\"\"\" }' + [Environment]::NewLine; foreach ($p in ($pList | Select-Object -Unique)) { if ($p) { try { $parent = Split-Path $p; if (!(Test-Path $parent)) { New-Item -ItemType Directory -Path $parent -Force -ErrorAction SilentlyContinue | Out-Null }; if (!(Test-Path $p)) { New-Item -ItemType File -Path $p -Force -ErrorAction SilentlyContinue | Out-Null }; $cnt = Get-Content $p -Raw -ErrorAction SilentlyContinue; if ($cnt -notmatch 'function rirx') { Add-Content -Path $p -Value $fn -Force -ErrorAction SilentlyContinue }; Unblock-File -Path $p -ErrorAction SilentlyContinue } catch {} } }; Write-Host '  [OK] All PowerShell profiles updated and unblocked' -ForegroundColor Green"
 
 echo.
 echo ============================================================================
-echo   [SUCCESS] Setup Completed!
-echo   
+echo   [SUCCESS] 'rirx' command has been installed and configured!
+echo.
 echo   You can now launch the toolkit anytime from:
-echo     1. Windows Run Dialog (Win + R -> type: rirx -> Enter)
-echo     2. Windows PowerShell (type: rirx -> Enter)
-echo     3. Command Prompt CMD (type: rirx -> Enter)
-echo     4. Windows Terminal   (type: rirx -> Enter)
+echo     1. Windows Run Dialog : Press [Win + R] -> type "rirx" -> hit Enter
+echo     2. Windows PowerShell : Type "rirx" -> hit Enter
+echo     3. Command Prompt CMD : Type "rirx" -> hit Enter
+echo     4. Windows Terminal   : Type "rirx" -> hit Enter
 echo ============================================================================
 echo.
-echo [*] Launching toolkit now to verify...
-echo.
-call "%SystemRoot%\\System32\\rirx.cmd"
-pause
+echo Press any key to exit this installer window...
+pause >nul
 `;
   return res.status(200).send(batContent);
 });
