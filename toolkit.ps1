@@ -335,12 +335,12 @@ function Show-Banner {
     Write-Host "██║   ██║   ███████╗" -NoNewline -ForegroundColor Green
     Write-Host "██████╔╝" -NoNewline -ForegroundColor Red
     Write-Host "██║██████╔╝" -NoNewline -ForegroundColor Red
-    Write-Host " ╚███╔╝    v1.1.0 PRO (BD Edition)  │" -ForegroundColor White
+    Write-Host " ╚███╔╝    v1.1.0 Neon Cyberpunk    │" -ForegroundColor White
     Write-Host "  │  " -NoNewline -ForegroundColor DarkGreen
     Write-Host "██║   ██║   ╚════██║" -NoNewline -ForegroundColor Green
     Write-Host "██╔══██╗" -NoNewline -ForegroundColor Red
     Write-Host "██║██╔══██╗" -NoNewline -ForegroundColor Red
-    Write-Host " ██╔██╗    🇧🇩 Red-Green Edition     │" -ForegroundColor Red
+    Write-Host " ██╔██╗    Cyberpunk Edition      │" -ForegroundColor Green
     Write-Host "  │  " -NoNewline -ForegroundColor DarkGreen
     Write-Host "██║   ██║   ███████║" -NoNewline -ForegroundColor Green
     Write-Host "██║  ██║" -NoNewline -ForegroundColor Red
@@ -368,14 +368,14 @@ function Show-ModuleHeader {
         [string]$Subtitle
     )
     $cleanTitle = if ($ModuleTitle.Length -gt 76) { $ModuleTitle.Substring(0, 73) + "..." } else { $ModuleTitle }
-    $titlePadded = ("  " + $cleanTitle).PadRight(80)
+    $titlePadded = ("  " + $cleanTitle).PadRight(78)
     $cleanSub = if ($Subtitle.Length -gt 76) { $Subtitle.Substring(0, 73) + "..." } else { $Subtitle }
-    $subPadded = ("  " + $cleanSub).PadRight(80)
+    $subPadded = ("  " + $cleanSub).PadRight(78)
 
-    Write-Host "  ╔════════════════════════════════════════════════════════════════════════════════════╗" -ForegroundColor DarkCyan
+    Write-Host "  ╔════════════════════════════════════════════════════════════════════════════════╗" -ForegroundColor DarkCyan
     Write-Host "  ║$titlePadded║" -ForegroundColor Cyan
     Write-Host "  ║$subPadded║" -ForegroundColor DarkGray
-    Write-Host "  ╚════════════════════════════════════════════════════════════════════════════════════╝" -ForegroundColor DarkCyan
+    Write-Host "  ╚════════════════════════════════════════════════════════════════════════════════╝" -ForegroundColor DarkCyan
     Write-Host ""
 }
 
@@ -384,17 +384,17 @@ function Show-OptionTable {
         [array]$Options,
         [string]$PromptRange = ""
     )
-    Write-Host "  ┌──────┬─────────────────────────────────────────────────────────────────────────────┐" -ForegroundColor DarkCyan
-    Write-Host "  │ NUM  │ FEATURE / OPTION DESCRIPTION                                                │" -ForegroundColor Cyan
-    Write-Host "  ├──────┼─────────────────────────────────────────────────────────────────────────────┤" -ForegroundColor DarkCyan
+    Write-Host "  ┌──────┬─────────────────────────────────────────────────────────────────────────┐" -ForegroundColor DarkCyan
+    Write-Host "  │ NUM  │ FEATURE / OPTION DESCRIPTION                                            │" -ForegroundColor Cyan
+    Write-Host "  ├──────┼─────────────────────────────────────────────────────────────────────────┤" -ForegroundColor DarkCyan
     foreach ($opt in $Options) {
         $numStr = "[$($opt.Num)]".PadRight(4)
         $textStr = $opt.Text
-        if ($textStr.Length -gt 73) { $textStr = $textStr.Substring(0, 70) + "..." }
-        $textPadded = $textStr.PadRight(73)
+        if ($textStr.Length -gt 71) { $textStr = $textStr.Substring(0, 68) + "..." }
+        $textPadded = $textStr.PadRight(71)
         Write-Host "  │ $numStr │ $textPadded │" -ForegroundColor White
     }
-    Write-Host "  └──────┴─────────────────────────────────────────────────────────────────────────────┘" -ForegroundColor DarkCyan
+    Write-Host "  └──────┴─────────────────────────────────────────────────────────────────────────┘" -ForegroundColor DarkCyan
     Write-Host ""
     Write-Host "  [0] 🚪 Return to Main Dashboard" -ForegroundColor DarkGray
     Write-Host ""
