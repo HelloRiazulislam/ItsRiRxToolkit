@@ -1785,7 +1785,7 @@ function Invoke-DeepLeftoverCleanup {
                     Remove-Item -Path $item -Recurse -Force -ErrorAction SilentlyContinue
                     Write-Success "Cleaned residual folder: $item"
                 } catch {
-                    Write-ErrorMessage "Failed to remove $item: $($_.Exception.Message)"
+                    Write-ErrorMessage "Failed to remove $($item): $($_.Exception.Message)"
                 }
             }
         } else {
