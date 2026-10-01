@@ -318,23 +318,89 @@ function Show-Banner {
     
     $telem = Get-SystemTelemetry
 
+    # 🇧🇩 BANGLADESH FLAG THEME (Rich Green with Glowing Red Center)
     Write-Host ""
-    Write-Host "  ╭──────────────────────────────────────────────────────────────────────────────╮" -ForegroundColor Magenta
-    Write-Host "  │  ██╗████████╗███████╗██████╗ ██╗██████╗ ██╗  ██╗                            │" -ForegroundColor Cyan
-    Write-Host "  │  ██║╚══██╔══╝██╔════╝██╔══██╗██║██╔══██╗╚██╗██╔╝   ITSRIRX TOOLKIT          │" -ForegroundColor Cyan
-    Write-Host "  │  ██║   ██║   ███████╗██████╔╝██║██████╔╝ ╚███╔╝    v1.1.0 Neon Cyberpunk    │" -ForegroundColor White
-    Write-Host "  │  ██║   ██║   ╚════██║██╔══██╗██║██╔══██╗ ██╔██╗                             │" -ForegroundColor White
-    Write-Host "  │  ██║   ██║   ███████║██║  ██║██║██║  ██║██╔╝ ██╗                            │" -ForegroundColor Cyan
-    Write-Host "  │  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝                            │" -ForegroundColor Cyan
-    Write-Host "  ├──────────────────────────────────────────────────────────────────────────────┤" -ForegroundColor Magenta
+    Write-Host "  ╭──────────────────────────────────────────────────────────────────────────────╮" -ForegroundColor DarkGreen
+    Write-Host "  │  " -NoNewline -ForegroundColor DarkGreen
+    Write-Host "██╗████████╗███████╗" -NoNewline -ForegroundColor Green
+    Write-Host "██████╗ " -NoNewline -ForegroundColor Red
+    Write-Host "██╗██████╗ " -NoNewline -ForegroundColor Red
+    Write-Host "██╗  ██╗                            │" -ForegroundColor Green
+    Write-Host "  │  " -NoNewline -ForegroundColor DarkGreen
+    Write-Host "██║╚══██╔══╝██╔════╝" -NoNewline -ForegroundColor Green
+    Write-Host "██╔══██╗" -NoNewline -ForegroundColor Red
+    Write-Host "██║██╔══██╗" -NoNewline -ForegroundColor Red
+    Write-Host "╚██╗██╔╝   ITSRIRX TOOLKIT          │" -ForegroundColor Green
+    Write-Host "  │  " -NoNewline -ForegroundColor DarkGreen
+    Write-Host "██║   ██║   ███████╗" -NoNewline -ForegroundColor Green
+    Write-Host "██████╔╝" -NoNewline -ForegroundColor Red
+    Write-Host "██║██████╔╝" -NoNewline -ForegroundColor Red
+    Write-Host " ╚███╔╝    v1.1.0 PRO (BD Edition)  │" -ForegroundColor White
+    Write-Host "  │  " -NoNewline -ForegroundColor DarkGreen
+    Write-Host "██║   ██║   ╚════██║" -NoNewline -ForegroundColor Green
+    Write-Host "██╔══██╗" -NoNewline -ForegroundColor Red
+    Write-Host "██║██╔══██╗" -NoNewline -ForegroundColor Red
+    Write-Host " ██╔██╗    🇧🇩 Red-Green Edition     │" -ForegroundColor Red
+    Write-Host "  │  " -NoNewline -ForegroundColor DarkGreen
+    Write-Host "██║   ██║   ███████║" -NoNewline -ForegroundColor Green
+    Write-Host "██║  ██║" -NoNewline -ForegroundColor Red
+    Write-Host "██║██║  ██║" -NoNewline -ForegroundColor Red
+    Write-Host "██╔╝ ██╗                            │" -ForegroundColor Green
+    Write-Host "  │  " -NoNewline -ForegroundColor DarkGreen
+    Write-Host "╚═╝   ╚═╝   ╚══════╝" -NoNewline -ForegroundColor Green
+    Write-Host "╚═╝  ╚═╝" -NoNewline -ForegroundColor Red
+    Write-Host "╚═╝╚═╝  ╚═╝" -NoNewline -ForegroundColor Red
+    Write-Host "╚═╝  ╚═╝                            │" -ForegroundColor Green
+    Write-Host "  ├──────────────────────────────────────────────────────────────────────────────┤" -ForegroundColor DarkGreen
     Write-Host "  │ ⚡ Status: " -NoNewline -ForegroundColor DarkGray
     Write-Host "$adminStatus".PadRight(26) -NoNewline -ForegroundColor $adminColor
     Write-Host "│ 💻 Host: " -NoNewline -ForegroundColor DarkGray
-    Write-Host "$env:COMPUTERNAME ($env:USERNAME)".PadRight(35) -NoNewline -ForegroundColor Cyan
-    Write-Host "│" -ForegroundColor Magenta
+    Write-Host "$env:COMPUTERNAME ($env:USERNAME)".PadRight(35) -NoNewline -ForegroundColor Green
+    Write-Host "│" -ForegroundColor DarkGreen
     Write-Host "  │ ⚡ CPU: $($telem.CpuPercent)% │ 🧠 RAM: $($telem.RamUsedGb)/$($telem.RamTotalGb) GB ($($telem.RamPercent)%) │ 🔋 $($telem.BatteryStr) │ 🖥️ $($telem.OsBuild)".PadRight(79) -ForegroundColor Yellow
-    Write-Host "  ╰──────────────────────────────────────────────────────────────────────────────╯" -ForegroundColor Magenta
+    Write-Host "  ╰──────────────────────────────────────────────────────────────────────────────╯" -ForegroundColor DarkGreen
     Write-Host ""
+}
+
+function Show-ModuleHeader {
+    param(
+        [string]$ModuleTitle,
+        [string]$Subtitle
+    )
+    $cleanTitle = if ($ModuleTitle.Length -gt 76) { $ModuleTitle.Substring(0, 73) + "..." } else { $ModuleTitle }
+    $titlePadded = ("  " + $cleanTitle).PadRight(80)
+    $cleanSub = if ($Subtitle.Length -gt 76) { $Subtitle.Substring(0, 73) + "..." } else { $Subtitle }
+    $subPadded = ("  " + $cleanSub).PadRight(80)
+
+    Write-Host "  ╔════════════════════════════════════════════════════════════════════════════════════╗" -ForegroundColor DarkCyan
+    Write-Host "  ║$titlePadded║" -ForegroundColor Cyan
+    Write-Host "  ║$subPadded║" -ForegroundColor DarkGray
+    Write-Host "  ╚════════════════════════════════════════════════════════════════════════════════════╝" -ForegroundColor DarkCyan
+    Write-Host ""
+}
+
+function Show-OptionTable {
+    param(
+        [array]$Options,
+        [string]$PromptRange = ""
+    )
+    Write-Host "  ┌──────┬─────────────────────────────────────────────────────────────────────────────┐" -ForegroundColor DarkCyan
+    Write-Host "  │ NUM  │ FEATURE / OPTION DESCRIPTION                                                │" -ForegroundColor Cyan
+    Write-Host "  ├──────┼─────────────────────────────────────────────────────────────────────────────┤" -ForegroundColor DarkCyan
+    foreach ($opt in $Options) {
+        $numStr = "[$($opt.Num)]".PadRight(4)
+        $textStr = $opt.Text
+        if ($textStr.Length -gt 73) { $textStr = $textStr.Substring(0, 70) + "..." }
+        $textPadded = $textStr.PadRight(73)
+        Write-Host "  │ $numStr │ $textPadded │" -ForegroundColor White
+    }
+    Write-Host "  └──────┴─────────────────────────────────────────────────────────────────────────────┘" -ForegroundColor DarkCyan
+    Write-Host ""
+    Write-Host "  [0] 🚪 Return to Main Dashboard" -ForegroundColor DarkGray
+    Write-Host ""
+    if ($PromptRange) {
+        Write-Host "  Select an option [$PromptRange]: " -ForegroundColor Cyan -NoNewline
+    }
 }
 
 # Beautiful structured main navigation dashboard
@@ -665,22 +731,20 @@ function Show-SoftwareMenu {
 # ============================================================================
 
 function Show-DebloatMenu {
+    $options = @(
+        @{ Num = "1"; Text = "Disable Telemetry & Diagnostic Data Tracking (Safe registry tweaks)" }
+        @{ Num = "2"; Text = "Disable Bing Search & Web Results in Start Menu (Speeds up search)" }
+        @{ Num = "3"; Text = "Restore Classic Windows 10 Context Menu in Windows 11 (No 'Show more')" }
+        @{ Num = "4"; Text = "Revert to Modern Windows 11 Context Menu (Restore default)" }
+        @{ Num = "5"; Text = "Disable Cortana & Search Telemetry" }
+        @{ Num = "6"; Text = "Disable Activity History & Advertising ID" }
+        @{ Num = "7"; Text = "Remove Pre-Installed UWP Bloatware (Feedback, Tips, Maps, Weather, Xbox)" }
+    )
+
     do {
         Show-Banner
-        Write-Host "  --- MODULE 2: DEBLOAT & PRIVACY HARDENING ---" -ForegroundColor Cyan
-        Write-Host "  Fine-tune Windows tracking, telemetry, and unwanted modern OS clutter." -ForegroundColor Yellow
-        Write-Host ""
-        Write-Host "  [1]  Disable Telemetry & Diagnostic Data Tracking (Safe registry tweaks)" -ForegroundColor White
-        Write-Host "  [2]  Disable Bing Search & Web Results in Start Menu (Speeds up search)" -ForegroundColor White
-        Write-Host "  [3]  Restore Classic Windows 10 Context Menu in Windows 11 (Remove 'Show more options')" -ForegroundColor White
-        Write-Host "  [4]  Revert to Modern Windows 11 Context Menu (Restore default)" -ForegroundColor White
-        Write-Host "  [5]  Disable Cortana & Search Telemetry" -ForegroundColor White
-        Write-Host "  [6]  Disable Activity History & Advertising ID" -ForegroundColor White
-        Write-Host "  [7]  Remove Pre-Installed UWP Bloatware (Feedback Hub, Tips, Maps, Weather, Xbox Game Bar)" -ForegroundColor White
-        Write-Host ""
-        Write-Host "  [0]  Back to Main Menu" -ForegroundColor DarkGray
-        Write-Host ""
-        Write-Host "  Select an option [0-7]: " -ForegroundColor Cyan -NoNewline
+        Show-ModuleHeader -ModuleTitle "🚀 MODULE 2: DEBLOAT & PRIVACY HARDENING" -Subtitle "Fine-tune Windows tracking, telemetry, and unwanted modern OS clutter."
+        Show-OptionTable -Options $options -PromptRange "0-7"
         $choice = Read-Host
 
         switch ($choice) {
@@ -792,21 +856,19 @@ function Show-DebloatMenu {
 # ============================================================================
 
 function Show-PerformanceMenu {
+    $options = @(
+        @{ Num = "1"; Text = "Unlock & Activate 'Ultimate Performance' Power Scheme" }
+        @{ Num = "2"; Text = "Activate 'High Performance' Power Scheme" }
+        @{ Num = "3"; Text = "Disable Windows Game DVR / Background Screen Recording (Boosts FPS)" }
+        @{ Num = "4"; Text = "Disable Mouse Acceleration (1:1 Raw Input Precision)" }
+        @{ Num = "5"; Text = "Optimize Visual Effects for Performance (Disable unnecessary animations)" }
+        @{ Num = "6"; Text = "Disable Windows Search Indexing for Drive C: (Reduces SSD load)" }
+    )
+
     do {
         Show-Banner
-        Write-Host "  --- MODULE 3: PERFORMANCE & GAMING OPTIMIZATION ---" -ForegroundColor Cyan
-        Write-Host "  Maximize system latency, unlock power limits, and eliminate input delays." -ForegroundColor Yellow
-        Write-Host ""
-        Write-Host "  [1]  Unlock & Activate 'Ultimate Performance' Power Scheme" -ForegroundColor White
-        Write-Host "  [2]  Activate 'High Performance' Power Scheme" -ForegroundColor White
-        Write-Host "  [3]  Disable Windows Game DVR / Background Screen Recording (Boosts FPS)" -ForegroundColor White
-        Write-Host "  [4]  Disable Mouse Acceleration (1:1 Raw Input Precision)" -ForegroundColor White
-        Write-Host "  [5]  Optimize Visual Effects for Performance (Disable unnecessary animations)" -ForegroundColor White
-        Write-Host "  [6]  Disable Windows Search Indexing for Drive C: (Reduces SSD load)" -ForegroundColor White
-        Write-Host ""
-        Write-Host "  [0]  Back to Main Menu" -ForegroundColor DarkGray
-        Write-Host ""
-        Write-Host "  Select an option [0-6]: " -ForegroundColor Cyan -NoNewline
+        Show-ModuleHeader -ModuleTitle "⚡ MODULE 3: PERFORMANCE & GAMING OPTIMIZATION" -Subtitle "Maximize system latency, unlock power limits, and eliminate input delays."
+        Show-OptionTable -Options $options -PromptRange "0-6"
         $choice = Read-Host
 
         switch ($choice) {
@@ -870,20 +932,18 @@ function Show-PerformanceMenu {
 # ============================================================================
 
 function Show-SafetyMenu {
+    $options = @(
+        @{ Num = "1"; Text = "Create 1-Click System Restore Point (Immediate snapshot)" }
+        @{ Num = "2"; Text = "List All Active System Restore Points" }
+        @{ Num = "3"; Text = "Monitor Active Listening TCP/UDP Ports & Associated Processes" }
+        @{ Num = "4"; Text = "Update Microsoft Defender Signatures" }
+        @{ Num = "5"; Text = "Run Microsoft Defender Quick Security Scan" }
+    )
+
     do {
         Show-Banner
-        Write-Host "  --- MODULE 4: SYSTEM SAFETY & RESTORE POINTS ---" -ForegroundColor Cyan
-        Write-Host "  Create safety checkpoints and monitor listening ports and security." -ForegroundColor Yellow
-        Write-Host ""
-        Write-Host "  [1]  Create 1-Click System Restore Point (Immediate snapshot)" -ForegroundColor White
-        Write-Host "  [2]  List All Active System Restore Points" -ForegroundColor White
-        Write-Host "  [3]  Monitor Active Listening TCP/UDP Ports & Associated Processes" -ForegroundColor White
-        Write-Host "  [4]  Update Microsoft Defender Signatures" -ForegroundColor White
-        Write-Host "  [5]  Run Microsoft Defender Quick Security Scan" -ForegroundColor White
-        Write-Host ""
-        Write-Host "  [0]  Back to Main Menu" -ForegroundColor DarkGray
-        Write-Host ""
-        Write-Host "  Select an option [0-5]: " -ForegroundColor Cyan -NoNewline
+        Show-ModuleHeader -ModuleTitle "🛡️ MODULE 4: SYSTEM SAFETY & RESTORE POINTS" -Subtitle "Create safety checkpoints and monitor listening ports and security."
+        Show-OptionTable -Options $options -PromptRange "0-5"
         $choice = Read-Host
 
         switch ($choice) {
@@ -966,20 +1026,18 @@ function Show-SafetyMenu {
 # ============================================================================
 
 function Show-DeveloperMenu {
+    $options = @(
+        @{ Num = "1"; Text = "Enable WSL 2 (Windows Subsystem for Linux)" }
+        @{ Num = "2"; Text = "Enable Windows Sandbox (Isolated testing environment)" }
+        @{ Num = "3"; Text = "Enable Hyper-V Hypervisor & Management Tools" }
+        @{ Num = "4"; Text = "Enable Virtual Machine Platform" }
+        @{ Num = "5"; Text = "Check Status of Windows Virtualization Features" }
+    )
+
     do {
         Show-Banner
-        Write-Host "  --- MODULE 5: DEVELOPER & VIRTUALIZATION FEATURES ---" -ForegroundColor Cyan
-        Write-Host "  Enable native Windows virtualization, WSL2, and Sandbox with one command." -ForegroundColor Yellow
-        Write-Host ""
-        Write-Host "  [1]  Enable WSL 2 (Windows Subsystem for Linux)" -ForegroundColor White
-        Write-Host "  [2]  Enable Windows Sandbox (Isolated testing environment)" -ForegroundColor White
-        Write-Host "  [3]  Enable Hyper-V Hypervisor & Management Tools" -ForegroundColor White
-        Write-Host "  [4]  Enable Virtual Machine Platform" -ForegroundColor White
-        Write-Host "  [5]  Check Status of Windows Virtualization Features" -ForegroundColor White
-        Write-Host ""
-        Write-Host "  [0]  Back to Main Menu" -ForegroundColor DarkGray
-        Write-Host ""
-        Write-Host "  Select an option [0-5]: " -ForegroundColor Cyan -NoNewline
+        Show-ModuleHeader -ModuleTitle "💻 MODULE 5: DEVELOPER & VIRTUALIZATION FEATURES" -Subtitle "Enable native Windows virtualization, WSL2, and Sandbox with one command."
+        Show-OptionTable -Options $options -PromptRange "0-5"
         $choice = Read-Host
 
         switch ($choice) {
@@ -1039,19 +1097,17 @@ function Show-DeveloperMenu {
 # ============================================================================
 
 function Show-BatteryMenu {
+    $options = @(
+        @{ Num = "1"; Text = "Generate & Open Full Battery Health Report (HTML)" }
+        @{ Num = "2"; Text = "Instant Battery Capacity & Wear Level Audit (Console view)" }
+        @{ Num = "3"; Text = "Generate Sleep Study Report (Identifies standby battery drain)" }
+        @{ Num = "4"; Text = "List All Available System Power Schemes" }
+    )
+
     do {
         Show-Banner
-        Write-Host "  --- MODULE 6: BATTERY HEALTH & POWER DIAGNOSTICS ---" -ForegroundColor Cyan
-        Write-Host "  Analyze battery degradation, cycle count, and background power drain." -ForegroundColor Yellow
-        Write-Host ""
-        Write-Host "  [1]  Generate & Open Full Battery Health Report (HTML)" -ForegroundColor White
-        Write-Host "  [2]  Instant Battery Capacity & Wear Level Audit (Console view)" -ForegroundColor White
-        Write-Host "  [3]  Generate Sleep Study Report (Identifies standby battery drain)" -ForegroundColor White
-        Write-Host "  [4]  List All Available System Power Schemes" -ForegroundColor White
-        Write-Host ""
-        Write-Host "  [0]  Back to Main Menu" -ForegroundColor DarkGray
-        Write-Host ""
-        Write-Host "  Select an option [0-4]: " -ForegroundColor Cyan -NoNewline
+        Show-ModuleHeader -ModuleTitle "🔋 MODULE 6: BATTERY HEALTH & POWER DIAGNOSTICS" -Subtitle "Analyze battery degradation, cycle count, and background power drain."
+        Show-OptionTable -Options $options -PromptRange "0-4"
         $choice = Read-Host
 
         switch ($choice) {
@@ -1114,20 +1170,19 @@ function Show-BatteryMenu {
 # ============================================================================
 
 function Show-RepairMenu {
+    $options = @(
+        @{ Num = "1"; Text = "System File Checker (SFC /scannow repair corrupted files)" }
+        @{ Num = "2"; Text = "DISM Health Inspection (CheckHealth & ScanHealth)" }
+        @{ Num = "3"; Text = "DISM Restore Health (Download & repair corrupted image)" }
+        @{ Num = "4"; Text = "CHKDSK Inspection (Read-only file system check for Drive C:)" }
+        @{ Num = "5"; Text = "Windows Update Repair (Purge SoftwareDistribution & restart services)" }
+        @{ Num = "6"; Text = "DISM Component Store Cleanup (Clean superseded packages)" }
+    )
+
     do {
         Show-Banner
-        Write-Host "  --- MODULE 7: WINDOWS SYSTEM REPAIR ---" -ForegroundColor Cyan
-        Write-Host ""
-        Write-Host "  [1]  System File Checker (SFC /scannow repair corrupted files)" -ForegroundColor White
-        Write-Host "  [2]  DISM Health Inspection (CheckHealth & ScanHealth)" -ForegroundColor White
-        Write-Host "  [3]  DISM Restore Health (Download & repair corrupted image)" -ForegroundColor White
-        Write-Host "  [4]  CHKDSK Inspection (Read-only file system check for Drive C:)" -ForegroundColor White
-        Write-Host "  [5]  Windows Update Repair (Purge SoftwareDistribution & restart services)" -ForegroundColor White
-        Write-Host "  [6]  DISM Component Store Cleanup (Clean superseded packages)" -ForegroundColor White
-        Write-Host ""
-        Write-Host "  [0]  Back to Main Menu" -ForegroundColor DarkGray
-        Write-Host ""
-        Write-Host "  Select an option [0-6]: " -ForegroundColor Cyan -NoNewline
+        Show-ModuleHeader -ModuleTitle "🔧 MODULE 7: WINDOWS SYSTEM REPAIR" -Subtitle "Scan, verify, and automatically repair corrupted OS components."
+        Show-OptionTable -Options $options -PromptRange "0-6"
         $choice = Read-Host
 
         switch ($choice) {
@@ -1228,21 +1283,20 @@ function Remove-FolderContentsSafely {
 }
 
 function Show-CleanupMenu {
+    $options = @(
+        @{ Num = "1"; Text = "Clean User Temporary Files ($env:TEMP)" }
+        @{ Num = "2"; Text = "Clean Windows System Temp ($env:SystemRoot\Temp)" }
+        @{ Num = "3"; Text = "Empty Recycle Bin (All drives)" }
+        @{ Num = "4"; Text = "Find Top 15 Largest Files on Drive C: (Locate hidden storage hogs)" }
+        @{ Num = "5"; Text = "Manual SSD TRIM & ReTrim Optimization (Optimize-Volume -ReTrim)" }
+        @{ Num = "6"; Text = "Launch Windows Native Disk Cleanup (cleanmgr.exe)" }
+        @{ Num = "7"; Text = "Clean Web Browser Caches (Chrome, Edge, Firefox)" }
+    )
+
     do {
         Show-Banner
-        Write-Host "  --- MODULE 8: DISK CLEANUP & ADVANCED STORAGE ---" -ForegroundColor Cyan
-        Write-Host ""
-        Write-Host "  [1]  Clean User Temporary Files ($env:TEMP)" -ForegroundColor White
-        Write-Host "  [2]  Clean Windows System Temp ($env:SystemRoot\Temp)" -ForegroundColor White
-        Write-Host "  [3]  Empty Recycle Bin (All drives)" -ForegroundColor White
-        Write-Host "  [4]  Find Top 15 Largest Files on Drive C: (Locate hidden storage hogs)" -ForegroundColor White
-        Write-Host "  [5]  Manual SSD TRIM & ReTrim Optimization (Optimize-Volume -ReTrim)" -ForegroundColor White
-        Write-Host "  [6]  Launch Windows Native Disk Cleanup (cleanmgr.exe)" -ForegroundColor White
-        Write-Host "  [7]  Clean Web Browser Caches (Chrome, Edge, Firefox)" -ForegroundColor White
-        Write-Host ""
-        Write-Host "  [0]  Back to Main Menu" -ForegroundColor DarkGray
-        Write-Host ""
-        Write-Host "  Select an option [0-7]: " -ForegroundColor Cyan -NoNewline
+        Show-ModuleHeader -ModuleTitle "🧹 MODULE 8: DISK CLEANUP & STORAGE OPTIMIZATION" -Subtitle "Purge gigabytes of junk, optimize SSD health, and reclaim storage space."
+        Show-OptionTable -Options $options -PromptRange "0-7"
         $choice = Read-Host
 
         switch ($choice) {
@@ -1371,23 +1425,22 @@ function Test-Internet {
 }
 
 function Show-NetworkMenu {
+    $options = @(
+        @{ Num = "1"; Text = "Show Active IP Configuration (IPv4, IPv6, Gateway, Adapters)" }
+        @{ Num = "2"; Text = "Ping Response Test (ICMP test to 8.8.8.8 or custom host)" }
+        @{ Num = "3"; Text = "3-Point Internet Connectivity Validation (Gateway, DNS, HTTPS)" }
+        @{ Num = "4"; Text = "Flush DNS Client Resolver Cache (Clear-DnsClientCache)" }
+        @{ Num = "5"; Text = "Switch DNS Server Provider (Cloudflare 1.1.1.1, Google 8.8.8.8, Quad9)" }
+        @{ Num = "6"; Text = "Show Hardware Network Adapters & Link Speeds" }
+        @{ Num = "7"; Text = "Show WiFi Interface & Signal Information" }
+        @{ Num = "8"; Text = "Show Saved WiFi Profiles (Safe display)" }
+        @{ Num = "9"; Text = "Perform Full Network Stack Reset (Winsock, IP, DNS flush)" }
+    )
+
     do {
         Show-Banner
-        Write-Host "  --- MODULE 9: NETWORK DIAGNOSTICS & DNS TOOLS ---" -ForegroundColor Cyan
-        Write-Host ""
-        Write-Host "  [1]  Show Active IP Configuration (IPv4, IPv6, Gateway, Adapters)" -ForegroundColor White
-        Write-Host "  [2]  Ping Response Test (ICMP test to 8.8.8.8 or custom host)" -ForegroundColor White
-        Write-Host "  [3]  3-Point Internet Connectivity Validation (Gateway, DNS, HTTPS)" -ForegroundColor White
-        Write-Host "  [4]  Flush DNS Client Resolver Cache (Clear-DnsClientCache)" -ForegroundColor White
-        Write-Host "  [5]  Switch DNS Server Provider (Cloudflare 1.1.1.1, Google 8.8.8.8, Quad9)" -ForegroundColor White
-        Write-Host "  [6]  Show Hardware Network Adapters & Link Speeds" -ForegroundColor White
-        Write-Host "  [7]  Show WiFi Interface & Signal Information" -ForegroundColor White
-        Write-Host "  [8]  Show Saved WiFi Profiles (Safe display)" -ForegroundColor White
-        Write-Host "  [9]  Perform Full Network Stack Reset (Winsock, IP, DNS flush)" -ForegroundColor White
-        Write-Host ""
-        Write-Host "  [0]  Back to Main Menu" -ForegroundColor DarkGray
-        Write-Host ""
-        Write-Host "  Select an option [0-9]: " -ForegroundColor Cyan -NoNewline
+        Show-ModuleHeader -ModuleTitle "🌐 MODULE 9: NETWORK DIAGNOSTICS & DNS TOOLS" -Subtitle "Test latency, flush cache, switch DNS servers, and audit adapters."
+        Show-OptionTable -Options $options -PromptRange "0-9"
         $choice = Read-Host
 
         switch ($choice) {
@@ -1499,24 +1552,23 @@ function Show-NetworkMenu {
 # ============================================================================
 
 function Show-SystemMenu {
+    $options = @(
+        @{ Num = "1"; Text = "Windows OS & System Uptime Details" }
+        @{ Num = "2"; Text = "Processor (CPU) Specifications & Physical Cores" }
+        @{ Num = "3"; Text = "Physical Memory (RAM) Module Frequencies & Slots" }
+        @{ Num = "4"; Text = "Graphics Adapters (GPU) & Video VRAM" }
+        @{ Num = "5"; Text = "Official Windows Activation & Licensing Status" }
+        @{ Num = "6"; Text = "Launch Task Manager (taskmgr.exe)" }
+        @{ Num = "7"; Text = "Launch Device Manager (devmgmt.msc)" }
+        @{ Num = "8"; Text = "Launch Registry Editor (regedit.exe)" }
+        @{ Num = "9"; Text = "Launch Windows Services Console (services.msc)" }
+        @{ Num = "10"; Text = "Launch Disk Management (diskmgmt.msc)" }
+    )
+
     do {
         Show-Banner
-        Write-Host "  --- MODULE 10: SYSTEM INFO & UTILITIES ---" -ForegroundColor Cyan
-        Write-Host ""
-        Write-Host "  [1]  Windows OS & Uptime Details" -ForegroundColor White
-        Write-Host "  [2]  Processor (CPU) Specifications & Physical Cores" -ForegroundColor White
-        Write-Host "  [3]  Physical Memory (RAM) Module Frequencies & Slots" -ForegroundColor White
-        Write-Host "  [4]  Graphics Adapters (GPU) & Video VRAM" -ForegroundColor White
-        Write-Host "  [5]  Official Windows Activation & Licensing Status" -ForegroundColor White
-        Write-Host "  [6]  Launch Task Manager (taskmgr.exe)" -ForegroundColor White
-        Write-Host "  [7]  Launch Device Manager (devmgmt.msc)" -ForegroundColor White
-        Write-Host "  [8]  Launch Registry Editor (regedit.exe)" -ForegroundColor White
-        Write-Host "  [9]  Launch Windows Services Console (services.msc)" -ForegroundColor White
-        Write-Host "  [10] Launch Disk Management (diskmgmt.msc)" -ForegroundColor White
-        Write-Host ""
-        Write-Host "  [0]  Back to Main Menu" -ForegroundColor DarkGray
-        Write-Host ""
-        Write-Host "  Select an option [0-10]: " -ForegroundColor Cyan -NoNewline
+        Show-ModuleHeader -ModuleTitle "🎛️ MODULE 10: SYSTEM INFO & BUILT-IN UTILITIES" -Subtitle "Audit hardware specifications, Windows license status, and launch MSC consoles."
+        Show-OptionTable -Options $options -PromptRange "0-10"
         $choice = Read-Host
 
         switch ($choice) {
@@ -1597,19 +1649,18 @@ function Show-SystemMenu {
 # ============================================================================
 
 function Show-QuickMenu {
+    $options = @(
+        @{ Num = "1"; Text = "Flush DNS Resolver Cache" }
+        @{ Num = "2"; Text = "Fast Internet Connectivity Test" }
+        @{ Num = "3"; Text = "Restart Windows Explorer Process (Clean fix for taskbar freeze)" }
+        @{ Num = "4"; Text = "Create Immediate System Restore Point" }
+        @{ Num = "5"; Text = "Install Essential Applications (Interactive Checkbox Selector)" }
+    )
+
     do {
         Show-Banner
-        Write-Host "  --- MODULE 11: INSTANT QUICK ACTIONS ---" -ForegroundColor Cyan
-        Write-Host ""
-        Write-Host "  [1]  Flush DNS Resolver Cache" -ForegroundColor White
-        Write-Host "  [2]  Fast Internet Connectivity Test" -ForegroundColor White
-        Write-Host "  [3]  Restart Windows Explorer Process (Clean fix for taskbar freeze)" -ForegroundColor White
-        Write-Host "  [4]  Create Immediate System Restore Point" -ForegroundColor White
-        Write-Host "  [5]  Install Essential Applications (Interactive Checkbox Selector)" -ForegroundColor White
-        Write-Host ""
-        Write-Host "  [0]  Back to Main Menu" -ForegroundColor DarkGray
-        Write-Host ""
-        Write-Host "  Select an option [0-5]: " -ForegroundColor Cyan -NoNewline
+        Show-ModuleHeader -ModuleTitle "⚡ MODULE 11: INSTANT QUICK ACTIONS" -Subtitle "1-click emergency tools to fix network lag, Explorer freeze, and system glitches."
+        Show-OptionTable -Options $options -PromptRange "0-5"
         $choice = Read-Host
 
         switch ($choice) {
@@ -2008,22 +2059,18 @@ function Invoke-BatchUninstallFlow {
 }
 
 function Show-UninstallerMenu {
+    $options = @(
+        @{ Num = "1"; Text = "📋 View & Select From All Installed Desktop Applications (Multi-Select)" }
+        @{ Num = "2"; Text = "🔍 Search Application by Name & Batch Uninstall" }
+        @{ Num = "3"; Text = "🧹 Clean Uninstall + Deep Leftover Data Wipe (AppData & ProgramData)" }
+        @{ Num = "4"; Text = "📦 Uninstall Windows Store (UWP) Apps (Multi-Select via Appx)" }
+        @{ Num = "5"; Text = "🔍 Deep Residue Scan (Inspect orphaned AppData folders)" }
+    )
+
     do {
         Show-Banner
-        Write-Host "  ╔════════════════════════════════════════════════════════════════════════════════════╗" -ForegroundColor DarkCyan
-        Write-Host "  ║  🗑️ MODULE 12: APP UNINSTALLER & LEFTOVER DEEP CLEANER                             ║" -ForegroundColor Cyan
-        Write-Host "  ║  Batch Multi-Select Uninstall • AppData & ProgramData Leftover Residue Wipe       ║" -ForegroundColor DarkGray
-        Write-Host "  ╚════════════════════════════════════════════════════════════════════════════════════╝" -ForegroundColor DarkCyan
-        Write-Host ""
-        Write-Host "  [1]  📋 View & Select From All Installed Desktop Applications (Multi-Select)" -ForegroundColor White
-        Write-Host "  [2]  🔍 Search Application by Name & Batch Uninstall" -ForegroundColor White
-        Write-Host "  [3]  🧹 Clean Uninstall + Deep Leftover Data Wipe (AppData & ProgramData)" -ForegroundColor White
-        Write-Host "  [4]  📦 Uninstall Windows Store (UWP) Apps (Multi-Select via Appx)" -ForegroundColor White
-        Write-Host "  [5]  🔍 Deep Residue Scan (Inspect orphaned AppData folders without uninstalling)" -ForegroundColor White
-        Write-Host ""
-        Write-Host "  [0]  🚪 Return to Main Dashboard" -ForegroundColor DarkGray
-        Write-Host ""
-        Write-Host "  Select an option [0-5]: " -ForegroundColor Cyan -NoNewline
+        Show-ModuleHeader -ModuleTitle "🗑️ MODULE 12: APP UNINSTALLER & LEFTOVER DEEP CLEANER" -Subtitle "Batch Multi-Select Uninstall • AppData & ProgramData Leftover Residue Wipe"
+        Show-OptionTable -Options $options -PromptRange "0-5"
         $uChoice = Read-Host
 
         switch ($uChoice) {
