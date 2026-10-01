@@ -628,9 +628,10 @@ function Show-SoftwareSelector {
         }
 
         try {
+            # Use -Verb RunAs to ensure administrative privileges for installation
             $process = Start-Process -FilePath "winget" `
-                -ArgumentList @("install", "--id=$($item.Id)", "-e", "--silent", "--accept-package-agreements", "--accept-source-agreements") `
-                -NoNewWindow -Wait -PassThru
+                -ArgumentList @("install", "--id=$($item.Id)", "-e", "--accept-package-agreements", "--accept-source-agreements") `
+                -Verb RunAs -Wait -PassThru
 
             if ($process.ExitCode -eq 0) {
                 Write-Success "$($item.Name) - Installed successfully!"
