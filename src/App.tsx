@@ -3,6 +3,7 @@ import {
   Terminal,
   Copy,
   Check,
+  CheckCircle2,
   ShieldCheck,
   Cpu,
   Wifi,
@@ -11,7 +12,6 @@ import {
   Settings,
   Zap,
   Boxes,
-  Play,
   HelpCircle,
   Sparkles,
   Gamepad2,
@@ -36,8 +36,6 @@ export default function App() {
   const [copiedType, setCopiedType] = useState<string | null>(null);
   const [downloadToast, setDownloadToast] = useState<string | null>(null);
   const [hostUrl, setHostUrl] = useState<string>('');
-  const [simStep, setSimStep] = useState<string>('main');
-  const [simLogs, setSimLogs] = useState<Array<{ text: string; color?: string }>>([]);
 
   useEffect(() => {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://itsrirx-toolkit.vercel.app';
@@ -68,7 +66,7 @@ echo ===========================================================================
 echo   ItsRiRx Windows Tool Kit - Launching remote suite...
 echo ============================================================================
 echo.
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "irm https://itsrirx-toolkit.vercel.app/i | iex"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$url = 'https://raw.githubusercontent.com/itsrirx/WindowsToolKit/main/toolkit.ps1'; try { irm $url | iex } catch { irm 'https://itsrirx-toolkit.vercel.app/i' | iex }"
 
 echo.
 echo Press any key to exit...
@@ -76,31 +74,45 @@ pause >nul`;
 
   const setupRirxCode = `@echo off
 :: ============================================================================
-::  ItsRiRx Windows Tool Kit - Permanent 'rirx' Terminal Command Installer
+::  ItsRiRx Windows Tool Kit - Universal 'rirx' Setup & ExecutionPolicy Fixer
 :: ============================================================================
-title Setup 'rirx' Command
-color 0a
+title Setup 'rirx' Command & Fix Security Policy
+color 0b
 cls
-echo ============================================================================
-echo   Installing 'rirx' shortcut command into your PowerShell Profile...
-echo ============================================================================
-echo.
 
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$profileDir = Split-Path $PROFILE; if (!(Test-Path $profileDir)) { New-Item -ItemType Directory -Path $profileDir -Force | Out-Null }; if (!(Test-Path $PROFILE)) { New-Item -ItemType File -Path $PROFILE -Force | Out-Null }; $fn = 'function rirx { irm https://itsrirx-toolkit.vercel.app/i | iex }'; $content = Get-Content $PROFILE -Raw -ErrorAction SilentlyContinue; if ($content -notmatch 'function rirx') { Add-Content -Path $PROFILE -Value \\"\`n# ItsRiRx Windows Tool Kit Shortcut\`n$fn\\" -Force; Write-Host '[OK] Shortcut installed successfully!' -ForegroundColor Green } else { Write-Host '[INFO] ''rirx'' command already configured in your PowerShell Profile.' -ForegroundColor Yellow }; Write-Host ''; Write-Host 'Now you can open any PowerShell terminal and simply type: rirx' -ForegroundColor Cyan"
+echo ============================================================================
+echo   ItsRiRx Windows Tool Kit - 1-Click 'rirx' Command Setup
+echo ============================================================================
+echo.
+echo [*] Step 1: Unlocking PowerShell Execution Policy for scripts...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "try { Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force; Write-Host '  [OK] CurrentUser ExecutionPolicy set to RemoteSigned' -ForegroundColor Green } catch { Write-Host '  [!] Warning: ' $_.Exception.Message -ForegroundColor Yellow }"
+
+echo.
+echo [*] Step 2: Registering 'rirx' function in PowerShell Profiles...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$doc = [Environment]::GetFolderPath('MyDocuments'); $profiles = @($PROFILE, (Join-Path $doc 'WindowsPowerShell\\Microsoft.PowerShell_profile.ps1'), (Join-Path $doc 'PowerShell\\Microsoft.PowerShell_profile.ps1')); foreach ($p in $profiles) { if ($p) { $dir = Split-Path $p; if (!(Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }; if (!(Test-Path $p)) { New-Item -ItemType File -Path $p -Force | Out-Null }; $fn = 'function rirx { & powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"\"\"$url = ''https://raw.githubusercontent.com/itsrirx/WindowsToolKit/main/toolkit.ps1''; try { irm $url | iex } catch { irm ''https://itsrirx-toolkit.vercel.app/i'' | iex }\"\"\" }'; $cnt = Get-Content $p -Raw -ErrorAction SilentlyContinue; if ($cnt -notmatch 'function rirx') { Add-Content -Path $p -Value ([Environment]::NewLine + '# ItsRiRx Windows Tool Kit Shortcut' + [Environment]::NewLine + $fn) -Force }; try { Unblock-File -Path $p -ErrorAction SilentlyContinue } catch {} } }; Write-Host '  [OK] PowerShell Profile scripts configured and unblocked' -ForegroundColor Green"
+
+echo.
+echo [*] Step 3: Creating Global 'rirx.cmd' (Runs everywhere in CMD, PowerShell & Run Dialog)...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$appsDir = [Environment]::GetFolderPath('LocalApplicationData') + '\\Microsoft\\WindowsApps'; if (Test-Path $appsDir) { $cmdPath = Join-Path $appsDir 'rirx.cmd'; $cmdText = '@echo off' + [Environment]::NewLine + 'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"\"\"$url = ''https://raw.githubusercontent.com/itsrirx/WindowsToolKit/main/toolkit.ps1''; try { irm $url | iex } catch { irm ''https://itsrirx-toolkit.vercel.app/i'' | iex }\"\"\"' + [Environment]::NewLine; [System.IO.File]::WriteAllText($cmdPath, $cmdText, [System.Text.Encoding]::ASCII); Write-Host '  [OK] Created global binary in WindowsApps: rirx.cmd' -ForegroundColor Green }"
 
 echo.
 echo ============================================================================
-echo Installation Complete!
-echo You can now open any terminal and type: rirx
+echo   [SUCCESS] Setup Completed!
+echo   
+echo   You can now open ANY PowerShell or Command Prompt (CMD) and simply type:
+echo     rirx
 echo ============================================================================
 echo.
+echo [*] Launching toolkit now to verify...
+echo.
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$url = 'https://raw.githubusercontent.com/itsrirx/WindowsToolKit/main/toolkit.ps1'; try { irm $url | iex } catch { irm 'https://itsrirx-toolkit.vercel.app/i' | iex }"
 pause`;
 
   const vbsShortcutCode = `Set oWS = WScript.CreateObject("WScript.Shell")
 sLinkFile = oWS.SpecialFolders("Desktop") & "\\ItsRiRx ToolKit.lnk"
 Set oLink = oWS.CreateShortcut(sLinkFile)
 oLink.TargetPath = "powershell.exe"
-oLink.Arguments = "-NoProfile -ExecutionPolicy Bypass -Command ""irm https://itsrirx-toolkit.vercel.app/i | iex"""
+oLink.Arguments = "-NoProfile -ExecutionPolicy Bypass -Command ""$url = 'https://raw.githubusercontent.com/itsrirx/WindowsToolKit/main/toolkit.ps1'; try { irm $url | iex } catch { irm 'https://itsrirx-toolkit.vercel.app/i' | iex }"""
 oLink.Description = "ItsRiRx Windows Tool Kit 1-Click Launcher"
 oLink.WorkingDirectory = "%USERPROFILE%"
 oLink.IconLocation = "powershell.exe, 0"
@@ -110,7 +122,8 @@ MsgBox "ItsRiRx ToolKit shortcut has been created on your Desktop!", 64, "ItsRiR
   const ps1ScriptCode = `# ============================================================================
 #  ItsRiRx Windows Tool Kit - 1-Click Local Runner
 # ============================================================================
-irm https://itsrirx-toolkit.vercel.app/i | iex`;
+$url = 'https://raw.githubusercontent.com/itsrirx/WindowsToolKit/main/toolkit.ps1'
+try { irm $url | iex } catch { irm 'https://itsrirx-toolkit.vercel.app/i' | iex }`;
 
   const handleCopy = (text: string, type: string) => {
     navigator.clipboard.writeText(text);
@@ -131,148 +144,6 @@ irm https://itsrirx-toolkit.vercel.app/i | iex`;
 
     setDownloadToast(`Downloaded ${label}!`);
     setTimeout(() => setDownloadToast(null), 3500);
-  };
-
-  // Terminal simulator logic
-  const handleTerminalSelect = (option: string) => {
-    if (simStep === 'main') {
-      switch (option) {
-        case '1':
-          setSimStep('software');
-          setSimLogs([
-            { text: '  ╔════════════════════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-500' },
-            { text: '  ║  📦 MODULE 1: SOFTWARE INSTALLER (WINGET APPLICATION CATALOG)                      ║', color: 'text-cyan-400 font-bold' },
-            { text: '  ║  Interactive Checkboxes • Zero Auto-Install • Safe Approval Flow                   ║', color: 'text-zinc-400' },
-            { text: '  ╚════════════════════════════════════════════════════════════════════════════════════╝', color: 'text-cyan-500' },
-            { text: '  ┌──────┬────────────────────────────┬────────────────────────────────────────────────┐', color: 'text-cyan-600' },
-            { text: '  │ NUM  │ CATEGORY & LOGO            │ INCLUDED TOP APPLICATIONS                      │', color: 'text-cyan-400 font-bold' },
-            { text: '  ├──────┼────────────────────────────┼────────────────────────────────────────────────┤', color: 'text-cyan-600' },
-            { text: '  │ [1]  │ 🌐 Web Browsers            │ Chrome, Firefox, Edge, Brave, Opera            │', color: 'text-zinc-200' },
-            { text: '  │ [2]  │ 💻 Developer & Coding      │ VS Code, Git, Python, Node.js, Notepad++       │', color: 'text-zinc-200' },
-            { text: '  │ [3]  │ 🎬 Multimedia & Creators   │ VLC Media Player, Spotify, OBS, HandBrake      │', color: 'text-zinc-200' },
-            { text: '  │ [4]  │ 🛠️ Utilities & Tools       │ 7-Zip, WinRAR, Everything, PowerToys, Rufus    │', color: 'text-zinc-200' },
-            { text: '  │ [5]  │ 💬 Communication & Chat    │ WhatsApp, Telegram, Discord, Zoom, Teams       │', color: 'text-zinc-200' },
-            { text: '  │ [6]  │ 🎮 Gaming Launchers        │ Steam, Epic Games, EA App, Ubisoft, Riot, Xbox │', color: 'text-zinc-200' },
-            { text: '  │ [7]  │ 🔐 Security & Privacy      │ Bitwarden, Malwarebytes, Proton VPN            │', color: 'text-zinc-200' },
-            { text: '  │ [8]  │ 🖥️ Remote Access & IT      │ AnyDesk, TeamViewer, RustDesk, PuTTY, WinSCP   │', color: 'text-zinc-200' },
-            { text: '  │ [9]  │ 📄 Office & Productivity   │ Microsoft 365, LibreOffice, Adobe, Notion      │', color: 'text-zinc-200' },
-            { text: '  ├──────┼────────────────────────────┼────────────────────────────────────────────────┤', color: 'text-cyan-600' },
-            { text: '  │ [10] │ 📦 Essential Applications  │ Curated instant pack for fresh Windows setup   │', color: 'text-cyan-300' },
-            { text: '  │ [11] │ 📚 Complete Catalog (All)  │ Browse and select from all verified packages   │', color: 'text-cyan-300' },
-            { text: '  │ [12] │ 🔍 Audit Installed Apps    │ Scan current PC for installed vs missing apps  │', color: 'text-zinc-400' },
-            { text: '  │ [13] │ 🔄 Refresh Winget Sources  │ Update winget catalog cache definitions        │', color: 'text-zinc-400' },
-            { text: '  └──────┴────────────────────────────┴────────────────────────────────────────────────┘', color: 'text-cyan-600' }
-          ]);
-          break;
-        case '2':
-          setSimStep('debloat');
-          setSimLogs([
-            { text: '  ╔════════════════════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-500' },
-            { text: '  ║  🚀 MODULE 2: DEBLOAT & PRIVACY HARDENING                                          ║', color: 'text-cyan-400 font-bold' },
-            { text: '  ╚════════════════════════════════════════════════════════════════════════════════════╝', color: 'text-cyan-500' },
-            { text: '  [OK] Telemetry and Diagnostic Tracking services disabled.', color: 'text-emerald-400' },
-            { text: '  [OK] Bing web search results disabled in Start Menu (Local search accelerated).', color: 'text-emerald-400' },
-            { text: '  [OK] Windows 10 Classic Context Menu restored in Windows 11.', color: 'text-emerald-400' }
-          ]);
-          break;
-        case '3':
-          setSimStep('perf');
-          setSimLogs([
-            { text: '  ╔════════════════════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-500' },
-            { text: '  ║  ⚡ MODULE 3: PERFORMANCE & GAMING OPTIMIZATION                                    ║', color: 'text-cyan-400 font-bold' },
-            { text: '  ╚════════════════════════════════════════════════════════════════════════════════════╝', color: 'text-cyan-500' },
-            { text: '  [OK] Ultimate Performance Power Scheme GUID unlocked and activated!', color: 'text-emerald-400' },
-            { text: '  [OK] Game DVR background recording disabled (Frame drops eliminated).', color: 'text-emerald-400' },
-            { text: '  [OK] Mouse acceleration disabled (1:1 Raw input precision active).', color: 'text-emerald-400' }
-          ]);
-          break;
-        case '4':
-          setSimStep('safety');
-          setSimLogs([
-            { text: '  ╔════════════════════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-500' },
-            { text: '  ║  🛡️ MODULE 4: SYSTEM SAFETY & RESTORE POINTS                                       ║', color: 'text-cyan-400 font-bold' },
-            { text: '  ╚════════════════════════════════════════════════════════════════════════════════════╝', color: 'text-cyan-500' },
-            { text: '  [OK] System Restore Point created: ItsRiRx-Toolkit-SafeCheckpoint-2025.', color: 'text-emerald-400' },
-            { text: '  [OK] Active Listening TCP/UDP ports scanned with bound process IDs.', color: 'text-emerald-400' },
-            { text: '  [OK] Microsoft Defender signatures updated to latest build.', color: 'text-emerald-400' }
-          ]);
-          break;
-        case '5':
-          setSimStep('dev');
-          setSimLogs([
-            { text: '  ╔════════════════════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-500' },
-            { text: '  ║  💻 MODULE 5: DEVELOPER & VIRTUALIZATION FEATURES                                  ║', color: 'text-cyan-400 font-bold' },
-            { text: '  ╚════════════════════════════════════════════════════════════════════════════════════╝', color: 'text-cyan-500' },
-            { text: '  [OK] Windows Subsystem for Linux (WSL2) enabled.', color: 'text-emerald-400' },
-            { text: '  [OK] Windows Sandbox (Disposable VM) enabled.', color: 'text-emerald-400' },
-            { text: '  [OK] Hyper-V and Virtual Machine Platform configured.', color: 'text-emerald-400' }
-          ]);
-          break;
-        case '6':
-          setSimStep('battery');
-          setSimLogs([
-            { text: '  ╔════════════════════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-500' },
-            { text: '  ║  🔋 MODULE 6: BATTERY HEALTH & POWER DIAGNOSTICS                                   ║', color: 'text-cyan-400 font-bold' },
-            { text: '  ╚════════════════════════════════════════════════════════════════════════════════════╝', color: 'text-cyan-500' },
-            { text: '  [OK] Full Battery Report generated: C:\\Users\\Admin\\AppData\\Local\\Temp\\battery-report.html', color: 'text-emerald-400' },
-            { text: '  Estimated Remaining: 98% | Health: Normal | Chemistry: Li-Ion', color: 'text-zinc-200' }
-          ]);
-          break;
-        case '7':
-          setSimStep('repair');
-          setSimLogs([
-            { text: '  ╔════════════════════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-500' },
-            { text: '  ║  🔧 MODULE 7: WINDOWS SYSTEM REPAIR                                                ║', color: 'text-cyan-400 font-bold' },
-            { text: '  ╚════════════════════════════════════════════════════════════════════════════════════╝', color: 'text-cyan-500' },
-            { text: '  [1] SFC /scannow       - Scans & repairs corrupted system files', color: 'text-zinc-200' },
-            { text: '  [2] DISM RestoreHealth - Restores healthy image components from Windows Update', color: 'text-zinc-200' },
-            { text: '  [3] WinUpdate Repair   - Cleans corrupted SoftwareDistribution cache', color: 'text-zinc-200' }
-          ]);
-          break;
-        case '8':
-          setSimStep('cleanup');
-          setSimLogs([
-            { text: '  ╔════════════════════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-500' },
-            { text: '  ║  🧹 MODULE 8: DISK CLEANUP & ADVANCED STORAGE                                      ║', color: 'text-cyan-400 font-bold' },
-            { text: '  ╚════════════════════════════════════════════════════════════════════════════════════╝', color: 'text-cyan-500' },
-            { text: '  [OK] Cleaned User Temp & System Temp files safely.', color: 'text-emerald-400' },
-            { text: '  [OK] Top 15 Largest Files scanned on Drive C: (Identified 18.4 GB ISO & VM images).', color: 'text-emerald-400' },
-            { text: '  [OK] Manual SSD TRIM executed on Drive C: (Storage blocks optimized).', color: 'text-emerald-400' }
-          ]);
-          break;
-        case '9':
-          setSimStep('net');
-          setSimLogs([
-            { text: '  ╔════════════════════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-500' },
-            { text: '  ║  🌐 MODULE 9: NETWORK DIAGNOSTICS & DNS TOOLS                                      ║', color: 'text-cyan-400 font-bold' },
-            { text: '  ╚════════════════════════════════════════════════════════════════════════════════════╝', color: 'text-cyan-500' },
-            { text: '  [OK] Active Adapter: Wi-Fi 6 (Intel AX201) - 1.2 Gbps Link Speed', color: 'text-emerald-400' },
-            { text: '  [OK] DNS Switcher: 1-click apply Cloudflare (1.1.1.1) or Google (8.8.8.8)', color: 'text-emerald-400' },
-            { text: '  [OK] 3-point connectivity: Gateway [OK] | DNS [OK] | HTTPS [OK]', color: 'text-emerald-400' }
-          ]);
-          break;
-        case '10':
-          setSimStep('system');
-          setSimLogs([
-            { text: '  ╔════════════════════════════════════════════════════════════════════════════════════╗', color: 'text-cyan-500' },
-            { text: '  ║  🎛️ MODULE 10: SYSTEM INFO & BUILT-IN UTILITIES                                    ║', color: 'text-cyan-400 font-bold' },
-            { text: '  ╚════════════════════════════════════════════════════════════════════════════════════╝', color: 'text-cyan-500' },
-            { text: '  OS   : Microsoft Windows 11 Pro 64-bit (Build 22631)', color: 'text-zinc-200' },
-            { text: '  CPU  : 13th Gen Intel Core i7-13700H (14 Cores / 20 Threads)', color: 'text-zinc-200' },
-            { text: '  RAM  : 32 GB DDR5 @ 5200 MHz across 2 modules', color: 'text-zinc-200' },
-            { text: '  Status: Licensed (Permanently Activated - Official CIM query)', color: 'text-emerald-400 font-bold' }
-          ]);
-          break;
-        case '0':
-          setSimLogs([{ text: 'Thank you for using ItsRiRx Windows Tool Kit! Session ended.', color: 'text-cyan-300' }]);
-          break;
-        default:
-          break;
-      }
-    } else {
-      setSimStep('main');
-      setSimLogs([]);
-    }
   };
 
   const categories = [
@@ -346,7 +217,7 @@ irm https://itsrirx-toolkit.vercel.app/i | iex`;
       icon: Monitor,
       color: 'from-teal-500/20 to-teal-900/10 border-teal-500/30 text-teal-400',
       badgeColor: 'bg-teal-500/10 text-teal-400 border-teal-500/30',
-      apps: ['AnyDesk', 'TeamViewer', 'RustDesk', 'PuTTY', 'WinSCP']
+      apps: ['AnyDesk', 'UltraViewer', 'TeamViewer', 'RustDesk', 'PuTTY', 'WinSCP']
     },
     {
       num: '09',
@@ -355,7 +226,7 @@ irm https://itsrirx-toolkit.vercel.app/i | iex`;
       icon: FileText,
       color: 'from-yellow-500/20 to-yellow-900/10 border-yellow-500/30 text-yellow-400',
       badgeColor: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
-      apps: ['Microsoft 365', 'LibreOffice', 'Adobe Acrobat Reader', 'Notion']
+      apps: ['Microsoft 365', 'Microsoft Office 2024', 'Microsoft Office 2021', 'LibreOffice', 'Adobe Acrobat Reader', 'Notion']
     }
   ];
 
@@ -370,7 +241,7 @@ irm https://itsrirx-toolkit.vercel.app/i | iex`;
       )}
 
       {/* Top Cyber Nav */}
-      <header className="border-b border-zinc-800/80 bg-zinc-900/60 backdrop-blur sticky top-0 z-30">
+      <header className="border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-30 shadow-lg">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-lg shadow-cyan-500/10">
@@ -381,37 +252,19 @@ irm https://itsrirx-toolkit.vercel.app/i | iex`;
                 <span className="font-extrabold tracking-tight text-white text-base">ItsRiRx Windows Tool Kit</span>
                 <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800 font-mono font-semibold">v1.1.0 PRO</span>
               </div>
-              <p className="text-xs text-zinc-400 font-mono">Advanced Remote Windows Administration Suite</p>
+              <p className="text-xs text-zinc-400 font-mono hidden sm:block">Advanced Remote Windows Administration Suite</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <a
-              href="#downloads"
-              className="text-xs text-cyan-400 hover:text-white transition font-medium flex items-center gap-1 hidden sm:inline-flex"
-            >
-              <Download className="w-3.5 h-3.5" />
-              Download Launchers
-            </a>
-            <a
-              href="#how-to-use"
-              className="text-xs text-zinc-400 hover:text-white transition hidden sm:inline-block"
-            >
-              How to Use
-            </a>
-            <a
-              href="#apps"
-              className="text-xs text-zinc-400 hover:text-white transition hidden sm:inline-block"
-            >
-              Categories
-            </a>
-            <a
-              href="#preview"
-              className="px-3.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs text-cyan-400 font-medium border border-zinc-700 transition flex items-center gap-1.5"
-            >
-              <Play className="w-3.5 h-3.5" />
-              Live Preview
-            </a>
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/90 border border-emerald-500/30 text-emerald-400 text-xs font-mono shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="font-medium">PowerShell Engine Ready</span>
+            </div>
+            <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-900/90 border border-cyan-500/30 text-cyan-300 text-xs font-mono">
+              <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Win 10 & 11 (64-bit)</span>
+            </div>
           </div>
         </div>
       </header>
@@ -612,6 +465,30 @@ irm https://itsrirx-toolkit.vercel.app/i | iex`;
               </div>
             </div>
           </div>
+
+          {/* Quick Help & Fix Banner for ExecutionPolicy */}
+          <div className="bg-gradient-to-r from-emerald-950/40 via-zinc-900/60 to-cyan-950/40 border border-emerald-500/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 shrink-0 mt-0.5">
+                <CheckCircle2 className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                  <span>Auto-Fix for "Running scripts is disabled on this system"</span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">Resolved</span>
+                </h4>
+                <p className="text-xs text-zinc-300">
+                  The updated <strong>Setup-rirx-Command.bat</strong> automatically fixes Windows execution policies and installs a global <code className="text-emerald-300 font-mono">rirx.cmd</code> binary that works everywhere (PowerShell, CMD, Run Dialog).
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => handleDownload('Setup-rirx-Command.bat', setupRirxCode, 'rirx Setup (.bat)')}
+              className="py-2 px-4 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-semibold whitespace-nowrap transition"
+            >
+              Download Fixed Setup (.bat)
+            </button>
+          </div>
         </section>
 
         {/* HOW TO USE */}
@@ -657,7 +534,7 @@ irm https://itsrirx-toolkit.vercel.app/i | iex`;
           </div>
         </section>
 
-        {/* TOP APPLICATIONS SHOWCASE WITH LOGOS & REGULAR FONTS */}
+        {/* TOP APPLICATIONS SHOWCASE */}
         <section id="apps" className="space-y-6">
           <div className="border-b border-zinc-800 pb-3 flex flex-wrap items-center justify-between gap-4">
             <div>
@@ -670,47 +547,49 @@ irm https://itsrirx-toolkit.vercel.app/i | iex`;
               </p>
             </div>
             <span className="text-xs font-mono px-3 py-1 rounded-full bg-cyan-950 border border-cyan-800 text-cyan-300">
-              44 Top Applications
+              47 Top Applications
             </span>
           </div>
 
+          {/* CATEGORIES GRID */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {categories.map((cat) => {
-              const IconComponent = cat.icon;
-              return (
-                <div
-                  key={cat.num}
-                  className={`rounded-2xl border bg-gradient-to-br ${cat.color} p-5 space-y-4 hover:border-zinc-500/60 transition-all duration-300 shadow-lg`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-zinc-900/80 border border-white/10 flex items-center justify-center text-xl shadow-inner">
-                        <span>{cat.logo}</span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">Category {cat.num}</span>
-                        <h3 className="font-bold text-white text-base tracking-tight">{cat.title}</h3>
-                      </div>
+            {categories.map((cat) => (
+              <div
+                key={cat.num}
+                className={`rounded-2xl border bg-gradient-to-br ${cat.color} p-5 space-y-4 hover:border-zinc-500/60 transition-all duration-300 shadow-lg`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-zinc-900/80 border border-white/10 flex items-center justify-center text-xl shadow-inner">
+                      <span>{cat.logo}</span>
                     </div>
-                    <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full border ${cat.badgeColor}`}>
-                      {cat.apps.length} Apps
-                    </span>
-                  </div>
-
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {cat.apps.map((app, aIdx) => (
-                      <span
-                        key={aIdx}
-                        className="text-xs px-2.5 py-1 rounded-lg bg-zinc-900/80 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/60 flex items-center gap-1.5 transition"
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                        {app}
+                    <div>
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">
+                        Category {cat.num}
                       </span>
-                    ))}
+                      <h3 className="font-bold text-base tracking-tight text-white">
+                        {cat.title}
+                      </h3>
+                    </div>
                   </div>
+                  <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full border ${cat.badgeColor}`}>
+                    {cat.apps.length} Apps
+                  </span>
                 </div>
-              );
-            })}
+
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {cat.apps.map((app, aIdx) => (
+                    <span
+                      key={aIdx}
+                      className="text-xs px-2.5 py-1 rounded-lg flex items-center gap-1.5 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/60 transition"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                      {app}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -825,135 +704,22 @@ irm https://itsrirx-toolkit.vercel.app/i | iex`;
                 <li>Clean Chrome, Edge, and Firefox browser caches</li>
               </ul>
             </div>
-          </div>
-        </section>
 
-        {/* INTERACTIVE TERMINAL PREVIEW */}
-        <section id="preview" className="space-y-6">
-          <div className="border-b border-zinc-800 pb-3 flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
-                <Terminal className="w-6 h-6 text-cyan-400" />
-                Live Terminal Preview (Framed Box Dashboard with Logos)
-              </h2>
-              <p className="text-xs text-zinc-400 mt-1">Exact replica of the boxed dashboard layout and category logos in Windows Terminal</p>
-            </div>
-
-            <button
-              onClick={() => { setSimStep('main'); setSimLogs([]); }}
-              className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-mono text-zinc-300 transition"
-            >
-              Reset Menu
-            </button>
-          </div>
-
-          {/* Terminal Box */}
-          <div className="rounded-2xl border border-zinc-800 bg-black font-mono text-xs sm:text-sm shadow-2xl overflow-hidden">
-            {/* Title Bar */}
-            <div className="bg-zinc-900 px-4 py-2 border-b border-zinc-800 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-red-500/80 inline-block" />
-                <span className="w-3 h-3 rounded-full bg-yellow-500/80 inline-block" />
-                <span className="w-3 h-3 rounded-full bg-green-500/80 inline-block" />
-                <span className="text-zinc-400 text-xs ml-2 font-mono">Administrator: Windows PowerShell</span>
-              </div>
-              <span className="text-zinc-500 text-xs">80x25 ANSI</span>
-            </div>
-
-            {/* Terminal Body */}
-            <div className="p-4 sm:p-6 space-y-3 min-h-[460px]">
-              <div className="text-cyan-400 whitespace-pre font-mono leading-tight text-[11px] sm:text-xs">
-{`  ██╗████████╗███████╗██████╗ ██╗██████╗ ██╗  ██╗
-  ██║╚══██╔══╝██╔════╝██╔══██╗██║██╔══██╗╚██╗██╔╝
-  ██║   ██║   ███████╗██████╔╝██║██████╔╝ ╚███╔╝   WINDOWS TOOL KIT
-  ██║   ██║   ╚════██║██╔══██╗██║██╔══██╗ ██╔██╗   Version 1.1.0 PRO
-  ██║   ██║   ███████║██║  ██║██║██║  ██║██╔╝ ██╗
-  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
-  ══════════════════════════════════════════════════════════════════════
-  Status: Administrator [ELEVATED] | Host: RIAZUL_ISLAM | User: itsri
-  ══════════════════════════════════════════════════════════════════════`}
-              </div>
-
-              {simStep === 'main' ? (
-                <div className="space-y-0.5 pt-2 font-normal leading-relaxed">
-                  <div className="text-cyan-500">  ╔════════════════════════════════════════════════════════════════════════════════════╗</div>
-                  <div className="text-cyan-400 font-bold">  ║  ⚡ SYSTEM ADMINISTRATION & MAINTENANCE DASHBOARD                                  ║</div>
-                  <div className="text-cyan-500">  ╚════════════════════════════════════════════════════════════════════════════════════╝</div>
-                  <div className="text-cyan-600">  ┌──────┬────────────────────────────┬────────────────────────────────────────────────┐</div>
-                  <div className="text-cyan-400 font-bold">  │ NUM  │ MODULE & LOGO              │ DESCRIPTION & CAPABILITIES                     │</div>
-                  <div className="text-cyan-600">  ├──────┼────────────────────────────┼────────────────────────────────────────────────┤</div>
-                  <div className="text-zinc-200">  │ [1]  │ 📦 Software Installer      │ 9 Curated categories with Winget checkboxes    │</div>
-                  <div className="text-zinc-200">  │ [2]  │ 🚀 Debloat & Privacy       │ Telemetry, Bing in Start, Classic Context Menu │</div>
-                  <div className="text-zinc-200">  │ [3]  │ ⚡ Performance & Gaming    │ Ultimate Power Plan, Game DVR, Mouse 1:1 Fix   │</div>
-                  <div className="text-zinc-200">  │ [4]  │ 🛡️ Safety & Restore        │ 1-Click Restore Point, Open Ports, Defender    │</div>
-                  <div className="text-zinc-200">  │ [5]  │ 💻 Developer Tools         │ WSL2, Windows Sandbox, Hyper-V Virtualization  │</div>
-                  <div className="text-zinc-200">  │ [6]  │ 🔋 Battery & Power         │ HTML Battery Health Report, Wear Level, Sleep  │</div>
-                  <div className="text-zinc-200">  │ [7]  │ 🔧 Windows System Repair   │ SFC Scannow, DISM RestoreHealth, Update Repair │</div>
-                  <div className="text-zinc-200">  │ [8]  │ 🧹 Disk Cleanup & Storage  │ Temp Cleaner, Top 15 Largest Files, SSD TRIM   │</div>
-                  <div className="text-zinc-200">  │ [9]  │ 🌐 Network Diagnostics     │ 3-Point Connectivity, DNS Switcher, Flush DNS  │</div>
-                  <div className="text-zinc-200">  │ [10] │ 🎛️ System Info & Utilities │ CIM Hardware specs, License status, TaskMgr    │</div>
-                  <div className="text-zinc-200">  │ [11] │ ⚡ Quick Emergency Actions │ 1-Click DNS flush, Explorer restart, ping test │</div>
-                  <div className="text-cyan-600">  └──────┴────────────────────────────┴────────────────────────────────────────────────┘</div>
-                  <div className="text-zinc-500 pt-1">  [0] 🚪 Exit Toolkit (Return to prompt)</div>
+            {/* Category 7: App Uninstaller & Deep Cleaner */}
+            <div className="p-5 rounded-2xl border border-cyan-500/40 bg-zinc-900/60 space-y-3 hover:border-cyan-400 transition shadow-lg">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+                  <Trash2 className="w-5 h-5" />
                 </div>
-              ) : (
-                <div className="space-y-1.5 pt-2">
-                  {simLogs.map((log, idx) => (
-                    <div key={idx} className={log.color || 'text-zinc-200'}>
-                      {log.text}
-                    </div>
-                  ))}
-                  <div className="pt-3">
-                    <p className="text-zinc-400">  [0] 🚪 Back to Main Menu</p>
-                  </div>
-                </div>
-              )}
-
-              <div className="pt-4 border-t border-zinc-900 flex items-center gap-2">
-                <span className="text-cyan-400 font-bold">PS &gt;</span>
-                <span className="text-zinc-400 text-xs">
-                  {simStep === 'main' ? 'Click any button below to test simulated dashboard:' : 'Press [0] to return to Main Menu:'}
-                </span>
+                <h3 className="font-bold text-white text-base">App Uninstaller & Deep Cleaner</h3>
               </div>
-            </div>
-          </div>
-
-          {/* Interactive Menu Buttons */}
-          <div className="space-y-2">
-            <span className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Test Menu Options:</span>
-            <div className="flex flex-wrap gap-2">
-              {simStep === 'main' ? (
-                <>
-                  {[
-                    { num: '1', label: '1: 📦 Software' },
-                    { num: '2', label: '2: 🚀 Debloat' },
-                    { num: '3', label: '3: ⚡ Gaming & Perf' },
-                    { num: '4', label: '4: 🛡️ Safety & Restore' },
-                    { num: '5', label: '5: 💻 Developer' },
-                    { num: '6', label: '6: 🔋 Battery' },
-                    { num: '7', label: '7: 🔧 Repair' },
-                    { num: '8', label: '8: 🧹 Storage' },
-                    { num: '9', label: '9: 🌐 Network' },
-                    { num: '10', label: '10: 🎛️ System Info' },
-                    { num: '0', label: '0: 🚪 Exit' }
-                  ].map((btn) => (
-                    <button
-                      key={btn.num}
-                      onClick={() => handleTerminalSelect(btn.num)}
-                      className="px-3.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-cyan-500 hover:text-black text-xs font-mono text-zinc-200 transition"
-                    >
-                      {btn.label}
-                    </button>
-                  ))}
-                </>
-              ) : (
-                <button
-                  onClick={() => handleTerminalSelect('0')}
-                  className="px-4 py-2 rounded-lg bg-cyan-500 text-black text-xs font-mono font-bold transition hover:bg-cyan-400"
-                >
-                  [0] 🚪 Return to Main Menu
-                </button>
-              )}
+              <ul className="text-xs text-zinc-300 space-y-1.5 list-disc list-inside">
+                <li>Batch multi-select removal for desktop & Store apps</li>
+                <li>Deep leftover data & cache scrubbing (AppData / ProgramData)</li>
+                <li>Search installed applications instantly by keyword</li>
+                <li>Silent native engine via Winget, MSI & native uninstallers</li>
+                <li>Purge orphaned directories left behind by deleted apps</li>
+              </ul>
             </div>
           </div>
         </section>

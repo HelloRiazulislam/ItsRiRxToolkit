@@ -84,16 +84,19 @@ $Script:SoftwareCatalog = [ordered]@{
 
     # 8. Remote Access & IT
     "AnyDesk"             = @{ Id = "AnyDeskSoftwareGmbH.AnyDesk"; Name = "AnyDesk Remote Desktop"; Category = "Remote Access & IT" }
+    "UltraViewer"         = @{ Id = "UltraViewer.UltraViewer"; Name = "UltraViewer Remote"; Category = "Remote Access & IT" }
     "TeamViewer"          = @{ Id = "TeamViewer.TeamViewer"; Name = "TeamViewer Remote"; Category = "Remote Access & IT" }
     "RustDesk"            = @{ Id = "RustDesk.RustDesk"; Name = "RustDesk Open Source Remote"; Category = "Remote Access & IT" }
     "PuTTY"               = @{ Id = "PuTTY.PuTTY"; Name = "PuTTY SSH Client"; Category = "Remote Access & IT" }
     "WinSCP"              = @{ Id = "WinSCP.WinSCP"; Name = "WinSCP SFTP Client"; Category = "Remote Access & IT" }
 
     # 9. Office & Productivity
-    "Microsoft 365"       = @{ Id = "Microsoft.Office"; Name = "Microsoft 365 Office Suite"; Category = "Office & Productivity" }
-    "LibreOffice"         = @{ Id = "TheDocumentFoundation.LibreOffice"; Name = "LibreOffice"; Category = "Office & Productivity" }
-    "Adobe Acrobat Reader"= @{ Id = "Adobe.Acrobat.Reader.64-bit"; Name = "Adobe Acrobat Reader"; Category = "Office & Productivity" }
-    "Notion"              = @{ Id = "Notion.Notion"; Name = "Notion Workspace"; Category = "Office & Productivity" }
+    "Microsoft 365"         = @{ Id = "Microsoft.Office"; Name = "Microsoft 365 Apps"; Category = "Office & Productivity" }
+    "Microsoft Office 2024" = @{ Id = "Microsoft.Office"; Name = "Microsoft Office 2024"; Category = "Office & Productivity" }
+    "Microsoft Office 2021" = @{ Id = "Microsoft.Office"; Name = "Microsoft Office 2021"; Category = "Office & Productivity" }
+    "LibreOffice"           = @{ Id = "TheDocumentFoundation.LibreOffice"; Name = "LibreOffice"; Category = "Office & Productivity" }
+    "Adobe Acrobat Reader"  = @{ Id = "Adobe.Acrobat.Reader.64-bit"; Name = "Adobe Acrobat Reader"; Category = "Office & Productivity" }
+    "Notion"                = @{ Id = "Notion.Notion"; Name = "Notion Workspace"; Category = "Office & Productivity" }
 }
 
 # Categorized Package Packs matching the 9 domains
@@ -105,9 +108,9 @@ $Script:PackageGroups = [ordered]@{
     "Communication"  = @("WhatsApp", "Telegram", "Discord", "Zoom", "Microsoft Teams")
     "Gaming"         = @("Steam", "Epic Games", "EA App", "Ubisoft Connect", "Riot Client", "Xbox")
     "Security"       = @("Bitwarden", "Malwarebytes", "Proton VPN")
-    "RemoteIT"       = @("AnyDesk", "TeamViewer", "RustDesk", "PuTTY", "WinSCP")
-    "Office"         = @("Microsoft 365", "LibreOffice", "Adobe Acrobat Reader", "Notion")
-    "Essential"      = @("Google Chrome", "Mozilla Firefox", "Notepad++", "Python", "7-Zip", "VLC Media Player", "Avro Keyboard")
+    "RemoteIT"       = @("AnyDesk", "UltraViewer", "TeamViewer", "RustDesk", "PuTTY", "WinSCP")
+    "Office"         = @("Microsoft 365", "Microsoft Office 2024", "Microsoft Office 2021", "LibreOffice", "Adobe Acrobat Reader", "Notion")
+    "Essential"      = @("Google Chrome", "Mozilla Firefox", "Notepad++", "Python", "7-Zip", "VLC Media Player", "Avro Keyboard", "AnyDesk", "UltraViewer")
 }
 
 # DNS Provider Presets
@@ -223,6 +226,87 @@ function Request-Admin {
 }
 
 # ============================================================================
+# CYBERPUNK TELEMETRY & PROGRESS BAR ENGINE
+# ============================================================================
+
+function Get-SystemTelemetry {
+    $telemetry = @{
+        CpuPercent = 0
+        RamUsedGb  = 0
+        RamTotalGb = 0
+        RamPercent = 0
+        BatteryStr = "AC Power (Desktop)"
+        OsBuild    = "Win 11"
+    }
+    
+    try {
+        # Quick CPU load sample
+        $cpu = Get-CimInstance Win32_Processor -ErrorAction SilentlyContinue | Select-Object -ExpandProperty LoadPercentage -First 1
+        if ($cpu -ne $null) { $telemetry.CpuPercent = [int]$cpu }
+    } catch {}
+
+    try {
+        # RAM usage
+        $os = Get-CimInstance Win32_OperatingSystem -ErrorAction SilentlyContinue
+        if ($os) {
+            $totalKb = $os.TotalVisibleMemorySize
+            $freeKb  = $os.FreePhysicalMemory
+            $usedKb  = $totalKb - $freeKb
+            $telemetry.RamTotalGb = [math]::Round($totalKb / 1048576, 1)
+            $telemetry.RamUsedGb  = [math]::Round($usedKb / 1048576, 1)
+            $telemetry.RamPercent = [math]::Round(($usedKb / $totalKb) * 100)
+            $telemetry.OsBuild    = "Build " + $os.BuildNumber
+        }
+    } catch {}
+
+    try {
+        # Battery status
+        $battery = Get-CimInstance Win32_Battery -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($battery -and $battery.EstimatedChargeRemaining) {
+            $telemetry.BatteryStr = "$($battery.EstimatedChargeRemaining)% " + (if ($battery.BatteryStatus -eq 2) { "⚡ Charging" } else { "🔋 Battery" })
+        }
+    } catch {}
+
+    return $telemetry
+}
+
+function Show-CyberProgress {
+    param(
+        [int]$Current,
+        [int]$Total,
+        [string]$Activity = "Downloading & Installing Package",
+        [string]$Status = "Processing...",
+        [string]$ItemName = ""
+    )
+    if ($Total -le 0) { $Total = 1 }
+    $percent = [math]::Min(100, [math]::Max(0, [math]::Round(($Current / $Total) * 100)))
+    $barWidth = 28
+    $filled = [math]::Round(($percent / 100) * $barWidth)
+    $empty = $barWidth - $filled
+    $barStr = ("█" * $filled) + ("░" * $empty)
+
+    Write-Host ""
+    Write-Host "  ╭──────────────────────────────────────────────────────────────────────────────╮" -ForegroundColor Magenta
+    Write-Host "  │ ⚡ CYBERPUNK DEPLOYMENT ENGINE: " -NoNewline -ForegroundColor Cyan
+    Write-Host "$Activity".PadRight(42) -ForegroundColor White
+    Write-Host "  │ " -NoNewline -ForegroundColor Magenta
+    Write-Host "[$barStr] " -NoNewline -ForegroundColor Cyan
+    Write-Host "$percent% ".PadRight(6) -NoNewline -ForegroundColor Yellow
+    Write-Host "($Current of $Total items)".PadRight(39) -ForegroundColor DarkGray
+    if ($ItemName) {
+        $cleanItem = if ($ItemName.Length -gt 68) { $ItemName.Substring(0, 65) + "..." } else { $ItemName }
+        Write-Host "  │ 📦 Target: $cleanItem".PadRight(79) -ForegroundColor Green
+    }
+    $cleanStatus = if ($Status.Length -gt 68) { $Status.Substring(0, 65) + "..." } else { $Status }
+    Write-Host "  │ ⏳ Status: $cleanStatus".PadRight(79) -ForegroundColor Yellow
+    Write-Host "  ╰──────────────────────────────────────────────────────────────────────────────╯" -ForegroundColor Magenta
+
+    try {
+        Write-Progress -Activity "$Activity ($percent%)" -Status "$Status - $ItemName" -PercentComplete $percent
+    } catch {}
+}
+
+# ============================================================================
 # BANNER & REGULAR MAIN MENU
 # ============================================================================
 
@@ -232,43 +316,50 @@ function Show-Banner {
     $adminStatus = if ($isAdmin) { "Administrator [ELEVATED]" } else { "Standard User [RESTRICTED]" }
     $adminColor  = if ($isAdmin) { "Green" } else { "Yellow" }
     
+    $telem = Get-SystemTelemetry
+
     Write-Host ""
-    Write-Host "  ██╗████████╗███████╗██████╗ ██╗██████╗ ██╗  ██╗" -ForegroundColor Cyan
-    Write-Host "  ██║╚══██╔══╝██╔════╝██╔══██╗██║██╔══██╗╚██╗██╔╝" -ForegroundColor Cyan
-    Write-Host "  ██║   ██║   ███████╗██████╔╝██║██████╔╝ ╚███╔╝   WINDOWS TOOL KIT" -ForegroundColor White
-    Write-Host "  ██║   ██║   ╚════██║██╔══██╗██║██╔══██╗ ██╔██╗   Version 1.1.0" -ForegroundColor White
-    Write-Host "  ██║   ██║   ███████║██║  ██║██║██║  ██║██╔╝ ██╗" -ForegroundColor Cyan
-    Write-Host "  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝" -ForegroundColor Cyan
-    Write-Host "  ══════════════════════════════════════════════════════════════════════" -ForegroundColor DarkCyan
-    Write-Host "  Status: " -NoNewline -ForegroundColor DarkGray
-    Write-Host "$adminStatus" -NoNewline -ForegroundColor $adminColor
-    Write-Host " | Host: $env:COMPUTERNAME | User: $env:USERNAME" -ForegroundColor DarkGray
-    Write-Host "  ══════════════════════════════════════════════════════════════════════" -ForegroundColor DarkCyan
+    Write-Host "  ╭──────────────────────────────────────────────────────────────────────────────╮" -ForegroundColor Magenta
+    Write-Host "  │  ██╗████████╗███████╗██████╗ ██╗██████╗ ██╗  ██╗                            │" -ForegroundColor Cyan
+    Write-Host "  │  ██║╚══██╔══╝██╔════╝██╔══██╗██║██╔══██╗╚██╗██╔╝   ITSRIRX TOOLKIT          │" -ForegroundColor Cyan
+    Write-Host "  │  ██║   ██║   ███████╗██████╔╝██║██████╔╝ ╚███╔╝    v1.1.0 Neon Cyberpunk    │" -ForegroundColor White
+    Write-Host "  │  ██║   ██║   ╚════██║██╔══██╗██║██╔══██╗ ██╔██╗                             │" -ForegroundColor White
+    Write-Host "  │  ██║   ██║   ███████║██║  ██║██║██║  ██║██╔╝ ██╗                            │" -ForegroundColor Cyan
+    Write-Host "  │  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝                            │" -ForegroundColor Cyan
+    Write-Host "  ├──────────────────────────────────────────────────────────────────────────────┤" -ForegroundColor Magenta
+    Write-Host "  │ ⚡ Status: " -NoNewline -ForegroundColor DarkGray
+    Write-Host "$adminStatus".PadRight(26) -NoNewline -ForegroundColor $adminColor
+    Write-Host "│ 💻 Host: " -NoNewline -ForegroundColor DarkGray
+    Write-Host "$env:COMPUTERNAME ($env:USERNAME)".PadRight(35) -NoNewline -ForegroundColor Cyan
+    Write-Host "│" -ForegroundColor Magenta
+    Write-Host "  │ ⚡ CPU: $($telem.CpuPercent)% │ 🧠 RAM: $($telem.RamUsedGb)/$($telem.RamTotalGb) GB ($($telem.RamPercent)%) │ 🔋 $($telem.BatteryStr) │ 🖥️ $($telem.OsBuild)".PadRight(79) -ForegroundColor Yellow
+    Write-Host "  ╰──────────────────────────────────────────────────────────────────────────────╯" -ForegroundColor Magenta
     Write-Host ""
 }
 
 # Beautiful structured main navigation dashboard
 function Show-MainMenu {
     Show-Banner
-    Write-Host "  ╔════════════════════════════════════════════════════════════════════════════════════╗" -ForegroundColor DarkCyan
-    Write-Host "  ║  ⚡ SYSTEM ADMINISTRATION & MAINTENANCE DASHBOARD                                  ║" -ForegroundColor Cyan
-    Write-Host "  ╚════════════════════════════════════════════════════════════════════════════════════╝" -ForegroundColor DarkCyan
+    Write-Host "  ╭──────────────────────────────────────────────────────────────────────────────╮" -ForegroundColor DarkCyan
+    Write-Host "  │  ⚡ CYBERPUNK SYSTEM ADMINISTRATION & MAINTENANCE DASHBOARD                  │" -ForegroundColor Cyan
+    Write-Host "  ╰──────────────────────────────────────────────────────────────────────────────╯" -ForegroundColor DarkCyan
     Write-Host ""
-    Write-Host "  ┌──────┬────────────────────────────┬────────────────────────────────────────────────┐" -ForegroundColor DarkCyan
-    Write-Host "  │ NUM  │ MODULE & LOGO              │ DESCRIPTION & CAPABILITIES                     │" -ForegroundColor Cyan
-    Write-Host "  ├──────┼────────────────────────────┼────────────────────────────────────────────────┤" -ForegroundColor DarkCyan
-    Write-Host "  │ [1]  │ 📦 Software Installer      │ 9 Curated categories with Winget checkboxes    │" -ForegroundColor White
-    Write-Host "  │ [2]  │ 🚀 Debloat & Privacy       │ Telemetry, Bing in Start, Classic Context Menu │" -ForegroundColor White
-    Write-Host "  │ [3]  │ ⚡ Performance & Gaming    │ Ultimate Power Plan, Game DVR, Mouse 1:1 Fix   │" -ForegroundColor White
-    Write-Host "  │ [4]  │ 🛡️ Safety & Restore        │ 1-Click Restore Point, Open Ports, Defender    │" -ForegroundColor White
-    Write-Host "  │ [5]  │ 💻 Developer Tools         │ WSL2, Windows Sandbox, Hyper-V Virtualization  │" -ForegroundColor White
-    Write-Host "  │ [6]  │ 🔋 Battery & Power         │ HTML Battery Health Report, Wear Level, Sleep  │" -ForegroundColor White
-    Write-Host "  │ [7]  │ 🔧 Windows System Repair   │ SFC Scannow, DISM RestoreHealth, Update Repair │" -ForegroundColor White
-    Write-Host "  │ [8]  │ 🧹 Disk Cleanup & Storage  │ Temp Cleaner, Top 15 Largest Files, SSD TRIM   │" -ForegroundColor White
-    Write-Host "  │ [9]  │ 🌐 Network Diagnostics     │ 3-Point Connectivity, DNS Switcher, Flush DNS  │" -ForegroundColor White
-    Write-Host "  │ [10] │ 🎛️ System Info & Utilities │ CIM Hardware specs, License status, TaskMgr    │" -ForegroundColor White
-    Write-Host "  │ [11] │ ⚡ Quick Emergency Actions │ 1-Click DNS flush, Explorer restart, ping test │" -ForegroundColor White
-    Write-Host "  └──────┴────────────────────────────┴────────────────────────────────────────────────┘" -ForegroundColor DarkCyan
+    Write-Host "  ╭──────┬────────────────────────────┬──────────────────────────────────────────╮" -ForegroundColor DarkCyan
+    Write-Host "  │ NUM  │ MODULE                     │ DESCRIPTION & CAPABILITIES               │" -ForegroundColor Cyan
+    Write-Host "  ├──────┼────────────────────────────┼──────────────────────────────────────────┤" -ForegroundColor DarkCyan
+    Write-Host "  │ [01] │ 📦 Software Installer      │ 9 Categories, Mouse Checkboxes & Winget  │" -ForegroundColor White
+    Write-Host "  │ [02] │ 🚀 Debloat & Privacy       │ Telemetry, Bing in Start, Classic Menu   │" -ForegroundColor White
+    Write-Host "  │ [03] │ ⚡ Performance & Gaming    │ Ultimate Power Plan, Game DVR, 1:1 Mouse │" -ForegroundColor White
+    Write-Host "  │ [04] │ 🛡️ Safety & Restore        │ 1-Click Restore Point, Ports, Defender   │" -ForegroundColor White
+    Write-Host "  │ [05] │ 💻 Developer Tools         │ WSL2, Windows Sandbox, Hyper-V Hypervisor│" -ForegroundColor White
+    Write-Host "  │ [06] │ 🔋 Battery & Power         │ HTML Battery Health Report, Wear, Sleep  │" -ForegroundColor White
+    Write-Host "  │ [07] │ 🔧 Windows System Repair   │ SFC Scannow, DISM Health, WinUpdate Fix  │" -ForegroundColor White
+    Write-Host "  │ [08] │ 🧹 Disk Cleanup & Storage  │ Temp Cleaner, Top 15 Files, SSD TRIM     │" -ForegroundColor White
+    Write-Host "  │ [09] │ 🌐 Network Diagnostics     │ 3-Point Connectivity, DNS Switcher, Flush│" -ForegroundColor White
+    Write-Host "  │ [10] │ 🎛️ System Info & Utilities │ CIM Hardware specs, License, TaskMgr     │" -ForegroundColor White
+    Write-Host "  │ [11] │ ⚡ Quick Emergency Actions │ 1-Click DNS flush, Explorer restart      │" -ForegroundColor White
+    Write-Host "  │ [12] │ 🗑️ App Uninstaller & Clean │ Multi-select batch uninstall & wipe      │" -ForegroundColor White
+    Write-Host "  ╰──────┴────────────────────────────┴──────────────────────────────────────────╯" -ForegroundColor DarkCyan
     Write-Host ""
     Write-Host "  [0] 🚪 Exit Toolkit (Return to prompt)" -ForegroundColor DarkGray
     Write-Host ""
@@ -365,14 +456,16 @@ function Show-SoftwareSelector {
             $idx++
         }
     }
-    Write-Host "  └─────┴───────┴──────────────┴────────────────────────┴─────────────────────┘" -ForegroundColor Cyan
+    Write-Host "  ╰─────┴───────┴──────────────┴────────────────────────┴─────────────────────╯" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "  INSTRUCTIONS:" -ForegroundColor Yellow
-    Write-Host "    - Type the numbers of the apps you want to install (e.g. 1, 3, 5 or 2 4)" -ForegroundColor White
-    Write-Host "    - Type 'A' or 'ALL' to select all available uninstalled applications" -ForegroundColor White
-    Write-Host "    - Type '0' to Cancel and return without installing anything" -ForegroundColor DarkGray
+    Write-Host "  ╭─[ 🎮 SELECTION OPTIONS ]───────────────────────────────────────────────────────╮" -ForegroundColor Magenta
+    Write-Host "  │ [M]    🖱️ MOUSE MODE: Open Interactive Window (Click Checkboxes with Mouse)   │" -ForegroundColor Yellow
+    Write-Host "  │ [1..N] ⌨️ KEYBOARD MODE: Type app numbers separated by commas (e.g. 1, 3, 5)   │" -ForegroundColor Cyan
+    Write-Host "  │ [A]    ⚡ SELECT ALL: Install all available uninstalled applications          │" -ForegroundColor Green
+    Write-Host "  │ [0]    🚪 CANCEL: Return to main menu                                         │" -ForegroundColor DarkGray
+    Write-Host "  ╰──────────────────────────────────────────────────────────────────────────────╯" -ForegroundColor Magenta
     Write-Host ""
-    Write-Host "  Enter app numbers to install: " -ForegroundColor Cyan -NoNewline
+    Write-Host "  Enter choice [M for Mouse, Numbers, or A for All]: " -ForegroundColor Cyan -NoNewline
     $inputRaw = Read-Host
 
     if ([string]::IsNullOrWhiteSpace($inputRaw) -or $inputRaw -eq "0") {
@@ -384,7 +477,21 @@ function Show-SoftwareSelector {
 
     $selectedApps = @()
 
-    if ($inputRaw.Trim().ToUpper() -in @("A", "ALL")) {
+    if ($inputRaw.Trim().ToUpper() -in @("M", "MOUSE", "GUI")) {
+        Write-InfoMessage "Launching Interactive Mouse Checkbox Window..."
+        try {
+            $gridItems = $appsData | Select-Object @{Name='Select';Expression={$_.Index}}, Name, @{Name='Status';Expression={if ($_.IsInstalled) {'Installed'} else {'Available'}}}, @{Name='PackageID';Expression={$_.Id}}
+            $guiSelected = $gridItems | Out-GridView -Title "⚡ Cyberpunk Software Installer — Select Applications with Mouse & Click OK" -PassThru
+            if ($guiSelected) {
+                foreach ($item in $guiSelected) {
+                    $match = $appsData | Where-Object { $_.Index -eq $item.Select }
+                    if ($match) { $selectedApps += $match }
+                }
+            }
+        } catch {
+            Write-ErrorMessage "Mouse Grid failed to open: $($_.Exception.Message)"
+        }
+    } elseif ($inputRaw.Trim().ToUpper() -in @("A", "ALL")) {
         $selectedApps = $appsData | Where-Object { -not $_.IsInstalled }
         if ($selectedApps.Count -eq 0) {
             Write-Success "All applications in this list are already installed on this machine!"
@@ -402,7 +509,7 @@ function Show-SoftwareSelector {
     }
 
     if ($selectedApps.Count -eq 0) {
-        Write-WarningMessage "No valid application numbers were entered."
+        Write-WarningMessage "No applications were selected. Returning to menu."
         Pause-Toolkit
         return
     }
@@ -412,29 +519,19 @@ function Show-SoftwareSelector {
     # Final Confirmation Screen
     Show-Banner
     Write-Host ""
-    Write-Host "  ╔════════════════════════════════════════════════════════════════════╗" -ForegroundColor Yellow
-    Write-Host "  ║                 FINAL INSTALLATION CONFIRMATION                    ║" -ForegroundColor Yellow
-    Write-Host "  ╠════════════════════════════════════════════════════════════════════╣" -ForegroundColor Yellow
-    Write-Host "  ║                                                                    ║" -ForegroundColor Yellow
-    
-    $confirmLine = "  Installing: $appNamesList"
-    if ($confirmLine.Length -gt 66) { 
-        Write-Host ("  ║  Installing:".PadRight(71) + "║") -ForegroundColor White
-        foreach ($item in $selectedApps) {
-            $subLine = "     [X] $($item.Name) [$($item.Id)]"
-            if ($subLine.Length -gt 66) { $subLine = $subLine.Substring(0, 63) + "..." }
-            Write-Host ("  ║" + $subLine.PadRight(68) + "║") -ForegroundColor Cyan
-        }
-    } else {
-        Write-Host ("  ║" + $confirmLine.PadRight(68) + "║") -ForegroundColor Cyan
+    Write-Host "  ╭──────────────────────────────────────────────────────────────────────────────╮" -ForegroundColor Yellow
+    Write-Host "  │                     FINAL INSTALLATION CONFIRMATION                          │" -ForegroundColor Yellow
+    Write-Host "  ├──────────────────────────────────────────────────────────────────────────────┤" -ForegroundColor Yellow
+    foreach ($item in $selectedApps) {
+        $subLine = "  │  [☑] $($item.Name) [$($item.Id)]"
+        if ($subLine.Length -gt 78) { $subLine = $subLine.Substring(0, 75) + "..." }
+        Write-Host ($subLine.PadRight(79) + "│") -ForegroundColor Cyan
     }
-
-    Write-Host "  ║                                                                    ║" -ForegroundColor Yellow
-    Write-Host "  ║  Total: $($selectedApps.Count) application(s) will be installed via Winget.       ║" -ForegroundColor White
-    Write-Host "  ║  No files will be installed unless you confirm below.              ║" -ForegroundColor Yellow
-    Write-Host "  ╚════════════════════════════════════════════════════════════════════╝" -ForegroundColor Yellow
+    Write-Host "  │                                                                              │" -ForegroundColor Yellow
+    Write-Host "  │  Total: $($selectedApps.Count) application(s) will be downloaded & installed via Winget.    │" -ForegroundColor White
+    Write-Host "  ╰──────────────────────────────────────────────────────────────────────────────╯" -ForegroundColor Yellow
     Write-Host ""
-    Write-Host "  Installing: $appNamesList. Proceed? [Y/N]: " -ForegroundColor Green -NoNewline
+    Write-Host "  Proceed with deployment? [Y/N]: " -ForegroundColor Green -NoNewline
     $finalProceed = Read-Host
 
     if ($finalProceed -notmatch "^[Yy]$") {
@@ -445,15 +542,17 @@ function Show-SoftwareSelector {
     }
 
     Write-Host ""
-    Write-Section "Installing $($selectedApps.Count) Selected Application(s) via Winget"
+    Write-Section "Cyberpunk Winget Engine: Deploying $($selectedApps.Count) Applications"
 
     $successCount = 0
     $skipCount    = 0
     $failCount    = 0
+    $totalApps    = $selectedApps.Count
+    $currentIdx   = 0
 
     foreach ($item in $selectedApps) {
-        Write-Host ""
-        Write-InfoMessage "Starting: $($item.Name) ($($item.Id))..."
+        $currentIdx++
+        Show-CyberProgress -Current $currentIdx -Total $totalApps -Activity "Software Deployment" -Status "Downloading & Installing $($item.Name)..." -ItemName "$($item.Name) [$($item.Id)]"
         
         $isInstalled = Get-InstalledPackage -PackageId $item.Id
         if ($isInstalled) {
@@ -462,7 +561,6 @@ function Show-SoftwareSelector {
             continue
         }
 
-        Write-Host "  Invoking winget install --id=$($item.Id)..." -ForegroundColor DarkCyan
         try {
             $process = Start-Process -FilePath "winget" `
                 -ArgumentList @("install", "--id=$($item.Id)", "-e", "--silent", "--accept-package-agreements", "--accept-source-agreements") `
@@ -500,7 +598,7 @@ function Show-SoftwareMenu {
         Write-Host "  ╚════════════════════════════════════════════════════════════════════════════════════╝" -ForegroundColor DarkCyan
         Write-Host ""
         Write-Host "  ┌──────┬────────────────────────────┬────────────────────────────────────────────────┐" -ForegroundColor DarkCyan
-        Write-Host "  │ NUM  │ CATEGORY & LOGO            │ INCLUDED TOP APPLICATIONS                      │" -ForegroundColor Cyan
+        Write-Host "  │ NUM  │ CATEGORY                   │ INCLUDED TOP APPLICATIONS                      │" -ForegroundColor Cyan
         Write-Host "  ├──────┼────────────────────────────┼────────────────────────────────────────────────┤" -ForegroundColor DarkCyan
         Write-Host "  │ [1]  │ 🌐 Web Browsers            │ Chrome, Firefox, Edge, Brave, Opera            │" -ForegroundColor White
         Write-Host "  │ [2]  │ 💻 Developer & Coding      │ VS Code, Git, Python, Node.js, Notepad++       │" -ForegroundColor White
@@ -1549,6 +1647,471 @@ function Show-QuickMenu {
 }
 
 # ============================================================================
+# MODULE 12: APP UNINSTALLER & LEFTOVER DEEP CLEANER
+# ============================================================================
+
+function Get-InstalledSoftwareList {
+    param([string]$FilterKeyword = "")
+
+    $paths = @(
+        "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*",
+        "HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*",
+        "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*"
+    )
+
+    $installedList = @()
+    $seenNames = @{}
+
+    foreach ($path in $paths) {
+        if (Test-Path (Split-Path $path)) {
+            Get-ItemProperty $path -ErrorAction SilentlyContinue | ForEach-Object {
+                $name = $_.DisplayName
+                if (-not [string]::IsNullOrWhiteSpace($name) -and 
+                    -not $_.SystemComponent -and 
+                    -not $_.ParentKeyName -and 
+                    $_.UninstallString) {
+                    
+                    # Clean unwanted non-user app clutter like KB updates
+                    if ($name -match "^(KB\d+|Security Update|Update for Windows)") { return }
+
+                    if (-not $seenNames.ContainsKey($name.ToLower())) {
+                        $seenNames[$name.ToLower()] = $true
+
+                        if ([string]::IsNullOrWhiteSpace($FilterKeyword) -or ($name -match [regex]::Escape($FilterKeyword)) -or ($_.Publisher -match [regex]::Escape($FilterKeyword))) {
+                            $installedList += [PSCustomObject]@{
+                                DisplayName          = $name
+                                DisplayVersion       = if ($_.DisplayVersion) { $_.DisplayVersion } else { "N/A" }
+                                Publisher            = if ($_.Publisher) { $_.Publisher } else { "Unknown" }
+                                UninstallString      = $_.UninstallString
+                                QuietUninstallString = $_.QuietUninstallString
+                                InstallLocation      = $_.InstallLocation
+                                PSChildName          = $_.PSChildName
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return ($installedList | Sort-Object DisplayName)
+}
+
+function Invoke-DeepLeftoverCleanup {
+    param(
+        [string]$AppName,
+        [string]$Publisher = "",
+        [switch]$AutoConfirm
+    )
+
+    if ([string]::IsNullOrWhiteSpace($AppName) -or $AppName.Length -lt 3) { return }
+
+    # Clean app name for regex folder search (strip special characters, version numbers, etc.)
+    $sanitized = ($AppName -replace "(?i)\s*(64-bit|32-bit|x64|x86|v\d+.*|version.*|\(.*\))", "").Trim()
+    if ($sanitized.Length -lt 3) { $sanitized = $AppName }
+    
+    $cleanKeywords = @($sanitized)
+    if ($sanitized -match "^(\w+)") {
+        $firstWord = $Matches[1]
+        if ($firstWord.Length -ge 4 -and $firstWord -notmatch "(?i)^(microsoft|google|adobe|windows|system|intel|nvidia|realtek)") {
+            $cleanKeywords += $firstWord
+        }
+    }
+    if (-not [string]::IsNullOrWhiteSpace($Publisher) -and $Publisher.Length -ge 4 -and $Publisher -notmatch "(?i)^(microsoft|corporation|unknown|inc\.|llc)") {
+        $cleanKeywords += $Publisher.Trim()
+    }
+
+    $locationsToCheck = @(
+        $env:APPDATA,
+        $env:LOCALAPPDATA,
+        "$env:LOCALAPPDATA\Programs",
+        $env:ProgramData,
+        "C:\Program Files",
+        "C:\Program Files (x86)"
+    )
+
+    $foundLeftovers = @()
+
+    foreach ($loc in $locationsToCheck) {
+        if (-not (Test-Path $loc)) { continue }
+        
+        foreach ($kw in ($cleanKeywords | Select-Object -Unique)) {
+            try {
+                $subDirs = Get-ChildItem -Path $loc -Directory -ErrorAction SilentlyContinue | Where-Object {
+                    $_.Name -match "^(?i)" + [regex]::Escape($kw) + "$" -or $_.Name -like "*$kw*"
+                }
+                foreach ($dir in $subDirs) {
+                    # Skip critical system root directories
+                    if ($dir.FullName -match "(?i)(system32|syswow64|windowsdefender|microsoft|windowsapp|temp)$") { continue }
+                    if ($foundLeftovers -notcontains $dir.FullName) {
+                        $foundLeftovers += $dir.FullName
+                    }
+                }
+            } catch {}
+        }
+    }
+
+    if ($foundLeftovers.Count -gt 0) {
+        Write-Host ""
+        Write-Host "  [LEFTOVER RESIDUE SCANNER]" -ForegroundColor Yellow
+        Write-Host "  Found $($foundLeftovers.Count) leftover directory(s) matching '$AppName':" -ForegroundColor Cyan
+        foreach ($item in $foundLeftovers) {
+            $sizeStr = "Calculating size..."
+            try {
+                $measure = Get-ChildItem -Path $item -Recurse -Force -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum
+                if ($measure.Sum) {
+                    $sizeMb = [Math]::Round($measure.Sum / 1MB, 2)
+                    $sizeStr = "$sizeMb MB"
+                } else {
+                    $sizeStr = "0 MB (Empty folder)"
+                }
+            } catch { $sizeStr = "N/A" }
+            Write-Host "    - $item ($sizeStr)" -ForegroundColor White
+        }
+
+        $proceed = $false
+        if ($AutoConfirm) {
+            $proceed = $true
+        } else {
+            Write-Host ""
+            Write-Host "  Delete all leftover files and folders? [Y/N]: " -ForegroundColor Green -NoNewline
+            $ans = Read-Host
+            if ($ans -match "^[Yy]$") { $proceed = $true }
+        }
+
+        if ($proceed) {
+            foreach ($item in $foundLeftovers) {
+                try {
+                    Remove-Item -Path $item -Recurse -Force -ErrorAction SilentlyContinue
+                    Write-Success "Cleaned residual folder: $item"
+                } catch {
+                    Write-ErrorMessage "Failed to remove $item: $($_.Exception.Message)"
+                }
+            }
+        } else {
+            Write-InfoMessage "Leftover files preserved by user."
+        }
+    } else {
+        Write-Success "Zero leftover folders detected in AppData or ProgramData for '$AppName'."
+    }
+}
+
+function Invoke-BatchUninstallFlow {
+    param(
+        [array]$SoftwareList,
+        [switch]$DeepClean
+    )
+
+    if (-not $SoftwareList -or $SoftwareList.Count -eq 0) {
+        Write-WarningMessage "No applications provided for uninstallation."
+        Pause-Toolkit
+        return
+    }
+
+    $pageSize = 25
+    $page = 1
+    $totalPages = [Math]::Ceiling($SoftwareList.Count / $pageSize)
+
+    do {
+        Show-Banner
+        Write-Host "  --- SELECT APPLICATIONS TO UNINSTALL (MULTI-SELECT) ---" -ForegroundColor Cyan
+        Write-Host "  Page $page of $totalPages | Total Installed Applications: $($SoftwareList.Count)" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "  ┌─────┬──────────────────────────────────────────┬──────────────┬────────────────────────┐" -ForegroundColor Cyan
+        Write-Host "  │ #   │ APPLICATION NAME                         │ VERSION      │ PUBLISHER              │" -ForegroundColor Cyan
+        Write-Host "  ├─────┼──────────────────────────────────────────┼──────────────┼────────────────────────┤" -ForegroundColor DarkCyan
+
+        $startIdx = ($page - 1) * $pageSize
+        $endIdx = [Math]::Min($startIdx + $pageSize - 1, $SoftwareList.Count - 1)
+
+        for ($i = $startIdx; $i -le $endIdx; $i++) {
+            $item = $SoftwareList[$i]
+            $numPad = "[$($i + 1)]".PadRight(4)
+            $namePad = $item.DisplayName
+            if ($namePad.Length -gt 40) { $namePad = $namePad.Substring(0, 37) + "..." }
+            $namePad = $namePad.PadRight(40)
+            
+            $verPad = $item.DisplayVersion
+            if ($verPad.Length -gt 12) { $verPad = $verPad.Substring(0, 9) + "..." }
+            $verPad = $verPad.PadRight(12)
+
+            $pubPad = $item.Publisher
+            if ($pubPad.Length -gt 22) { $pubPad = $pubPad.Substring(0, 19) + "..." }
+            $pubPad = $pubPad.PadRight(22)
+
+            Write-Host "  │ $numPad│ $namePad │ $verPad │ $pubPad │" -ForegroundColor White
+        }
+
+        Write-Host "  ╰─────┴──────────────────────────────────────────┴──────────────┴────────────────────────╯" -ForegroundColor DarkCyan
+        Write-Host ""
+        Write-Host "  ╭─[ 🎮 SELECTION OPTIONS ]───────────────────────────────────────────────────────╮" -ForegroundColor Magenta
+        Write-Host "  │ [M]    🖱️ MOUSE MODE: Open Interactive Window (Click Checkboxes with Mouse)   │" -ForegroundColor Yellow
+        Write-Host "  │ [1..N] ⌨️ KEYBOARD MODE: Type app numbers separated by commas (e.g. 1, 3, 5)   │" -ForegroundColor Cyan
+        Write-Host "  │ [S]    🔍 SEARCH: Filter applications by name / keyword                       │" -ForegroundColor White
+        Write-Host "  │ [N/P]  📄 PAGINATION: Next / Previous page of applications                   │" -ForegroundColor DarkCyan
+        Write-Host "  │ [0]    🚪 CANCEL: Return to menu                                              │" -ForegroundColor DarkGray
+        Write-Host "  ╰──────────────────────────────────────────────────────────────────────────────╯" -ForegroundColor Magenta
+        Write-Host ""
+        Write-Host "  Enter your choice: " -ForegroundColor Cyan -NoNewline
+        $inputChoice = Read-Host
+
+        if ([string]::IsNullOrWhiteSpace($inputChoice) -or $inputChoice -eq "0") {
+            return
+        }
+
+        if ($inputChoice.Trim().ToUpper() -in @("M", "MOUSE", "GUI")) {
+            Write-InfoMessage "Launching Interactive Mouse Checkbox Window for Uninstall..."
+            try {
+                $gridItems = $SoftwareList | Select-Object @{Name='Index';Expression={$SoftwareList.IndexOf($_) + 1}}, DisplayName, DisplayVersion, Publisher
+                $guiSelected = $gridItems | Out-GridView -Title "⚡ Cyberpunk App Uninstaller — Select Apps to Remove with Mouse & Click OK" -PassThru
+                if ($guiSelected) {
+                    $selectedItems = @()
+                    foreach ($item in $guiSelected) {
+                        $target = $SoftwareList[$item.Index - 1]
+                        if ($target) { $selectedItems += $target }
+                    }
+                }
+            } catch {
+                Write-ErrorMessage "Mouse Grid failed: $($_.Exception.Message)"
+            }
+        } elseif ($inputChoice.Trim().ToUpper() -eq "N") {
+            if ($page -lt $totalPages) { $page++ }
+            continue
+        } elseif ($inputChoice.Trim().ToUpper() -eq "P") {
+            if ($page -gt 1) { $page-- }
+            continue
+        } elseif ($inputChoice.Trim().ToUpper() -eq "S") {
+            Write-Host ""
+            Write-Host "  Enter search keyword: " -ForegroundColor Cyan -NoNewline
+            $searchKw = Read-Host
+            if (-not [string]::IsNullOrWhiteSpace($searchKw)) {
+                $filtered = Get-InstalledSoftwareList -FilterKeyword $searchKw
+                if ($filtered.Count -gt 0) {
+                    Invoke-BatchUninstallFlow -SoftwareList $filtered -DeepClean:$DeepClean
+                    return
+                } else {
+                    Write-WarningMessage "No applications found matching '$searchKw'."
+                    Start-Sleep -Seconds 1
+                }
+            }
+            continue
+        } else {
+            # Parse selected numbers
+            $numbers = [regex]::Split($inputChoice, "[,\s]+") | Where-Object { $_ -match "^\d+$" } | ForEach-Object { [int]$_ }
+            $selectedItems = @()
+
+            foreach ($n in $numbers) {
+                if ($n -ge 1 -and $n -le $SoftwareList.Count) {
+                    $target = $SoftwareList[$n - 1]
+                    if ($selectedItems -notcontains $target) {
+                        $selectedItems += $target
+                    }
+                }
+            }
+        }
+
+        if ($selectedItems.Count -eq 0) {
+            Write-WarningMessage "No applications were selected."
+            Start-Sleep -Seconds 1
+            continue
+        }
+
+        # Confirmation Screen
+        Show-Banner
+        Write-Host ""
+        Write-Host "  ╭──────────────────────────────────────────────────────────────────────────────╮" -ForegroundColor Yellow
+        Write-Host "  │                     FINAL UNINSTALLATION CONFIRMATION                        │" -ForegroundColor Yellow
+        Write-Host "  ├──────────────────────────────────────────────────────────────────────────────┤" -ForegroundColor Yellow
+        Write-Host "  │  The following application(s) will be uninstalled:                           │" -ForegroundColor White
+        foreach ($app in $selectedItems) {
+            $line = "  │  [☑] $($app.DisplayName) (v$($app.DisplayVersion))"
+            if ($line.Length -gt 78) { $line = $line.Substring(0, 75) + "..." }
+            Write-Host ($line.PadRight(79) + "│") -ForegroundColor Cyan
+        }
+        Write-Host "  │                                                                              │" -ForegroundColor Yellow
+        if ($DeepClean) {
+            Write-Host "  │  ⚡ [DEEP CLEAN ACTIVE] Leftover AppData & ProgramData will be wiped!        │" -ForegroundColor Green
+        }
+        Write-Host "  ╰──────────────────────────────────────────────────────────────────────────────╯" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "  Are you sure you want to proceed with uninstalling $($selectedItems.Count) app(s)? [Y/N]: " -ForegroundColor Red -NoNewline
+        $confirm = Read-Host
+
+        if ($confirm -notmatch "^[Yy]$") {
+            Write-InfoMessage "Uninstallation cancelled by user. Zero changes made."
+            Pause-Toolkit
+            return
+        }
+
+        # Perform uninstallation
+        Write-Host ""
+        Write-Section "Cyberpunk Engine: Uninstalling $($selectedItems.Count) Application(s)"
+
+        $uSuccess = 0
+        $uFail = 0
+        $uTotal = $selectedItems.Count
+        $uCurrent = 0
+
+        foreach ($app in $selectedItems) {
+            $uCurrent++
+            Show-CyberProgress -Current $uCurrent -Total $uTotal -Activity "Uninstalling Application" -Status "Removing $($app.DisplayName)..." -ItemName "$($app.DisplayName)"
+            
+            $uninstalledOk = $false
+
+            # 1. Try winget if available
+            $wingetCmd = Get-Command winget -ErrorAction SilentlyContinue
+            if ($wingetCmd) {
+                Write-Host "    Attempting Winget silent uninstall..." -ForegroundColor DarkCyan
+                $wProc = Start-Process winget -ArgumentList @("uninstall", "--name", "`"$($app.DisplayName)`"", "--silent", "--accept-source-agreements") -NoNewWindow -Wait -PassThru -ErrorAction SilentlyContinue
+                if ($wProc.ExitCode -eq 0) {
+                    $uninstalledOk = $true
+                }
+            }
+
+            # 2. Try QuietUninstallString or standard UninstallString
+            if (-not $uninstalledOk) {
+                $uninstStr = if ($app.QuietUninstallString) { $app.QuietUninstallString } else { $app.UninstallString }
+                if ($uninstStr) {
+                    Write-Host "    Invoking system uninstallation command..." -ForegroundColor DarkCyan
+                    try {
+                        if ($uninstStr -match "(?i)^msiexec(\.exe)?\s+([/a-zA-Z0-9\s{} -]+)") {
+                            $msiArgs = ($Matches[2] -replace "(?i)/i", "/x") + " /qn /norestart"
+                            $proc = Start-Process msiexec.exe -ArgumentList $msiArgs -NoNewWindow -Wait -PassThru
+                            if ($proc.ExitCode -in @(0, 1605, 3010)) { $uninstalledOk = $true }
+                        } else {
+                            # Execute native uninstaller string
+                            $proc = Start-Process cmd.exe -ArgumentList "/c `"$uninstStr`"" -NoNewWindow -Wait -PassThru -ErrorAction SilentlyContinue
+                            if ($proc.ExitCode -in @(0, 3010)) { $uninstalledOk = $true }
+                        }
+                    } catch {
+                        Write-ErrorMessage "Standard uninstaller execution encountered an error: $($_.Exception.Message)"
+                    }
+                }
+            }
+
+            Write-Success "Uninstallation process finished for: $($app.DisplayName)"
+            $uSuccess++
+
+            # Deep leftover cleanup
+            if ($DeepClean) {
+                Invoke-DeepLeftoverCleanup -AppName $app.DisplayName -Publisher $app.Publisher
+            }
+        }
+
+        Write-Host ""
+        Write-Host "  --- UNINSTALLATION COMPLETED ---" -ForegroundColor Cyan
+        Write-Host "  Processed: $uSuccess application(s)" -ForegroundColor Green
+        Pause-Toolkit
+        return
+
+    } while ($true)
+}
+
+function Show-UninstallerMenu {
+    do {
+        Show-Banner
+        Write-Host "  ╔════════════════════════════════════════════════════════════════════════════════════╗" -ForegroundColor DarkCyan
+        Write-Host "  ║  🗑️ MODULE 12: APP UNINSTALLER & LEFTOVER DEEP CLEANER                             ║" -ForegroundColor Cyan
+        Write-Host "  ║  Batch Multi-Select Uninstall • AppData & ProgramData Leftover Residue Wipe       ║" -ForegroundColor DarkGray
+        Write-Host "  ╚════════════════════════════════════════════════════════════════════════════════════╝" -ForegroundColor DarkCyan
+        Write-Host ""
+        Write-Host "  [1]  📋 View & Select From All Installed Desktop Applications (Multi-Select)" -ForegroundColor White
+        Write-Host "  [2]  🔍 Search Application by Name & Batch Uninstall" -ForegroundColor White
+        Write-Host "  [3]  🧹 Clean Uninstall + Deep Leftover Data Wipe (AppData & ProgramData)" -ForegroundColor White
+        Write-Host "  [4]  📦 Uninstall Windows Store (UWP) Apps (Multi-Select via Appx)" -ForegroundColor White
+        Write-Host "  [5]  🔍 Deep Residue Scan (Inspect orphaned AppData folders without uninstalling)" -ForegroundColor White
+        Write-Host ""
+        Write-Host "  [0]  🚪 Return to Main Dashboard" -ForegroundColor DarkGray
+        Write-Host ""
+        Write-Host "  Select an option [0-5]: " -ForegroundColor Cyan -NoNewline
+        $uChoice = Read-Host
+
+        switch ($uChoice) {
+            "1" {
+                Write-InfoMessage "Scanning installed desktop applications..."
+                $apps = Get-InstalledSoftwareList
+                Invoke-BatchUninstallFlow -SoftwareList $apps
+            }
+            "2" {
+                Write-Host ""
+                Write-Host "  Enter application name or keyword to search: " -ForegroundColor Cyan -NoNewline
+                $query = Read-Host
+                if (-not [string]::IsNullOrWhiteSpace($query)) {
+                    Write-InfoMessage "Searching installed software for '$query'..."
+                    $apps = Get-InstalledSoftwareList -FilterKeyword $query
+                    if ($apps.Count -gt 0) {
+                        Invoke-BatchUninstallFlow -SoftwareList $apps
+                    } else {
+                        Write-WarningMessage "No applications found matching '$query'."
+                        Pause-Toolkit
+                    }
+                }
+            }
+            "3" {
+                Write-InfoMessage "Scanning installed applications for Clean Uninstall + Leftover Wipe..."
+                $apps = Get-InstalledSoftwareList
+                Invoke-BatchUninstallFlow -SoftwareList $apps -DeepClean
+            }
+            "4" {
+                Show-Banner
+                Write-Section "Windows Store (UWP / Appx) Applications"
+                Write-InfoMessage "Querying provisioned and installed UWP packages..."
+                $uwpApps = Get-AppxPackage -AllUsers -ErrorAction SilentlyContinue | Where-Object { 
+                    -not $_.IsFramework -and -not $_.NonRemovable -and $_.Name -notmatch "^Microsoft\.(Windows|UI|NET|VCLibs|DirectX)"
+                } | Sort-Object Name
+
+                if ($uwpApps.Count -eq 0) {
+                    Write-InfoMessage "No removable user UWP packages found."
+                    Pause-Toolkit
+                    break
+                }
+
+                $idx = 1
+                $uwpMap = @()
+                Write-Host "  ┌─────┬────────────────────────────────────────────────────────┐" -ForegroundColor Cyan
+                Write-Host "  │ #   │ UWP PACKAGE NAME                                       │" -ForegroundColor Cyan
+                Write-Host "  ├─────┼────────────────────────────────────────────────────────┤" -ForegroundColor DarkCyan
+                foreach ($u in $uwpApps) {
+                    $uName = $u.Name
+                    if ($uName.Length -gt 54) { $uName = $uName.Substring(0, 51) + "..." }
+                    $uName = $uName.PadRight(54)
+                    $numPad = "[$idx]".PadRight(4)
+                    Write-Host "  │ $numPad│ $uName │" -ForegroundColor White
+                    $uwpMap += [PSCustomObject]@{ Index = $idx; Package = $u }
+                    $idx++
+                }
+                Write-Host "  └─────┴────────────────────────────────────────────────────────┘" -ForegroundColor DarkCyan
+                Write-Host ""
+                Write-Host "  Enter UWP app numbers to uninstall (e.g. 1, 3, 5 or 0 to Cancel): " -ForegroundColor Cyan -NoNewline
+                $uwpInput = Read-Host
+
+                if (-not [string]::IsNullOrWhiteSpace($uwpInput) -and $uwpInput -ne "0") {
+                    $nums = [regex]::Split($uwpInput, "[,\s]+") | Where-Object { $_ -match "^\d+$" } | ForEach-Object { [int]$_ }
+                    foreach ($n in $nums) {
+                        $match = $uwpMap | Where-Object { $_.Index -eq $n }
+                        if ($match) {
+                            Write-InfoMessage "Removing UWP Package: $($match.Package.Name)..."
+                            Remove-AppxPackage -Package $match.Package.PackageFullName -AllUsers -ErrorAction SilentlyContinue
+                            Write-Success "Removed UWP Package: $($match.Package.Name)"
+                        }
+                    }
+                }
+                Pause-Toolkit
+            }
+            "5" {
+                Write-Host ""
+                Write-Host "  Enter App / Vendor name to scan for orphaned folders: " -ForegroundColor Cyan -NoNewline
+                $kw = Read-Host
+                if (-not [string]::IsNullOrWhiteSpace($kw)) {
+                    Invoke-DeepLeftoverCleanup -AppName $kw
+                }
+                Pause-Toolkit
+            }
+        }
+    } while ($uChoice -ne "0")
+}
+
+# ============================================================================
 # MAIN ENTRY LOOP
 # ============================================================================
 
@@ -1559,7 +2122,7 @@ function Start-Toolkit {
 
     do {
         Show-MainMenu
-        Write-Host "  Select an option [0-11]: " -ForegroundColor Cyan -NoNewline
+        Write-Host "  Select an option [0-12]: " -ForegroundColor Cyan -NoNewline
         $mainChoice = Read-Host
 
         switch ($mainChoice) {
@@ -1574,6 +2137,7 @@ function Start-Toolkit {
             "9"  { Show-NetworkMenu }
             "10" { Show-SystemMenu }
             "11" { Show-QuickMenu }
+            "12" { Show-UninstallerMenu }
             "0"  {
                 Clear-Host
                 Write-Host ""
@@ -1583,7 +2147,7 @@ function Start-Toolkit {
                 return
             }
             default {
-                Write-WarningMessage "Invalid option. Please enter a number between 0 and 11."
+                Write-WarningMessage "Invalid option. Please enter a number between 0 and 12."
                 Start-Sleep -Milliseconds 600
             }
         }
