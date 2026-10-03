@@ -17,7 +17,7 @@ $ErrorActionPreference = "Continue"
 # Toolkit Metadata
 $ToolkitName    = "ItsRiRx Windows Tool Kit"
 $ToolkitShort   = "ItsRiRx Toolkit"
-$ToolkitVersion = "1.1.0"
+$ToolkitVersion = "1.2.0"
 $ToolkitYear    = "2025"
 
 # Determine Launcher URL dynamically
@@ -129,39 +129,39 @@ $Script:InstalledCache = @{}
 
 function Write-Success {
     param([string]$Message)
-    Write-Host "  [OK]   $Message" -ForegroundColor Green
+    Write-Host "  [OK] $Message" -ForegroundColor Green
 }
 
 function Write-InfoMessage {
     param([string]$Message)
-    Write-Host "  [INFO] $Message" -ForegroundColor Cyan
+    Write-Host "  [i]  $Message" -ForegroundColor Cyan
 }
 
 function Write-WarningMessage {
     param([string]$Message)
-    Write-Host "  [WARN] $Message" -ForegroundColor Yellow
+    Write-Host "  [!]  $Message" -ForegroundColor Yellow
 }
 
 function Write-ErrorMessage {
     param([string]$Message)
-    Write-Host "  [FAIL] $Message" -ForegroundColor Red
+    Write-Host "  [x]  $Message" -ForegroundColor Red
 }
 
 function Write-SkipMessage {
     param([string]$Message)
-    Write-Host "  [SKIP] $Message" -ForegroundColor DarkGray
+    Write-Host "  [-]  $Message" -ForegroundColor DarkGray
 }
 
 function Write-Section {
     param([string]$Title)
     Write-Host ""
-    Write-Host "--- $Title ---" -ForegroundColor Cyan
+    Write-Host "  --- $Title ---" -ForegroundColor Cyan
     Write-Host ""
 }
 
 function Pause-Toolkit {
     Write-Host ""
-    Write-Host "Press any key to return to menu..." -ForegroundColor DarkGray -NoNewline
+    Write-Host "  Press any key to return to menu..." -ForegroundColor DarkGray -NoNewline
     [void][System.Console]::ReadKey($true)
     Write-Host ""
 }
@@ -226,7 +226,7 @@ function Request-Admin {
 }
 
 # ============================================================================
-# CYBERPUNK TELEMETRY & PROGRESS BAR ENGINE
+# SYSTEM TELEMETRY & PROGRESS BAR ENGINE
 # ============================================================================
 
 function Get-SystemTelemetry {
@@ -280,30 +280,19 @@ function Show-CyberProgress {
     )
     if ($Total -le 0) { $Total = 1 }
     $percent = [math]::Min(100, [math]::Max(0, [math]::Round(($Current / $Total) * 100)))
-    $barWidth = 28
+    $barWidth = 24
     $filled = [math]::Round(($percent / 100) * $barWidth)
     $empty = $barWidth - $filled
-    $barStr = ("█" * $filled) + ("░" * $empty)
+    $barStr = ("=" * $filled) + (" " * $empty)
 
     Write-Host ""
-    Write-Host "  ╭──────────────────────────────────────────────────────────────────────────────╮" -ForegroundColor Magenta
-    Write-Host "  │ ⚡ CYBERPUNK DEPLOYMENT ENGINE: " -NoNewline -ForegroundColor Cyan
-    Write-Host "$Activity".PadRight(42) -ForegroundColor White
-    Write-Host "  │ " -NoNewline -ForegroundColor Magenta
-    Write-Host "[$barStr] " -NoNewline -ForegroundColor Cyan
-    Write-Host "$percent% ".PadRight(6) -NoNewline -ForegroundColor Yellow
-    Write-Host "($Current of $Total items)".PadRight(39) -ForegroundColor DarkGray
+    Write-Host "  [$barStr] $percent% ($Current of $Total) - $Activity" -ForegroundColor Cyan
     if ($ItemName) {
-        $cleanItem = if ($ItemName.Length -gt 68) { $ItemName.Substring(0, 65) + "..." } else { $ItemName }
-        Write-Host "  │ 📦 Target: $cleanItem".PadRight(79) -ForegroundColor Green
+        Write-Host "  Target: $ItemName" -ForegroundColor White
     }
-    $cleanStatus = if ($Status.Length -gt 68) { $Status.Substring(0, 65) + "..." } else { $Status }
-    Write-Host "  │ ⏳ Status: $cleanStatus".PadRight(79) -ForegroundColor Yellow
-    Write-Host "  ╰──────────────────────────────────────────────────────────────────────────────╯" -ForegroundColor Magenta
-
-    try {
-        Write-Progress -Activity "$Activity ($percent%)" -Status "$Status - $ItemName" -PercentComplete $percent
-    } catch {}
+    if ($Status) {
+        Write-Host "  Status: $Status" -ForegroundColor DarkGray
+    }
 }
 
 # ============================================================================
@@ -313,52 +302,36 @@ function Show-CyberProgress {
 function Show-Banner {
     Clear-Host
     $isAdmin = Test-IsAdmin
-    $adminStatus = if ($isAdmin) { "Administrator [ELEVATED]" } else { "Standard User [RESTRICTED]" }
+    $adminStatus = if ($isAdmin) { "Administrator [Elevated]" } else { "Standard User [Restricted]" }
     $adminColor  = if ($isAdmin) { "Green" } else { "Yellow" }
     
     $telem = Get-SystemTelemetry
 
-    # 🇧🇩 BANGLADESH FLAG THEME (Rich Green with Glowing Red Center)
+    # Minimalist Header Banner (Strict 76 characters width)
     Write-Host ""
-    Write-Host "  ╭──────────────────────────────────────────────────────────────────────────────╮" -ForegroundColor DarkGreen
-    Write-Host "  │  " -NoNewline -ForegroundColor DarkGreen
-    Write-Host "██╗████████╗███████╗" -NoNewline -ForegroundColor Green
-    Write-Host "██████╗ " -NoNewline -ForegroundColor Red
-    Write-Host "██╗██████╗ " -NoNewline -ForegroundColor Red
-    Write-Host "██╗  ██╗                            │" -ForegroundColor Green
-    Write-Host "  │  " -NoNewline -ForegroundColor DarkGreen
-    Write-Host "██║╚══██╔══╝██╔════╝" -NoNewline -ForegroundColor Green
-    Write-Host "██╔══██╗" -NoNewline -ForegroundColor Red
-    Write-Host "██║██╔══██╗" -NoNewline -ForegroundColor Red
-    Write-Host "╚██╗██╔╝   ITSRIRX TOOLKIT          │" -ForegroundColor Green
-    Write-Host "  │  " -NoNewline -ForegroundColor DarkGreen
-    Write-Host "██║   ██║   ███████╗" -NoNewline -ForegroundColor Green
-    Write-Host "██████╔╝" -NoNewline -ForegroundColor Red
-    Write-Host "██║██████╔╝" -NoNewline -ForegroundColor Red
-    Write-Host " ╚███╔╝    v1.1.0 Neon Cyberpunk    │" -ForegroundColor White
-    Write-Host "  │  " -NoNewline -ForegroundColor DarkGreen
-    Write-Host "██║   ██║   ╚════██║" -NoNewline -ForegroundColor Green
-    Write-Host "██╔══██╗" -NoNewline -ForegroundColor Red
-    Write-Host "██║██╔══██╗" -NoNewline -ForegroundColor Red
-    Write-Host " ██╔██╗    Cyberpunk Edition      │" -ForegroundColor Green
-    Write-Host "  │  " -NoNewline -ForegroundColor DarkGreen
-    Write-Host "██║   ██║   ███████║" -NoNewline -ForegroundColor Green
-    Write-Host "██║  ██║" -NoNewline -ForegroundColor Red
-    Write-Host "██║██║  ██║" -NoNewline -ForegroundColor Red
-    Write-Host "██╔╝ ██╗                            │" -ForegroundColor Green
-    Write-Host "  │  " -NoNewline -ForegroundColor DarkGreen
-    Write-Host "╚═╝   ╚═╝   ╚══════╝" -NoNewline -ForegroundColor Green
-    Write-Host "╚═╝  ╚═╝" -NoNewline -ForegroundColor Red
-    Write-Host "╚═╝╚═╝  ╚═╝" -NoNewline -ForegroundColor Red
-    Write-Host "╚═╝  ╚═╝                            │" -ForegroundColor Green
-    Write-Host "  ├──────────────────────────────────────────────────────────────────────────────┤" -ForegroundColor DarkGreen
-    Write-Host "  │ ⚡ Status: " -NoNewline -ForegroundColor DarkGray
-    Write-Host "$adminStatus".PadRight(26) -NoNewline -ForegroundColor $adminColor
-    Write-Host "│ 💻 Host: " -NoNewline -ForegroundColor DarkGray
-    Write-Host "$env:COMPUTERNAME ($env:USERNAME)".PadRight(35) -NoNewline -ForegroundColor Green
-    Write-Host "│" -ForegroundColor DarkGreen
-    Write-Host "  │ ⚡ CPU: $($telem.CpuPercent)% │ 🧠 RAM: $($telem.RamUsedGb)/$($telem.RamTotalGb) GB ($($telem.RamPercent)%) │ 🔋 $($telem.BatteryStr) │ 🖥️ $($telem.OsBuild)".PadRight(79) -ForegroundColor Yellow
-    Write-Host "  ╰──────────────────────────────────────────────────────────────────────────────╯" -ForegroundColor DarkGreen
+    Write-Host "  ┌────────────────────────────────────────────────────────────────────────┐" -ForegroundColor DarkCyan
+    
+    $titleLeft = "ITSRIRX WINDOWS TOOLKIT"
+    $titleRight = "v1.2.0 Minimalist"
+    $spaces1 = [math]::Max(1, (68 - $titleLeft.Length - $titleRight.Length))
+    $line1 = "  │  " + $titleLeft + (" " * $spaces1) + $titleRight + "  │"
+    Write-Host $line1 -ForegroundColor Cyan
+    
+    $hostLeft = "Host: $env:COMPUTERNAME ($env:USERNAME)"
+    if ($hostLeft.Length -gt 38) { $hostLeft = $hostLeft.Substring(0, 35) + "..." }
+    $statusRight = "Status: $adminStatus"
+    $spaces2 = [math]::Max(1, (68 - $hostLeft.Length - $statusRight.Length))
+    $line2 = "  │  " + $hostLeft + (" " * $spaces2) + $statusRight + "  │"
+    Write-Host $line2 -ForegroundColor White
+
+    Write-Host "  ├────────────────────────────────────────────────────────────────────────┤" -ForegroundColor DarkCyan
+    
+    $telemStr = "CPU: $($telem.CpuPercent)%  │  RAM: $($telem.RamUsedGb)/$($telem.RamTotalGb) GB ($($telem.RamPercent)%)  │  $($telem.OsBuild)"
+    if ($telemStr.Length -gt 68) { $telemStr = $telemStr.Substring(0, 65) + "..." }
+    $line3 = "  │  " + $telemStr.PadRight(68) + "  │"
+    Write-Host $line3 -ForegroundColor DarkGray
+
+    Write-Host "  └────────────────────────────────────────────────────────────────────────┘" -ForegroundColor DarkCyan
     Write-Host ""
 }
 
@@ -367,15 +340,19 @@ function Show-ModuleHeader {
         [string]$ModuleTitle,
         [string]$Subtitle
     )
-    $cleanTitle = if ($ModuleTitle.Length -gt 76) { $ModuleTitle.Substring(0, 73) + "..." } else { $ModuleTitle }
-    $titlePadded = ("  " + $cleanTitle).PadRight(78)
-    $cleanSub = if ($Subtitle.Length -gt 76) { $Subtitle.Substring(0, 73) + "..." } else { $Subtitle }
-    $subPadded = ("  " + $cleanSub).PadRight(78)
+    # Strip any emojis so terminal character cell widths are exact ASCII
+    $cleanTitle = ($ModuleTitle -replace "[\uD800-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u27BF]", "").Trim()
+    if ($cleanTitle.Length -gt 68) { $cleanTitle = $cleanTitle.Substring(0, 65) + "..." }
+    $titlePadded = $cleanTitle.PadRight(68)
 
-    Write-Host "  ╔════════════════════════════════════════════════════════════════════════════════╗" -ForegroundColor DarkCyan
-    Write-Host "  ║$titlePadded║" -ForegroundColor Cyan
-    Write-Host "  ║$subPadded║" -ForegroundColor DarkGray
-    Write-Host "  ╚════════════════════════════════════════════════════════════════════════════════╝" -ForegroundColor DarkCyan
+    $cleanSub = ($Subtitle -replace "[\uD800-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u27BF]", "").Trim()
+    if ($cleanSub.Length -gt 68) { $cleanSub = $cleanSub.Substring(0, 65) + "..." }
+    $subPadded = $cleanSub.PadRight(68)
+
+    Write-Host "  ┌────────────────────────────────────────────────────────────────────────┐" -ForegroundColor DarkCyan
+    Write-Host "  │  $titlePadded  │" -ForegroundColor Cyan
+    Write-Host "  │  $subPadded  │" -ForegroundColor DarkGray
+    Write-Host "  └────────────────────────────────────────────────────────────────────────┘" -ForegroundColor DarkCyan
     Write-Host ""
 }
 
@@ -384,50 +361,45 @@ function Show-OptionTable {
         [array]$Options,
         [string]$PromptRange = ""
     )
-    Write-Host "  ┌──────┬─────────────────────────────────────────────────────────────────────────┐" -ForegroundColor DarkCyan
-    Write-Host "  │ NUM  │ FEATURE / OPTION DESCRIPTION                                            │" -ForegroundColor Cyan
-    Write-Host "  ├──────┼─────────────────────────────────────────────────────────────────────────┤" -ForegroundColor DarkCyan
+    Write-Host "  ┌──────┬─────────────────────────────────────────────────────────────────┐" -ForegroundColor DarkCyan
+    Write-Host "  │ NUM  │ FEATURE / OPTION DESCRIPTION                                    │" -ForegroundColor Cyan
+    Write-Host "  ├──────┼─────────────────────────────────────────────────────────────────┤" -ForegroundColor DarkCyan
     foreach ($opt in $Options) {
         $numStr = "[$($opt.Num)]".PadRight(4)
-        $textStr = $opt.Text
-        if ($textStr.Length -gt 71) { $textStr = $textStr.Substring(0, 68) + "..." }
-        $textPadded = $textStr.PadRight(71)
+        $cleanText = ($opt.Text -replace "[\uD800-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u27BF]", "").Trim()
+        if ($cleanText.Length -gt 63) { $cleanText = $cleanText.Substring(0, 60) + "..." }
+        $textPadded = $cleanText.PadRight(63)
         Write-Host "  │ $numStr │ $textPadded │" -ForegroundColor White
     }
-    Write-Host "  └──────┴─────────────────────────────────────────────────────────────────────────┘" -ForegroundColor DarkCyan
+    Write-Host "  └──────┴─────────────────────────────────────────────────────────────────┘" -ForegroundColor DarkCyan
     Write-Host ""
-    Write-Host "  [0] 🚪 Return to Main Dashboard" -ForegroundColor DarkGray
+    Write-Host "  [0] Return to Main Dashboard" -ForegroundColor DarkGray
     Write-Host ""
     if ($PromptRange) {
         Write-Host "  Select an option [$PromptRange]: " -ForegroundColor Cyan -NoNewline
     }
 }
 
-# Beautiful structured main navigation dashboard
 function Show-MainMenu {
     Show-Banner
-    Write-Host "  ╭──────────────────────────────────────────────────────────────────────────────╮" -ForegroundColor DarkCyan
-    Write-Host "  │  ⚡ CYBERPUNK SYSTEM ADMINISTRATION & MAINTENANCE DASHBOARD                  │" -ForegroundColor Cyan
-    Write-Host "  ╰──────────────────────────────────────────────────────────────────────────────╯" -ForegroundColor DarkCyan
+    Write-Host "  ┌──────┬────────────────────────────┬────────────────────────────────────┐" -ForegroundColor DarkCyan
+    Write-Host "  │ NUM  │ MODULE                     │ DESCRIPTION & CAPABILITIES         │" -ForegroundColor Cyan
+    Write-Host "  ├──────┼────────────────────────────┼────────────────────────────────────┤" -ForegroundColor DarkCyan
+    Write-Host "  │ [01] │ Software Installer         │ Curated apps across 9 domains      │" -ForegroundColor White
+    Write-Host "  │ [02] │ Debloat & Privacy          │ Disable telemetry, Bing & bloat    │" -ForegroundColor White
+    Write-Host "  │ [03] │ Performance & Gaming       │ Ultimate power plan & Game DVR     │" -ForegroundColor White
+    Write-Host "  │ [04] │ Safety & Restore           │ Restore points, ports & Defender   │" -ForegroundColor White
+    Write-Host "  │ [05] │ Developer Tools            │ WSL2, Windows Sandbox, Hyper-V     │" -ForegroundColor White
+    Write-Host "  │ [06] │ Battery & Power            │ Health analytics & power reports   │" -ForegroundColor White
+    Write-Host "  │ [07] │ Windows System Repair      │ SFC scannow, DISM & Update fix     │" -ForegroundColor White
+    Write-Host "  │ [08] │ Disk Cleanup & Storage     │ Temp cleaner, top files & TRIM     │" -ForegroundColor White
+    Write-Host "  │ [09] │ Network Diagnostics        │ Ping test, DNS switcher & flush    │" -ForegroundColor White
+    Write-Host "  │ [10] │ System Info & Utilities    │ Hardware specs, license & tools    │" -ForegroundColor White
+    Write-Host "  │ [11] │ Quick Actions              │ Instant DNS flush & Explorer fix   │" -ForegroundColor White
+    Write-Host "  │ [12] │ App Uninstaller            │ Batch clean uninstall & wipe       │" -ForegroundColor White
+    Write-Host "  └──────┴────────────────────────────┴────────────────────────────────────┘" -ForegroundColor DarkCyan
     Write-Host ""
-    Write-Host "  ╭──────┬────────────────────────────┬──────────────────────────────────────────╮" -ForegroundColor DarkCyan
-    Write-Host "  │ NUM  │ MODULE                     │ DESCRIPTION & CAPABILITIES               │" -ForegroundColor Cyan
-    Write-Host "  ├──────┼────────────────────────────┼──────────────────────────────────────────┤" -ForegroundColor DarkCyan
-    Write-Host "  │ [01] │ 📦 Software Installer      │ 9 Categories, Mouse Checkboxes & Winget  │" -ForegroundColor White
-    Write-Host "  │ [02] │ 🚀 Debloat & Privacy       │ Telemetry, Bing in Start, Classic Menu   │" -ForegroundColor White
-    Write-Host "  │ [03] │ ⚡ Performance & Gaming    │ Ultimate Power Plan, Game DVR, 1:1 Mouse │" -ForegroundColor White
-    Write-Host "  │ [04] │ 🛡️ Safety & Restore        │ 1-Click Restore Point, Ports, Defender   │" -ForegroundColor White
-    Write-Host "  │ [05] │ 💻 Developer Tools         │ WSL2, Windows Sandbox, Hyper-V Hypervisor│" -ForegroundColor White
-    Write-Host "  │ [06] │ 🔋 Battery & Power         │ HTML Battery Health Report, Wear, Sleep  │" -ForegroundColor White
-    Write-Host "  │ [07] │ 🔧 Windows System Repair   │ SFC Scannow, DISM Health, WinUpdate Fix  │" -ForegroundColor White
-    Write-Host "  │ [08] │ 🧹 Disk Cleanup & Storage  │ Temp Cleaner, Top 15 Files, SSD TRIM     │" -ForegroundColor White
-    Write-Host "  │ [09] │ 🌐 Network Diagnostics     │ 3-Point Connectivity, DNS Switcher, Flush│" -ForegroundColor White
-    Write-Host "  │ [10] │ 🎛️ System Info & Utilities │ CIM Hardware specs, License, TaskMgr     │" -ForegroundColor White
-    Write-Host "  │ [11] │ ⚡ Quick Emergency Actions │ 1-Click DNS flush, Explorer restart      │" -ForegroundColor White
-    Write-Host "  │ [12] │ 🗑️ App Uninstaller & Clean │ Multi-select batch uninstall & wipe      │" -ForegroundColor White
-    Write-Host "  ╰──────┴────────────────────────────┴──────────────────────────────────────────╯" -ForegroundColor DarkCyan
-    Write-Host ""
-    Write-Host "  [0] 🚪 Exit Toolkit (Return to prompt)" -ForegroundColor DarkGray
+    Write-Host "  [0] Exit Toolkit" -ForegroundColor DarkGray
     Write-Host ""
 }
 
@@ -435,11 +407,25 @@ function Show-MainMenu {
 # MODULE 1: SOFTWARE SELECTOR & INSTALLER (WITH CHECKBOXES & FINAL CONFIRMATION)
 # ============================================================================
 
-function Test-Winget {
+function Get-WingetPath {
     $cmd = Get-Command winget -ErrorAction SilentlyContinue
-    if (-not $cmd) {
-        Write-ErrorMessage "Winget is not available on this computer."
-        Write-InfoMessage "App Installer from Microsoft Store or GitHub is required:"
+    if ($cmd) { return "winget" }
+
+    $localPath = "$env:LOCALAPPDATA\Microsoft\WindowsApps\winget.exe"
+    if (Test-Path $localPath) { return $localPath }
+
+    $progPath = Get-ChildItem -Path "$env:ProgramFiles\WindowsApps\Microsoft.DesktopAppInstaller_*_x64__8wekyb3d8bbwe\winget.exe" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName -First 1
+    if ($progPath -and (Test-Path $progPath)) { return $progPath }
+
+    return "winget"
+}
+
+function Test-Winget {
+    $wingetExe = Get-WingetPath
+    $cmd = Get-Command $wingetExe -ErrorAction SilentlyContinue
+    if (-not $cmd -and -not (Test-Path $wingetExe)) {
+        Write-ErrorMessage "Winget package manager is not detected on this system."
+        Write-InfoMessage "Please install App Installer from Microsoft Store or GitHub:"
         Write-InfoMessage "https://github.com/microsoft/winget-cli/releases"
         return $false
     }
@@ -454,7 +440,8 @@ function Get-InstalledPackage {
     }
 
     try {
-        $result = & winget list --id $PackageId --exact --accept-source-agreements 2>$null
+        $wingetExe = Get-WingetPath
+        $result = & $wingetExe list --id $PackageId --exact --accept-source-agreements 2>$null
         if ($LASTEXITCODE -eq 0 -and ($result -match [regex]::Escape($PackageId))) {
             $Script:InstalledCache[$PackageId] = $true
             return $true
@@ -480,15 +467,15 @@ function Show-SoftwareSelector {
     Show-Banner
     Write-Host "  --- SOFTWARE SELECTOR: $GroupTitle ---" -ForegroundColor Cyan
     Write-Host ""
-    Write-InfoMessage "Scanning system status and preparing application checkboxes..."
+    Write-InfoMessage "Scanning system status and preparing application catalog..."
     Write-Host ""
 
     $appsData = @()
     $idx = 1
 
-    Write-Host "  ┌─────┬───────┬──────────────┬────────────────────────┬─────────────────────┐" -ForegroundColor Cyan
-    Write-Host "  │ #   │ SELECT│ STATUS       │ APPLICATION NAME       │ WINGET PACKAGE ID   │" -ForegroundColor Cyan
-    Write-Host "  ├─────┼───────┼──────────────┼────────────────────────┼─────────────────────┤" -ForegroundColor Cyan
+    Write-Host "  ┌────┬───────┬───────────┬──────────────────────┬──────────────────────┐" -ForegroundColor DarkCyan
+    Write-Host "  │ #  │ STATE │ STATUS    │ APPLICATION NAME     │ WINGET PACKAGE ID    │" -ForegroundColor Cyan
+    Write-Host "  ├────┼───────┼───────────┼──────────────────────┼──────────────────────┤" -ForegroundColor DarkCyan
 
     foreach ($key in $PackageKeys) {
         if ($Script:SoftwareCatalog.Contains($key)) {
@@ -497,20 +484,25 @@ function Show-SoftwareSelector {
             
             $boxSymbol  = if ($isInstalled) { "[OK]" } else { "[ ]" }
             $boxColor   = if ($isInstalled) { "DarkGray" } else { "Yellow" }
-            $statusText = if ($isInstalled) { "INSTALLED" } else { "AVAILABLE" }
+            $statusText = if ($isInstalled) { "Installed" } else { "Available" }
             $statusColor = if ($isInstalled) { "Green" } else { "Cyan" }
             
-            $numPad = "[$idx]".PadRight(4)
-            $namePad = $pkg.Name.PadRight(22)
-            if ($namePad.Length -gt 22) { $namePad = $namePad.Substring(0, 19) + "..." }
-            $idPad = $pkg.Id.PadRight(19)
-            if ($idPad.Length -gt 19) { $idPad = $idPad.Substring(0, 16) + "..." }
+            $numPad = "[$idx]".PadRight(3)
+            $statePad = $boxSymbol.PadRight(5)
+            $statPad = $statusText.PadRight(9)
+            $namePad = $pkg.Name
+            if ($namePad.Length -gt 20) { $namePad = $namePad.Substring(0, 17) + "..." }
+            $namePad = $namePad.PadRight(20)
+
+            $idPad = $pkg.Id
+            if ($idPad.Length -gt 20) { $idPad = $idPad.Substring(0, 17) + "..." }
+            $idPad = $idPad.PadRight(20)
 
             Write-Host "  │ $numPad│ " -NoNewline -ForegroundColor Cyan
-            Write-Host "$boxSymbol" -NoNewline -ForegroundColor $boxColor
-            Write-Host "   │ " -NoNewline -ForegroundColor Cyan
-            Write-Host "$statusText".PadRight(13) -NoNewline -ForegroundColor $statusColor
-            Write-Host "│ $namePad │ $idPad │" -ForegroundColor White
+            Write-Host "$statePad" -NoNewline -ForegroundColor $boxColor
+            Write-Host " │ " -NoNewline -ForegroundColor DarkCyan
+            Write-Host "$statPad" -NoNewline -ForegroundColor $statusColor
+            Write-Host " │ $namePad │ $idPad │" -ForegroundColor White
 
             $appsData += [PSCustomObject]@{
                 Index       = $idx
@@ -522,16 +514,14 @@ function Show-SoftwareSelector {
             $idx++
         }
     }
-    Write-Host "  ╰─────┴───────┴──────────────┴────────────────────────┴─────────────────────╯" -ForegroundColor Cyan
+    Write-Host "  └────┴───────┴───────────┴──────────────────────┴──────────────────────┘" -ForegroundColor DarkCyan
     Write-Host ""
-    Write-Host "  ╭─[ 🎮 SELECTION OPTIONS ]───────────────────────────────────────────────────────╮" -ForegroundColor Magenta
-    Write-Host "  │ [M]    🖱️ MOUSE MODE: Open Interactive Window (Click Checkboxes with Mouse)   │" -ForegroundColor Yellow
-    Write-Host "  │ [1..N] ⌨️ KEYBOARD MODE: Type app numbers separated by commas (e.g. 1, 3, 5)   │" -ForegroundColor Cyan
-    Write-Host "  │ [A]    ⚡ SELECT ALL: Install all available uninstalled applications          │" -ForegroundColor Green
-    Write-Host "  │ [0]    🚪 CANCEL: Return to main menu                                         │" -ForegroundColor DarkGray
-    Write-Host "  ╰──────────────────────────────────────────────────────────────────────────────╯" -ForegroundColor Magenta
+    Write-Host "  [M]    Mouse Mode: Open Interactive Checkbox Selection Window" -ForegroundColor Cyan
+    Write-Host "  [1..N] Keyboard Mode: Type app numbers separated by commas (e.g. 1, 3, 5)" -ForegroundColor White
+    Write-Host "  [A]    Select All: Install all available uninstalled applications" -ForegroundColor Green
+    Write-Host "  [0]    Cancel: Return to software menu" -ForegroundColor DarkGray
     Write-Host ""
-    Write-Host "  Enter choice [M for Mouse, Numbers, or A for All]: " -ForegroundColor Cyan -NoNewline
+    Write-Host "  Enter choice [M, Numbers, or A for All]: " -ForegroundColor Cyan -NoNewline
     $inputRaw = Read-Host
 
     if ([string]::IsNullOrWhiteSpace($inputRaw) -or $inputRaw -eq "0") {
@@ -547,7 +537,7 @@ function Show-SoftwareSelector {
         Write-InfoMessage "Launching Interactive Mouse Checkbox Window..."
         try {
             $gridItems = $appsData | Select-Object @{Name='Select';Expression={$_.Index}}, Name, @{Name='Status';Expression={if ($_.IsInstalled) {'Installed'} else {'Available'}}}, @{Name='PackageID';Expression={$_.Id}}
-            $guiSelected = $gridItems | Out-GridView -Title "⚡ Cyberpunk Software Installer — Select Applications with Mouse & Click OK" -PassThru
+            $guiSelected = $gridItems | Out-GridView -Title "Software Installer — Select Applications & Click OK" -PassThru
             if ($guiSelected) {
                 foreach ($item in $guiSelected) {
                     $match = $appsData | Where-Object { $_.Index -eq $item.Select }
@@ -580,24 +570,23 @@ function Show-SoftwareSelector {
         return
     }
 
-    $appNamesList = ($selectedApps | ForEach-Object { $_.Name }) -join ", "
-
-    # Final Confirmation Screen
+    # Final Minimal Confirmation Screen (Strict 76 characters)
     Show-Banner
-    Write-Host ""
-    Write-Host "  ╭──────────────────────────────────────────────────────────────────────────────╮" -ForegroundColor Yellow
-    Write-Host "  │                     FINAL INSTALLATION CONFIRMATION                          │" -ForegroundColor Yellow
-    Write-Host "  ├──────────────────────────────────────────────────────────────────────────────┤" -ForegroundColor Yellow
+    Write-Host "  ┌────────────────────────────────────────────────────────────────────────┐" -ForegroundColor DarkCyan
+    Write-Host "  │  INSTALLATION CONFIRMATION                                             │" -ForegroundColor Cyan
+    Write-Host "  ├────────────────────────────────────────────────────────────────────────┤" -ForegroundColor DarkCyan
     foreach ($item in $selectedApps) {
-        $subLine = "  │  [☑] $($item.Name) [$($item.Id)]"
-        if ($subLine.Length -gt 78) { $subLine = $subLine.Substring(0, 75) + "..." }
-        Write-Host ($subLine.PadRight(79) + "│") -ForegroundColor Cyan
+        $nameLine = "$($item.Name) ($($item.Id))"
+        if ($nameLine.Length -gt 63) { $nameLine = $nameLine.Substring(0, 60) + "..." }
+        $line = "  │  [+] " + $nameLine.PadRight(64) + "│"
+        Write-Host $line -ForegroundColor White
     }
-    Write-Host "  │                                                                              │" -ForegroundColor Yellow
-    Write-Host "  │  Total: $($selectedApps.Count) application(s) will be downloaded & installed via Winget.    │" -ForegroundColor White
-    Write-Host "  ╰──────────────────────────────────────────────────────────────────────────────╯" -ForegroundColor Yellow
+    Write-Host "  ├────────────────────────────────────────────────────────────────────────┤" -ForegroundColor DarkCyan
+    $totalLine = "Total: $($selectedApps.Count) application(s) queued for download & install."
+    Write-Host ("  │  " + $totalLine.PadRight(68) + "  │") -ForegroundColor DarkGray
+    Write-Host "  └────────────────────────────────────────────────────────────────────────┘" -ForegroundColor DarkCyan
     Write-Host ""
-    Write-Host "  Proceed with deployment? [Y/N]: " -ForegroundColor Green -NoNewline
+    Write-Host "  Proceed with installation in current window? [Y/N]: " -ForegroundColor Green -NoNewline
     $finalProceed = Read-Host
 
     if ($finalProceed -notmatch "^[Yy]$") {
@@ -608,13 +597,15 @@ function Show-SoftwareSelector {
     }
 
     Write-Host ""
-    Write-Section "Cyberpunk Winget Engine: Deploying $($selectedApps.Count) Applications"
+    Write-Section "Winget Engine: Deploying $($selectedApps.Count) Applications"
 
     $successCount = 0
     $skipCount    = 0
     $failCount    = 0
     $totalApps    = $selectedApps.Count
     $currentIdx   = 0
+
+    $wingetCmd = Get-WingetPath
 
     foreach ($item in $selectedApps) {
         $currentIdx++
@@ -628,18 +619,27 @@ function Show-SoftwareSelector {
         }
 
         try {
-            # Use -Verb RunAs to ensure administrative privileges for installation
-            $process = Start-Process -FilePath "winget" `
-                -ArgumentList @("install", "--id=$($item.Id)", "-e", "--accept-package-agreements", "--accept-source-agreements") `
-                -Verb RunAs -Wait -PassThru
+            # Execute winget directly in the CURRENT console session without spawning secondary windows
+            $process = Start-Process -FilePath $wingetCmd `
+                -ArgumentList @("install", "--id", "$($item.Id)", "-e", "--accept-package-agreements", "--accept-source-agreements", "--disable-interactivity") `
+                -NoNewWindow -Wait -PassThru
 
             if ($process.ExitCode -eq 0) {
                 Write-Success "$($item.Name) - Installed successfully!"
                 $Script:InstalledCache[$item.Id] = $true
                 $successCount++
             } else {
-                Write-ErrorMessage "$($item.Name) - Installation failed (Exit code: $($process.ExitCode))"
-                $failCount++
+                # Verify installation in case Winget returned a non-zero code but installed successfully
+                Start-Sleep -Seconds 1
+                $verified = Get-InstalledPackage -PackageId $item.Id
+                if ($verified) {
+                    Write-Success "$($item.Name) - Verified installed!"
+                    $Script:InstalledCache[$item.Id] = $true
+                    $successCount++
+                } else {
+                    Write-ErrorMessage "$($item.Name) - Installation failed (Exit code: $($process.ExitCode))"
+                    $failCount++
+                }
             }
         }
         catch {
@@ -657,35 +657,26 @@ function Show-SoftwareSelector {
 }
 
 function Show-SoftwareMenu {
+    $options = @(
+        @{ Num = "1";  Text = "Web Browsers: Chrome, Firefox, Edge, Brave, Opera" }
+        @{ Num = "2";  Text = "Developer & Coding: VS Code, Git, Python, Node.js, Notepad++" }
+        @{ Num = "3";  Text = "Multimedia: VLC Media Player, Spotify, OBS Studio, HandBrake" }
+        @{ Num = "4";  Text = "Utilities & Tools: 7-Zip, WinRAR, Everything, PowerToys, Rufus" }
+        @{ Num = "5";  Text = "Communication: WhatsApp, Telegram, Discord, Zoom, Teams" }
+        @{ Num = "6";  Text = "Gaming Launchers: Steam, Epic Games, EA App, Ubisoft, Riot" }
+        @{ Num = "7";  Text = "Security & Privacy: Bitwarden, Malwarebytes, Proton VPN" }
+        @{ Num = "8";  Text = "Remote Access & IT: AnyDesk, UltraViewer, TeamViewer, PuTTY" }
+        @{ Num = "9";  Text = "Office & Productivity: Microsoft 365, LibreOffice, Adobe Reader" }
+        @{ Num = "10"; Text = "Essential Pack: Curated instant pack for fresh Windows setup" }
+        @{ Num = "11"; Text = "Complete Catalog: Browse and select from all verified packages" }
+        @{ Num = "12"; Text = "Audit Installed Apps: Scan PC for installed catalog apps" }
+        @{ Num = "13"; Text = "Refresh Winget Cache: Update winget package source repositories" }
+    )
+
     do {
         Show-Banner
-        Write-Host "  ╔════════════════════════════════════════════════════════════════════════════════════╗" -ForegroundColor DarkCyan
-        Write-Host "  ║  📦 MODULE 1: SOFTWARE INSTALLER (WINGET APPLICATION CATALOG)                      ║" -ForegroundColor Cyan
-        Write-Host "  ║  Interactive Checkboxes • Zero Auto-Install • Safe Approval Flow                   ║" -ForegroundColor DarkGray
-        Write-Host "  ╚════════════════════════════════════════════════════════════════════════════════════╝" -ForegroundColor DarkCyan
-        Write-Host ""
-        Write-Host "  ┌──────┬────────────────────────────┬────────────────────────────────────────────────┐" -ForegroundColor DarkCyan
-        Write-Host "  │ NUM  │ CATEGORY                   │ INCLUDED TOP APPLICATIONS                      │" -ForegroundColor Cyan
-        Write-Host "  ├──────┼────────────────────────────┼────────────────────────────────────────────────┤" -ForegroundColor DarkCyan
-        Write-Host "  │ [1]  │ 🌐 Web Browsers            │ Chrome, Firefox, Edge, Brave, Opera            │" -ForegroundColor White
-        Write-Host "  │ [2]  │ 💻 Developer & Coding      │ VS Code, Git, Python, Node.js, Notepad++       │" -ForegroundColor White
-        Write-Host "  │ [3]  │ 🎬 Multimedia & Creators   │ VLC Media Player, Spotify, OBS, HandBrake      │" -ForegroundColor White
-        Write-Host "  │ [4]  │ 🛠️ Utilities & Tools       │ 7-Zip, WinRAR, Everything, PowerToys, Rufus    │" -ForegroundColor White
-        Write-Host "  │ [5]  │ 💬 Communication & Chat    │ WhatsApp, Telegram, Discord, Zoom, Teams       │" -ForegroundColor White
-        Write-Host "  │ [6]  │ 🎮 Gaming Launchers        │ Steam, Epic Games, EA App, Ubisoft, Riot, Xbox │" -ForegroundColor White
-        Write-Host "  │ [7]  │ 🔐 Security & Privacy      │ Bitwarden, Malwarebytes, Proton VPN            │" -ForegroundColor White
-        Write-Host "  │ [8]  │ 🖥️ Remote Access & IT      │ AnyDesk, TeamViewer, RustDesk, PuTTY, WinSCP   │" -ForegroundColor White
-        Write-Host "  │ [9]  │ 📄 Office & Productivity   │ Microsoft 365, LibreOffice, Adobe, Notion      │" -ForegroundColor White
-        Write-Host "  ├──────┼────────────────────────────┼────────────────────────────────────────────────┤" -ForegroundColor DarkCyan
-        Write-Host "  │ [10] │ 📦 Essential Applications  │ Curated instant pack for fresh Windows setup   │" -ForegroundColor Cyan
-        Write-Host "  │ [11] │ 📚 Complete Catalog (All)  │ Browse and select from all verified packages   │" -ForegroundColor Cyan
-        Write-Host "  │ [12] │ 🔍 Audit Installed Apps    │ Scan current PC for installed vs missing apps  │" -ForegroundColor DarkGray
-        Write-Host "  │ [13] │ 🔄 Refresh Winget Sources  │ Update winget catalog cache definitions        │" -ForegroundColor DarkGray
-        Write-Host "  └──────┴────────────────────────────┴────────────────────────────────────────────────┘" -ForegroundColor DarkCyan
-        Write-Host ""
-        Write-Host "  [0] 🚪 Return to Main Dashboard" -ForegroundColor DarkGray
-        Write-Host ""
-        Write-Host "  Select an option [0-13]: " -ForegroundColor Cyan -NoNewline
+        Show-ModuleHeader -ModuleTitle "MODULE 1: SOFTWARE INSTALLER (WINGET APPLICATION CATALOG)" -Subtitle "Interactive Selection • Zero Auto-Install • Single-Window Deployment"
+        Show-OptionTable -Options $options -PromptRange "0-13"
         $choice = Read-Host
 
         switch ($choice) {
@@ -710,7 +701,7 @@ function Show-SoftwareMenu {
                     if ($installed) {
                         Write-Host "  [INSTALLED] " -ForegroundColor Green -NoNewline
                     } else {
-                        Write-Host "  [MISSING]   " -ForegroundColor DarkGray -NoNewline
+                        Write-Host "  [AVAILABLE] " -ForegroundColor DarkGray -NoNewline
                     }
                     Write-Host "$($pkg.Name) ($($pkg.Id))"
                 }
@@ -719,7 +710,8 @@ function Show-SoftwareMenu {
             "13" {
                 if (-not (Test-Winget)) { Pause-Toolkit; break }
                 Write-Section "Refreshing Winget Package Sources"
-                & winget source update
+                $wingetExe = Get-WingetPath
+                & $wingetExe source update
                 Write-Success "Winget sources updated successfully."
                 Pause-Toolkit
             }
@@ -744,7 +736,7 @@ function Show-DebloatMenu {
 
     do {
         Show-Banner
-        Show-ModuleHeader -ModuleTitle "🚀 MODULE 2: DEBLOAT & PRIVACY HARDENING" -Subtitle "Fine-tune Windows tracking, telemetry, and unwanted modern OS clutter."
+        Show-ModuleHeader -ModuleTitle "MODULE 2: DEBLOAT & PRIVACY HARDENING" -Subtitle "Fine-tune Windows tracking, telemetry, and unwanted modern OS clutter."
         Show-OptionTable -Options $options -PromptRange "0-7"
         $choice = Read-Host
 
@@ -868,7 +860,7 @@ function Show-PerformanceMenu {
 
     do {
         Show-Banner
-        Show-ModuleHeader -ModuleTitle "⚡ MODULE 3: PERFORMANCE & GAMING OPTIMIZATION" -Subtitle "Maximize system latency, unlock power limits, and eliminate input delays."
+        Show-ModuleHeader -ModuleTitle "MODULE 3: PERFORMANCE & GAMING OPTIMIZATION" -Subtitle "Maximize system latency, unlock power limits, and eliminate input delays."
         Show-OptionTable -Options $options -PromptRange "0-6"
         $choice = Read-Host
 
@@ -943,7 +935,7 @@ function Show-SafetyMenu {
 
     do {
         Show-Banner
-        Show-ModuleHeader -ModuleTitle "🛡️ MODULE 4: SYSTEM SAFETY & RESTORE POINTS" -Subtitle "Create safety checkpoints and monitor listening ports and security."
+        Show-ModuleHeader -ModuleTitle "MODULE 4: SYSTEM SAFETY & RESTORE POINTS" -Subtitle "Create safety checkpoints and monitor listening ports and security."
         Show-OptionTable -Options $options -PromptRange "0-5"
         $choice = Read-Host
 
@@ -1037,7 +1029,7 @@ function Show-DeveloperMenu {
 
     do {
         Show-Banner
-        Show-ModuleHeader -ModuleTitle "💻 MODULE 5: DEVELOPER & VIRTUALIZATION FEATURES" -Subtitle "Enable native Windows virtualization, WSL2, and Sandbox with one command."
+        Show-ModuleHeader -ModuleTitle "MODULE 5: DEVELOPER & VIRTUALIZATION FEATURES" -Subtitle "Enable native Windows virtualization, WSL2, and Sandbox with one command."
         Show-OptionTable -Options $options -PromptRange "0-5"
         $choice = Read-Host
 
@@ -1107,7 +1099,7 @@ function Show-BatteryMenu {
 
     do {
         Show-Banner
-        Show-ModuleHeader -ModuleTitle "🔋 MODULE 6: BATTERY HEALTH & POWER DIAGNOSTICS" -Subtitle "Analyze battery degradation, cycle count, and background power drain."
+        Show-ModuleHeader -ModuleTitle "MODULE 6: BATTERY HEALTH & POWER DIAGNOSTICS" -Subtitle "Analyze battery degradation, cycle count, and background power drain."
         Show-OptionTable -Options $options -PromptRange "0-4"
         $choice = Read-Host
 
@@ -1182,7 +1174,7 @@ function Show-RepairMenu {
 
     do {
         Show-Banner
-        Show-ModuleHeader -ModuleTitle "🔧 MODULE 7: WINDOWS SYSTEM REPAIR" -Subtitle "Scan, verify, and automatically repair corrupted OS components."
+        Show-ModuleHeader -ModuleTitle "MODULE 7: WINDOWS SYSTEM REPAIR" -Subtitle "Scan, verify, and automatically repair corrupted OS components."
         Show-OptionTable -Options $options -PromptRange "0-6"
         $choice = Read-Host
 
@@ -1296,7 +1288,7 @@ function Show-CleanupMenu {
 
     do {
         Show-Banner
-        Show-ModuleHeader -ModuleTitle "🧹 MODULE 8: DISK CLEANUP & STORAGE OPTIMIZATION" -Subtitle "Purge gigabytes of junk, optimize SSD health, and reclaim storage space."
+        Show-ModuleHeader -ModuleTitle "MODULE 8: DISK CLEANUP & STORAGE OPTIMIZATION" -Subtitle "Purge gigabytes of junk, optimize SSD health, and reclaim storage space."
         Show-OptionTable -Options $options -PromptRange "0-7"
         $choice = Read-Host
 
@@ -1440,7 +1432,7 @@ function Show-NetworkMenu {
 
     do {
         Show-Banner
-        Show-ModuleHeader -ModuleTitle "🌐 MODULE 9: NETWORK DIAGNOSTICS & DNS TOOLS" -Subtitle "Test latency, flush cache, switch DNS servers, and audit adapters."
+        Show-ModuleHeader -ModuleTitle "MODULE 9: NETWORK DIAGNOSTICS & DNS TOOLS" -Subtitle "Test latency, flush cache, switch DNS servers, and audit adapters."
         Show-OptionTable -Options $options -PromptRange "0-9"
         $choice = Read-Host
 
@@ -1568,7 +1560,7 @@ function Show-SystemMenu {
 
     do {
         Show-Banner
-        Show-ModuleHeader -ModuleTitle "🎛️ MODULE 10: SYSTEM INFO & BUILT-IN UTILITIES" -Subtitle "Audit hardware specifications, Windows license status, and launch MSC consoles."
+        Show-ModuleHeader -ModuleTitle "MODULE 10: SYSTEM INFO & BUILT-IN UTILITIES" -Subtitle "Audit hardware specifications, Windows license status, and launch MSC consoles."
         Show-OptionTable -Options $options -PromptRange "0-10"
         $choice = Read-Host
 
@@ -1660,7 +1652,7 @@ function Show-QuickMenu {
 
     do {
         Show-Banner
-        Show-ModuleHeader -ModuleTitle "⚡ MODULE 11: INSTANT QUICK ACTIONS" -Subtitle "1-click emergency tools to fix network lag, Explorer freeze, and system glitches."
+        Show-ModuleHeader -ModuleTitle "MODULE 11: INSTANT QUICK ACTIONS" -Subtitle "1-click emergency tools to fix network lag, Explorer freeze, and system glitches."
         Show-OptionTable -Options $options -PromptRange "0-5"
         $choice = Read-Host
 
@@ -1869,23 +1861,23 @@ function Invoke-BatchUninstallFlow {
         Write-Host "  --- SELECT APPLICATIONS TO UNINSTALL (MULTI-SELECT) ---" -ForegroundColor Cyan
         Write-Host "  Page $page of $totalPages | Total Installed Applications: $($SoftwareList.Count)" -ForegroundColor Yellow
         Write-Host ""
-        Write-Host "  ┌─────┬──────────────────────────────────────────┬──────────────┬────────────────────────┐" -ForegroundColor Cyan
-        Write-Host "  │ #   │ APPLICATION NAME                         │ VERSION      │ PUBLISHER              │" -ForegroundColor Cyan
-        Write-Host "  ├─────┼──────────────────────────────────────────┼──────────────┼────────────────────────┤" -ForegroundColor DarkCyan
+        Write-Host "  ┌────┬─────────────────────────────┬───────────┬────────────────────────┐" -ForegroundColor DarkCyan
+        Write-Host "  │ #  │ APPLICATION NAME            │ VERSION   │ PUBLISHER              │" -ForegroundColor Cyan
+        Write-Host "  ├────┼─────────────────────────────┼───────────┼────────────────────────┤" -ForegroundColor DarkCyan
 
         $startIdx = ($page - 1) * $pageSize
         $endIdx = [Math]::Min($startIdx + $pageSize - 1, $SoftwareList.Count - 1)
 
         for ($i = $startIdx; $i -le $endIdx; $i++) {
             $item = $SoftwareList[$i]
-            $numPad = "[$($i + 1)]".PadRight(4)
+            $numPad = "[$($i + 1)]".PadRight(3)
             $namePad = $item.DisplayName
-            if ($namePad.Length -gt 40) { $namePad = $namePad.Substring(0, 37) + "..." }
-            $namePad = $namePad.PadRight(40)
+            if ($namePad.Length -gt 27) { $namePad = $namePad.Substring(0, 24) + "..." }
+            $namePad = $namePad.PadRight(27)
             
             $verPad = $item.DisplayVersion
-            if ($verPad.Length -gt 12) { $verPad = $verPad.Substring(0, 9) + "..." }
-            $verPad = $verPad.PadRight(12)
+            if ($verPad.Length -gt 9) { $verPad = $verPad.Substring(0, 7) + ".." }
+            $verPad = $verPad.PadRight(9)
 
             $pubPad = $item.Publisher
             if ($pubPad.Length -gt 22) { $pubPad = $pubPad.Substring(0, 19) + "..." }
@@ -1894,15 +1886,13 @@ function Invoke-BatchUninstallFlow {
             Write-Host "  │ $numPad│ $namePad │ $verPad │ $pubPad │" -ForegroundColor White
         }
 
-        Write-Host "  ╰─────┴──────────────────────────────────────────┴──────────────┴────────────────────────╯" -ForegroundColor DarkCyan
+        Write-Host "  └────┴─────────────────────────────┴───────────┴────────────────────────┘" -ForegroundColor DarkCyan
         Write-Host ""
-        Write-Host "  ╭─[ 🎮 SELECTION OPTIONS ]───────────────────────────────────────────────────────╮" -ForegroundColor Magenta
-        Write-Host "  │ [M]    🖱️ MOUSE MODE: Open Interactive Window (Click Checkboxes with Mouse)   │" -ForegroundColor Yellow
-        Write-Host "  │ [1..N] ⌨️ KEYBOARD MODE: Type app numbers separated by commas (e.g. 1, 3, 5)   │" -ForegroundColor Cyan
-        Write-Host "  │ [S]    🔍 SEARCH: Filter applications by name / keyword                       │" -ForegroundColor White
-        Write-Host "  │ [N/P]  📄 PAGINATION: Next / Previous page of applications                   │" -ForegroundColor DarkCyan
-        Write-Host "  │ [0]    🚪 CANCEL: Return to menu                                              │" -ForegroundColor DarkGray
-        Write-Host "  ╰──────────────────────────────────────────────────────────────────────────────╯" -ForegroundColor Magenta
+        Write-Host "  [M]    Mouse Mode: Open Interactive Checkbox Selection Window" -ForegroundColor Cyan
+        Write-Host "  [1..N] Keyboard Mode: Type app numbers separated by commas (e.g. 1, 3, 5)" -ForegroundColor White
+        Write-Host "  [S]    Search: Filter applications by name keyword" -ForegroundColor White
+        Write-Host "  [N/P]  Pagination: Next / Previous page" -ForegroundColor DarkGray
+        Write-Host "  [0]    Cancel: Return to uninstaller menu" -ForegroundColor DarkGray
         Write-Host ""
         Write-Host "  Enter your choice: " -ForegroundColor Cyan -NoNewline
         $inputChoice = Read-Host
@@ -1915,7 +1905,7 @@ function Invoke-BatchUninstallFlow {
             Write-InfoMessage "Launching Interactive Mouse Checkbox Window for Uninstall..."
             try {
                 $gridItems = $SoftwareList | Select-Object @{Name='Index';Expression={$SoftwareList.IndexOf($_) + 1}}, DisplayName, DisplayVersion, Publisher
-                $guiSelected = $gridItems | Out-GridView -Title "⚡ Cyberpunk App Uninstaller — Select Apps to Remove with Mouse & Click OK" -PassThru
+                $guiSelected = $gridItems | Out-GridView -Title "App Uninstaller — Select Applications to Remove & Click OK" -PassThru
                 if ($guiSelected) {
                     $selectedItems = @()
                     foreach ($item in $guiSelected) {
@@ -1968,25 +1958,24 @@ function Invoke-BatchUninstallFlow {
             continue
         }
 
-        # Confirmation Screen
+        # Minimal Confirmation Screen (Strict 76 characters)
         Show-Banner
         Write-Host ""
-        Write-Host "  ╭──────────────────────────────────────────────────────────────────────────────╮" -ForegroundColor Yellow
-        Write-Host "  │                     FINAL UNINSTALLATION CONFIRMATION                        │" -ForegroundColor Yellow
-        Write-Host "  ├──────────────────────────────────────────────────────────────────────────────┤" -ForegroundColor Yellow
-        Write-Host "  │  The following application(s) will be uninstalled:                           │" -ForegroundColor White
+        Write-Host "  ┌────────────────────────────────────────────────────────────────────────┐" -ForegroundColor DarkCyan
+        Write-Host "  │  UNINSTALLATION CONFIRMATION                                           │" -ForegroundColor Cyan
+        Write-Host "  ├────────────────────────────────────────────────────────────────────────┤" -ForegroundColor DarkCyan
         foreach ($app in $selectedItems) {
-            $line = "  │  [☑] $($app.DisplayName) (v$($app.DisplayVersion))"
-            if ($line.Length -gt 78) { $line = $line.Substring(0, 75) + "..." }
-            Write-Host ($line.PadRight(79) + "│") -ForegroundColor Cyan
+            $line = "  │  [-] $($app.DisplayName) (v$($app.DisplayVersion))"
+            if ($line.Length -gt 72) { $line = $line.Substring(0, 69) + "..." }
+            Write-Host ($line.PadRight(75) + "│") -ForegroundColor White
         }
-        Write-Host "  │                                                                              │" -ForegroundColor Yellow
         if ($DeepClean) {
-            Write-Host "  │  ⚡ [DEEP CLEAN ACTIVE] Leftover AppData & ProgramData will be wiped!        │" -ForegroundColor Green
+            Write-Host "  ├────────────────────────────────────────────────────────────────────────┤" -ForegroundColor DarkCyan
+            Write-Host "  │  Deep Clean Active: Leftover AppData & ProgramData will be wiped       │" -ForegroundColor Green
         }
-        Write-Host "  ╰──────────────────────────────────────────────────────────────────────────────╯" -ForegroundColor Yellow
+        Write-Host "  └────────────────────────────────────────────────────────────────────────┘" -ForegroundColor DarkCyan
         Write-Host ""
-        Write-Host "  Are you sure you want to proceed with uninstalling $($selectedItems.Count) app(s)? [Y/N]: " -ForegroundColor Red -NoNewline
+        Write-Host "  Proceed with uninstalling $($selectedItems.Count) application(s)? [Y/N]: " -ForegroundColor Yellow -NoNewline
         $confirm = Read-Host
 
         if ($confirm -notmatch "^[Yy]$") {
@@ -1997,7 +1986,7 @@ function Invoke-BatchUninstallFlow {
 
         # Perform uninstallation
         Write-Host ""
-        Write-Section "Cyberpunk Engine: Uninstalling $($selectedItems.Count) Application(s)"
+        Write-Section "Uninstalling $($selectedItems.Count) Application(s)"
 
         $uSuccess = 0
         $uFail = 0
@@ -2070,7 +2059,7 @@ function Show-UninstallerMenu {
 
     do {
         Show-Banner
-        Show-ModuleHeader -ModuleTitle "🗑️ MODULE 12: APP UNINSTALLER & LEFTOVER DEEP CLEANER" -Subtitle "Batch Multi-Select Uninstall • AppData & ProgramData Leftover Residue Wipe"
+        Show-ModuleHeader -ModuleTitle "MODULE 12: APP UNINSTALLER & LEFTOVER CLEANER" -Subtitle "Batch Multi-Select Uninstall • AppData & ProgramData Leftover Residue Wipe"
         Show-OptionTable -Options $options -PromptRange "0-5"
         $uChoice = Read-Host
 
@@ -2167,6 +2156,32 @@ function Start-Toolkit {
     try {
         $Host.UI.RawUI.WindowTitle = "$ToolkitName v$ToolkitVersion"
     } catch {}
+
+    # Check for administrative privileges at startup
+    if (-not (Test-IsAdmin)) {
+        Clear-Host
+        Write-Host ""
+        Write-Host "  ┌────────────────────────────────────────────────────────────────────────┐" -ForegroundColor Yellow
+        Write-Host "  │  ADMINISTRATIVE PRIVILEGES REQUIRED                                    │" -ForegroundColor Yellow
+        Write-Host "  ├────────────────────────────────────────────────────────────────────────┤" -ForegroundColor Yellow
+        Write-Host "  │  Administrator rights are required to install software and configure   │" -ForegroundColor White
+        Write-Host "  │  system settings without errors or secondary popup windows.            │" -ForegroundColor White
+        Write-Host "  │                                                                        │" -ForegroundColor White
+        Write-Host "  │  Relaunching in a single elevated Administrator window...              │" -ForegroundColor Cyan
+        Write-Host "  └────────────────────────────────────────────────────────────────────────┘" -ForegroundColor Yellow
+        Write-Host ""
+        Start-Sleep -Seconds 1
+
+        try {
+            $launchCmd = "irm $Script:LauncherUrl | iex"
+            Start-Process -FilePath "powershell.exe" -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"$launchCmd`""
+            exit
+        } catch {
+            Write-ErrorMessage "Elevation was cancelled or denied: $($_.Exception.Message)"
+            Write-WarningMessage "Running in restricted mode. Some modules may fail without Administrator rights."
+            Pause-Toolkit
+        }
+    }
 
     do {
         Show-MainMenu

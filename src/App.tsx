@@ -288,7 +288,7 @@ try { irm $url | iex } catch { irm 'https://itsrirx-toolkit.vercel.app/i' | iex 
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-extrabold tracking-tight text-white text-base">ItsRiRx Windows Tool Kit</span>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800 font-mono font-semibold">v1.1.0 PRO</span>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800 font-mono font-semibold">v1.2.0 Minimalist</span>
               </div>
               <p className="text-xs text-zinc-400 font-mono hidden sm:block">Advanced Remote Windows Administration Suite</p>
             </div>
@@ -779,7 +779,7 @@ try { irm $url | iex } catch { irm 'https://itsrirx-toolkit.vercel.app/i' | iex 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span>ItsRiRx Windows Tool Kit v1.1.0 PRO</span>
+            <span>ItsRiRx Windows Tool Kit v1.2.0 Minimalist</span>
           </div>
           <div>
             Launcher: <code className="text-zinc-400">irm {endpointUrl} | iex</code>
