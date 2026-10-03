@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Search,
   Check,
@@ -18,7 +18,16 @@ import {
   FileText,
   Boxes,
   RotateCcw,
-  CheckCircle2
+  CheckCircle2,
+  Cloud,
+  Palette,
+  Bot,
+  HardDriveDownload,
+  Cpu,
+  Network,
+  Database,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { SOFTWARE_APPS, CATEGORIES, PRESET_BUNDLES, SoftwareApp } from '../data/toolkitCatalog';
 import { generateBatchInstaller, generatePowerShellInstaller, generateOneLineCommand, triggerFileDownload } from '../utils/scriptGenerator';
@@ -39,6 +48,71 @@ export const SoftwareInstallerTab: React.FC<SoftwareInstallerTabProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All Applications');
   const [copiedAppId, setCopiedAppId] = useState<string | null>(null);
+
+  // Category Sliding & Scrolling Ref
+  const categoryScrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeftState, setScrollLeftState] = useState(0);
+
+  const checkScrollability = () => {
+    if (categoryScrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = categoryScrollRef.current;
+      setCanScrollLeft(scrollLeft > 5);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 5);
+    }
+  };
+
+  useEffect(() => {
+    checkScrollability();
+    window.addEventListener('resize', checkScrollability);
+    return () => window.removeEventListener('resize', checkScrollability);
+  }, []);
+
+  const slideLeft = () => {
+    if (categoryScrollRef.current) {
+      categoryScrollRef.current.scrollBy({ left: -260, behavior: 'smooth' });
+      setTimeout(checkScrollability, 300);
+    }
+  };
+
+  const slideRight = () => {
+    if (categoryScrollRef.current) {
+      categoryScrollRef.current.scrollBy({ left: 260, behavior: 'smooth' });
+      setTimeout(checkScrollability, 300);
+    }
+  };
+
+  // Mouse Drag to Scroll handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!categoryScrollRef.current) return;
+    setIsDragging(true);
+    setStartX(e.pageX - categoryScrollRef.current.offsetLeft);
+    setScrollLeftState(categoryScrollRef.current.scrollLeft);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !categoryScrollRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - categoryScrollRef.current.offsetLeft;
+    const walk = (x - startX) * 1.5;
+    categoryScrollRef.current.scrollLeft = scrollLeftState - walk;
+    checkScrollability();
+  };
+
+  const handleMouseUpOrLeave = () => {
+    setIsDragging(false);
+  };
+
+  // Mouse Wheel horizontal scroll
+  const handleWheel = (e: React.WheelEvent) => {
+    if (categoryScrollRef.current && Math.abs(e.deltaY) > 0) {
+      categoryScrollRef.current.scrollLeft += e.deltaY * 1.2;
+      checkScrollability();
+    }
+  };
 
   // Filter apps based on search and category
   const filteredApps = useMemo(() => {
@@ -129,6 +203,26 @@ export const SoftwareInstallerTab: React.FC<SoftwareInstallerTabProps> = ({
 
   const getCategoryIcon = (cat: string) => {
     switch (cat) {
+      case 'Office & Productivity':
+        return <FileText className="w-4 h-4 text-amber-500" />;
+      case 'Cloud & Storage':
+        return <Cloud className="w-4 h-4 text-sky-500" />;
+      case 'Remote Access':
+        return <Monitor className="w-4 h-4 text-teal-500" />;
+      case 'Graphics & Design':
+        return <Palette className="w-4 h-4 text-purple-500" />;
+      case 'AI Tools':
+        return <Bot className="w-4 h-4 text-emerald-500" />;
+      case 'Backup & Recovery':
+        return <HardDriveDownload className="w-4 h-4 text-rose-500" />;
+      case 'System & Hardware':
+        return <Cpu className="w-4 h-4 text-indigo-500" />;
+      case 'Network Tools':
+        return <Network className="w-4 h-4 text-blue-500" />;
+      case 'Download Tools':
+        return <Download className="w-4 h-4 text-cyan-500" />;
+      case 'Database & Server':
+        return <Database className="w-4 h-4 text-emerald-600" />;
       case 'Web Browsers':
         return <Globe className="w-4 h-4 text-blue-500" />;
       case 'Developer & Coding':
@@ -143,10 +237,6 @@ export const SoftwareInstallerTab: React.FC<SoftwareInstallerTabProps> = ({
         return <Gamepad2 className="w-4 h-4 text-rose-500" />;
       case 'Security & Privacy':
         return <ShieldCheck className="w-4 h-4 text-cyan-500" />;
-      case 'Remote Access & IT':
-        return <Monitor className="w-4 h-4 text-teal-500" />;
-      case 'Office & Productivity':
-        return <FileText className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />;
       default:
         return <Boxes className="w-4 h-4 text-cyan-500" />;
     }
@@ -170,7 +260,7 @@ export const SoftwareInstallerTab: React.FC<SoftwareInstallerTabProps> = ({
               </span>
               <span className={isDark ? 'text-zinc-600' : 'text-slate-300'}>·</span>
               <span className={`font-mono ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                44 Curated Packages
+                {SOFTWARE_APPS.length} Curated Packages across {CATEGORIES.length - 1} Categories
               </span>
             </div>
 
@@ -181,7 +271,7 @@ export const SoftwareInstallerTab: React.FC<SoftwareInstallerTabProps> = ({
             <p className={`text-sm max-w-2xl leading-relaxed ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
               Select multiple applications to bundle into a single 1-click silent installer file (
               <code className={`font-mono text-xs font-semibold px-1.5 py-0.5 rounded-md ${isDark ? 'bg-zinc-800 text-cyan-300' : 'bg-slate-100 text-cyan-700'}`}>.bat</code> or{' '}
-              <code className={`font-mono text-xs font-semibold px-1.5 py-0.5 rounded-md ${isDark ? 'bg-zinc-800 text-cyan-300' : 'bg-cyan-700'}`}>.ps1</code>). Zero wizard dialogs, zero bloatware, completely automated.
+              <code className={`font-mono text-xs font-semibold px-1.5 py-0.5 rounded-md ${isDark ? 'bg-zinc-800 text-cyan-300' : 'bg-slate-100 text-cyan-700'}`}>.ps1</code>). Zero wizard dialogs, zero bloatware, completely automated.
             </p>
           </div>
 
@@ -191,7 +281,7 @@ export const SoftwareInstallerTab: React.FC<SoftwareInstallerTabProps> = ({
               <Layers className="w-3.5 h-3.5 text-cyan-500" /> 1-Click Curated Presets:
             </span>
             <div className="flex flex-wrap gap-2">
-              {PRESET_BUNDLES.slice(0, 4).map((p) => (
+              {PRESET_BUNDLES.map((p) => (
                 <button
                   key={p.name}
                   onClick={() => applyPreset(p.name)}
@@ -274,7 +364,7 @@ export const SoftwareInstallerTab: React.FC<SoftwareInstallerTabProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search software by name (Chrome, VS Code, Git, VLC), category, or Winget ID..."
+            placeholder="Search software by name (Chrome, WPS, ChatGPT, AnyDesk), category, or Winget ID..."
             className={`w-full rounded-2xl pl-10 pr-4 py-3 text-sm placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 transition-all font-sans backdrop-blur-xl ${
               isDark
                 ? 'bg-zinc-900/60 border border-white/10 text-zinc-100 focus:border-cyan-500'
@@ -318,41 +408,89 @@ export const SoftwareInstallerTab: React.FC<SoftwareInstallerTabProps> = ({
         </div>
       </div>
 
-      {/* Category Pills Glass Bar */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-        {CATEGORIES.map((cat) => {
-          const count =
-            cat === 'All Applications'
-              ? SOFTWARE_APPS.length
-              : SOFTWARE_APPS.filter((a) => a.category === cat).length;
-          const isSelected = selectedCategory === cat;
-          return (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-150 flex items-center gap-2 cursor-pointer backdrop-blur-md ${
-                isSelected
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/25 border-transparent'
-                  : isDark
-                  ? 'bg-zinc-900/50 text-zinc-400 hover:text-zinc-200 border border-white/10 hover:border-white/20'
-                  : 'bg-white/70 text-slate-600 hover:text-slate-900 border border-white/90 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:bg-white'
-              }`}
-            >
-              <span>{cat}</span>
-              <span
-                className={`text-[10px] px-1.5 py-0.2 rounded-md font-mono ${
+      {/* Category Pills Slider with Interactive Left/Right Nav Buttons & Smooth Drag/Wheel */}
+      <div className="relative flex items-center gap-2">
+        {/* Left Slide Button */}
+        <button
+          onClick={slideLeft}
+          disabled={!canScrollLeft}
+          className={`shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all cursor-pointer z-10 backdrop-blur-md ${
+            canScrollLeft
+              ? isDark
+                ? 'bg-zinc-800/90 hover:bg-zinc-700 text-white border border-white/10 shadow-md'
+                : 'bg-white/90 hover:bg-white text-slate-800 border border-slate-200/80 shadow-md'
+              : 'opacity-30 cursor-not-allowed text-slate-400'
+          }`}
+          title="Scroll Left"
+          aria-label="Scroll Categories Left"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+
+        {/* Scrollable Category Row */}
+        <div
+          ref={categoryScrollRef}
+          onScroll={checkScrollability}
+          onWheel={handleWheel}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUpOrLeave}
+          onMouseLeave={handleMouseUpOrLeave}
+          className={`flex items-center gap-2 overflow-x-auto py-1 scroll-smooth scrollbar-none select-none flex-1 ${
+            isDragging ? 'cursor-grabbing' : 'cursor-grab'
+          }`}
+        >
+          {CATEGORIES.map((cat) => {
+            const count =
+              cat === 'All Applications'
+                ? SOFTWARE_APPS.length
+                : SOFTWARE_APPS.filter((a) => a.category === cat).length;
+            const isSelected = selectedCategory === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-150 flex items-center gap-2 cursor-pointer backdrop-blur-md shrink-0 ${
                   isSelected
-                    ? 'bg-white/20 text-white'
+                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/25 border-transparent'
                     : isDark
-                    ? 'bg-white/5 text-zinc-400'
-                    : 'bg-slate-100 text-slate-500'
+                    ? 'bg-zinc-900/50 text-zinc-400 hover:text-zinc-200 border border-white/10 hover:border-white/20'
+                    : 'bg-white/70 text-slate-600 hover:text-slate-900 border border-white/90 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:bg-white'
                 }`}
               >
-                {count}
-              </span>
-            </button>
-          );
-        })}
+                <span>{cat}</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.2 rounded-md font-mono ${
+                    isSelected
+                      ? 'bg-white/20 text-white'
+                      : isDark
+                      ? 'bg-white/5 text-zinc-400'
+                      : 'bg-slate-100 text-slate-500'
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Right Slide Button */}
+        <button
+          onClick={slideRight}
+          disabled={!canScrollRight}
+          className={`shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all cursor-pointer z-10 backdrop-blur-md ${
+            canScrollRight
+              ? isDark
+                ? 'bg-zinc-800/90 hover:bg-zinc-700 text-white border border-white/10 shadow-md'
+                : 'bg-white/90 hover:bg-white text-slate-800 border border-slate-200/80 shadow-md'
+              : 'opacity-30 cursor-not-allowed text-slate-400'
+          }`}
+          title="Scroll Right"
+          aria-label="Scroll Categories Right"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Application Cards Grid with Frosted Glasstic Style */}

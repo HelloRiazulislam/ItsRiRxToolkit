@@ -32,75 +32,127 @@ if ($MyInvocation.Line -match "https?://[^\s|/]+(?:/[^\s|]+)*") {
 # ============================================================================
 
 $Script:SoftwareCatalog = [ordered]@{
-    # 1. Web Browsers
-    "Google Chrome"       = @{ Id = "Google.Chrome"; Name = "Google Chrome"; Category = "Web Browsers" }
-    "Mozilla Firefox"     = @{ Id = "Mozilla.Firefox"; Name = "Mozilla Firefox"; Category = "Web Browsers" }
-    "Microsoft Edge"      = @{ Id = "Microsoft.Edge"; Name = "Microsoft Edge"; Category = "Web Browsers" }
-    "Brave"               = @{ Id = "Brave.Brave"; Name = "Brave Browser"; Category = "Web Browsers" }
-    "Opera"               = @{ Id = "Opera.Opera"; Name = "Opera Browser"; Category = "Web Browsers" }
-
-    # 2. Developer & Coding
-    "VS Code"             = @{ Id = "Microsoft.VisualStudioCode"; Name = "Visual Studio Code"; Category = "Developer & Coding" }
-    "Git"                 = @{ Id = "Git.Git"; Name = "Git for Windows"; Category = "Developer & Coding" }
-    "Python"              = @{ Id = "Python.Python.3.14"; Name = "Python"; Category = "Developer & Coding" }
-    "Node.js"             = @{ Id = "OpenJS.NodeJS.LTS"; Name = "Node.js (LTS)"; Category = "Developer & Coding" }
-    "Notepad++"           = @{ Id = "Notepad++.Notepad++"; Name = "Notepad++"; Category = "Developer & Coding" }
-
-    # 3. Multimedia
-    "VLC Media Player"    = @{ Id = "VideoLAN.VLC"; Name = "VLC Media Player"; Category = "Multimedia" }
-    "Spotify"             = @{ Id = "Spotify.Spotify"; Name = "Spotify Music"; Category = "Multimedia" }
-    "OBS Studio"          = @{ Id = "OBSProject.OBSStudio"; Name = "OBS Studio"; Category = "Multimedia" }
-    "Audacity"            = @{ Id = "Audacity.Audacity"; Name = "Audacity Audio Editor"; Category = "Multimedia" }
-    "HandBrake"           = @{ Id = "HandBrake.HandBrake"; Name = "HandBrake Video Transcoder"; Category = "Multimedia" }
-
-    # 4. Utilities & Tools
-    "7-Zip"               = @{ Id = "7zip.7zip"; Name = "7-Zip Archiver"; Category = "Utilities & Tools" }
-    "WinRAR"              = @{ Id = "RARLab.WinRAR"; Name = "WinRAR"; Category = "Utilities & Tools" }
-    "Everything"          = @{ Id = "voidtools.Everything"; Name = "Everything Search"; Category = "Utilities & Tools" }
-    "Microsoft PowerToys" = @{ Id = "Microsoft.PowerToys"; Name = "Microsoft PowerToys"; Category = "Utilities & Tools" }
-    "Rufus"               = @{ Id = "Rufus.Rufus"; Name = "Rufus USB Creator"; Category = "Utilities & Tools" }
-    "ShareX"              = @{ Id = "ShareX.ShareX"; Name = "ShareX Screen Capture"; Category = "Utilities & Tools" }
-    "Avro Keyboard"       = @{ Id = "OmicronLab.Avro"; Name = "Avro Keyboard"; Category = "Utilities & Tools" }
-
-    # 5. Communication
-    "WhatsApp"            = @{ Id = "WhatsApp.WhatsApp"; Name = "WhatsApp Desktop"; Category = "Communication" }
-    "Telegram"            = @{ Id = "Telegram.TelegramDesktop"; Name = "Telegram Desktop"; Category = "Communication" }
-    "Discord"             = @{ Id = "Discord.Discord"; Name = "Discord"; Category = "Communication" }
-    "Zoom"                = @{ Id = "Zoom.Zoom"; Name = "Zoom Workplace"; Category = "Communication" }
-    "Microsoft Teams"     = @{ Id = "Microsoft.Teams"; Name = "Microsoft Teams"; Category = "Communication" }
-
-    # 6. Gaming
-    "Steam"               = @{ Id = "Valve.Steam"; Name = "Steam Client"; Category = "Gaming" }
-    "Epic Games"          = @{ Id = "EpicGames.EpicGamesLauncher"; Name = "Epic Games Launcher"; Category = "Gaming" }
-    "EA App"              = @{ Id = "ElectronicArts.EADesktop"; Name = "EA Desktop App"; Category = "Gaming" }
-    "Ubisoft Connect"     = @{ Id = "Ubisoft.Connect"; Name = "Ubisoft Connect"; Category = "Gaming" }
-    "Riot Client"         = @{ Id = "RiotGames.RiotClient"; Name = "Riot Client"; Category = "Gaming" }
-    "Xbox"                = @{ Id = "Microsoft.GamingApp"; Name = "Xbox App"; Category = "Gaming" }
-
-    # 7. Security & Privacy
-    "Bitwarden"           = @{ Id = "Bitwarden.Bitwarden"; Name = "Bitwarden Password Manager"; Category = "Security & Privacy" }
-    "Malwarebytes"        = @{ Id = "Malwarebytes.Malwarebytes"; Name = "Malwarebytes Anti-Malware"; Category = "Security & Privacy" }
-    "Proton VPN"          = @{ Id = "Proton.ProtonVPN"; Name = "Proton VPN"; Category = "Security & Privacy" }
-
-    # 8. Remote Access & IT
-    "AnyDesk"             = @{ Id = "AnyDeskSoftwareGmbH.AnyDesk"; Name = "AnyDesk Remote Desktop"; Category = "Remote Access & IT" }
-    "UltraViewer"         = @{ Id = "UltraViewer.UltraViewer"; Name = "UltraViewer Remote"; Category = "Remote Access & IT" }
-    "TeamViewer"          = @{ Id = "TeamViewer.TeamViewer"; Name = "TeamViewer Remote"; Category = "Remote Access & IT" }
-    "RustDesk"            = @{ Id = "RustDesk.RustDesk"; Name = "RustDesk Open Source Remote"; Category = "Remote Access & IT" }
-    "PuTTY"               = @{ Id = "PuTTY.PuTTY"; Name = "PuTTY SSH Client"; Category = "Remote Access & IT" }
-    "WinSCP"              = @{ Id = "WinSCP.WinSCP"; Name = "WinSCP SFTP Client"; Category = "Remote Access & IT" }
-
-    # 9. Office & Productivity
+    # 1. Office & Productivity
     "Microsoft 365"         = @{ Id = "Microsoft.Office"; Name = "Microsoft 365 Apps"; Category = "Office & Productivity" }
-    "Microsoft Office 2024" = @{ Id = "Microsoft.Office"; Name = "Microsoft Office 2024"; Category = "Office & Productivity" }
-    "Microsoft Office 2021" = @{ Id = "Microsoft.Office"; Name = "Microsoft Office 2021"; Category = "Office & Productivity" }
+    "WPS Office"            = @{ Id = "Kingsoft.WPSOffice"; Name = "WPS Office"; Category = "Office & Productivity" }
     "LibreOffice"           = @{ Id = "TheDocumentFoundation.LibreOffice"; Name = "LibreOffice"; Category = "Office & Productivity" }
+    "Notepad++"             = @{ Id = "Notepad++.Notepad++"; Name = "Notepad++"; Category = "Office & Productivity" }
     "Adobe Acrobat Reader"  = @{ Id = "Adobe.Acrobat.Reader.64-bit"; Name = "Adobe Acrobat Reader"; Category = "Office & Productivity" }
-    "Notion"                = @{ Id = "Notion.Notion"; Name = "Notion Workspace"; Category = "Office & Productivity" }
-}
 
-# Categorized Package Packs matching the 9 domains
+    # 2. Cloud & Storage
+    "Google Drive"          = @{ Id = "Google.GoogleDrive"; Name = "Google Drive"; Category = "Cloud & Storage" }
+    "OneDrive"              = @{ Id = "Microsoft.OneDrive"; Name = "OneDrive"; Category = "Cloud & Storage" }
+    "Dropbox"               = @{ Id = "Dropbox.Dropbox"; Name = "Dropbox"; Category = "Cloud & Storage" }
+    "MEGA"                  = @{ Id = "Mega.MEGAsync"; Name = "MEGA"; Category = "Cloud & Storage" }
+
+    # 3. Remote Access
+    "AnyDesk"               = @{ Id = "AnyDeskSoftwareGmbH.AnyDesk"; Name = "AnyDesk Remote Desktop"; Category = "Remote Access" }
+    "TeamViewer"            = @{ Id = "TeamViewer.TeamViewer"; Name = "TeamViewer Remote"; Category = "Remote Access" }
+    "RustDesk"              = @{ Id = "RustDesk.RustDesk"; Name = "RustDesk Open Source Remote"; Category = "Remote Access" }
+    "PuTTY"                 = @{ Id = "PuTTY.PuTTY"; Name = "PuTTY SSH Client"; Category = "Remote Access" }
+
+    # 4. Graphics & Design
+    "Adobe Photoshop"       = @{ Id = "Adobe.Photoshop"; Name = "Adobe Photoshop"; Category = "Graphics & Design" }
+    "GIMP"                  = @{ Id = "GIMP.GIMP"; Name = "GIMP Image Editor"; Category = "Graphics & Design" }
+    "Paint.NET"             = @{ Id = "dotPDNLLC.paintdotnet"; Name = "Paint.NET"; Category = "Graphics & Design" }
+    "Inkscape"              = @{ Id = "Inkscape.Inkscape"; Name = "Inkscape Vector Graphics"; Category = "Graphics & Design" }
+
+    # 5. AI Tools
+    "ChatGPT"               = @{ Id = "OpenAI.ChatGPT"; Name = "ChatGPT Desktop"; Category = "AI Tools" }
+    "Google Gemini"         = @{ Id = "Google.Gemini"; Name = "Google Gemini AI"; Category = "AI Tools" }
+    "Claude"                = @{ Id = "Anthropic.Claude"; Name = "Claude AI Assistant"; Category = "AI Tools" }
+    "Microsoft Copilot"     = @{ Id = "Microsoft.Copilot"; Name = "Microsoft Copilot"; Category = "AI Tools" }
+    "Perplexity"            = @{ Id = "Perplexity.Perplexity"; Name = "Perplexity AI"; Category = "AI Tools" }
+
+    # 6. Backup & Recovery
+    "Macrium Reflect"       = @{ Id = "ParamountSoftware.MacriumReflectHome"; Name = "Macrium Reflect"; Category = "Backup & Recovery" }
+    "AOMEI Backupper"       = @{ Id = "AOMEI.Backupper"; Name = "AOMEI Backupper"; Category = "Backup & Recovery" }
+    "EaseUS Todo Backup"    = @{ Id = "EaseUS.TodoBackup"; Name = "EaseUS Todo Backup"; Category = "Backup & Recovery" }
+
+    # 7. System & Hardware
+    "CPU-Z"                 = @{ Id = "CPUID.CPU-Z"; Name = "CPU-Z"; Category = "System & Hardware" }
+    "GPU-Z"                 = @{ Id = "TechPowerUp.GPU-Z"; Name = "GPU-Z"; Category = "System & Hardware" }
+    "HWiNFO"                = @{ Id = "REALiX.HWiNFO"; Name = "HWiNFO Diagnostic"; Category = "System & Hardware" }
+    "CrystalDiskInfo"       = @{ Id = "CrystalDewWorld.CrystalDiskInfo"; Name = "CrystalDiskInfo"; Category = "System & Hardware" }
+    "Speccy"                = @{ Id = "Piriform.Speccy"; Name = "Speccy System Info"; Category = "System & Hardware" }
+
+    # 8. Network Tools
+    "WireGuard"             = @{ Id = "WireGuard.WireGuard"; Name = "WireGuard VPN Client"; Category = "Network Tools" }
+    "OpenVPN Connect"       = @{ Id = "OpenVPNTechnologies.OpenVPNConnect"; Name = "OpenVPN Connect"; Category = "Network Tools" }
+    "Tailscale"             = @{ Id = "Tailscale.Tailscale"; Name = "Tailscale Mesh VPN"; Category = "Network Tools" }
+    "ZeroTier"              = @{ Id = "ZeroTier.ZeroTierOne"; Name = "ZeroTier One"; Category = "Network Tools" }
+
+    # 9. Download Tools
+    "qBittorrent"           = @{ Id = "qBittorrent.qBittorrent"; Name = "qBittorrent Client"; Category = "Download Tools" }
+    "Free Download Manager" = @{ Id = "SoftDeluxe.FreeDownloadManager"; Name = "Free Download Manager"; Category = "Download Tools" }
+    "IDM"                   = @{ Id = "Tonec.InternetDownloadManager"; Name = "Internet Download Manager"; Category = "Download Tools" }
+
+    # 10. Database & Server
+    "MySQL Workbench"       = @{ Id = "Oracle.MySQLWorkbench"; Name = "MySQL Workbench"; Category = "Database & Server" }
+    "DBeaver"               = @{ Id = "dbeaver.dbeaver"; Name = "DBeaver Universal Database"; Category = "Database & Server" }
+    "FileZilla"             = @{ Id = "FileZilla.FileZilla"; Name = "FileZilla FTP Client"; Category = "Database & Server" }
+    "pgAdmin"               = @{ Id = "PostgreSQL.pgAdmin"; Name = "pgAdmin PostgreSQL"; Category = "Database & Server" }
+
+    # 11. Web Browsers
+    "Google Chrome"         = @{ Id = "Google.Chrome"; Name = "Google Chrome"; Category = "Web Browsers" }
+    "Mozilla Firefox"       = @{ Id = "Mozilla.Firefox"; Name = "Mozilla Firefox"; Category = "Web Browsers" }
+    "Microsoft Edge"        = @{ Id = "Microsoft.Edge"; Name = "Microsoft Edge"; Category = "Web Browsers" }
+    "Brave"                 = @{ Id = "Brave.Brave"; Name = "Brave Browser"; Category = "Web Browsers" }
+    "Opera"                 = @{ Id = "Opera.Opera"; Name = "Opera Browser"; Category = "Web Browsers" }
+
+    # 12. Developer & Coding
+    "VS Code"               = @{ Id = "Microsoft.VisualStudioCode"; Name = "Visual Studio Code"; Category = "Developer & Coding" }
+    "Git"                   = @{ Id = "Git.Git"; Name = "Git for Windows"; Category = "Developer & Coding" }
+    "Python"                = @{ Id = "Python.Python.3.14"; Name = "Python 3"; Category = "Developer & Coding" }
+    "Node.js"               = @{ Id = "OpenJS.NodeJS.LTS"; Name = "Node.js (LTS)"; Category = "Developer & Coding" }
+
+    # 13. Multimedia
+    "VLC Media Player"      = @{ Id = "VideoLAN.VLC"; Name = "VLC Media Player"; Category = "Multimedia" }
+    "Spotify"               = @{ Id = "Spotify.Spotify"; Name = "Spotify Music"; Category = "Multimedia" }
+    "OBS Studio"            = @{ Id = "OBSProject.OBSStudio"; Name = "OBS Studio"; Category = "Multimedia" }
+    "Audacity"              = @{ Id = "Audacity.Audacity"; Name = "Audacity Audio Editor"; Category = "Multimedia" }
+    "HandBrake"             = @{ Id = "HandBrake.HandBrake"; Name = "HandBrake Video Transcoder"; Category = "Multimedia" }
+
+    # 14. Utilities & Tools
+    "7-Zip"                 = @{ Id = "7zip.7zip"; Name = "7-Zip Archiver"; Category = "Utilities & Tools" }
+    "WinRAR"                = @{ Id = "RARLab.WinRAR"; Name = "WinRAR"; Category = "Utilities & Tools" }
+    "Everything"            = @{ Id = "voidtools.Everything"; Name = "Everything Search"; Category = "Utilities & Tools" }
+    "Microsoft PowerToys"   = @{ Id = "Microsoft.PowerToys"; Name = "Microsoft PowerToys"; Category = "Utilities & Tools" }
+    "Rufus"                 = @{ Id = "Rufus.Rufus"; Name = "Rufus USB Creator"; Category = "Utilities & Tools" }
+    "ShareX"                = @{ Id = "ShareX.ShareX"; Name = "ShareX Screen Capture"; Category = "Utilities & Tools" }
+    "Avro Keyboard"         = @{ Id = "OmicronLab.Avro"; Name = "Avro Keyboard"; Category = "Utilities & Tools" }
+
+    # 15. Communication
+    "WhatsApp"              = @{ Id = "WhatsApp.WhatsApp"; Name = "WhatsApp Desktop"; Category = "Communication" }
+    "Telegram"              = @{ Id = "Telegram.TelegramDesktop"; Name = "Telegram Desktop"; Category = "Communication" }
+    "Discord"               = @{ Id = "Discord.Discord"; Name = "Discord"; Category = "Communication" }
+    "Zoom"                  = @{ Id = "Zoom.Zoom"; Name = "Zoom Workplace"; Category = "Communication" }
+    "Microsoft Teams"       = @{ Id = "Microsoft.Teams"; Name = "Microsoft Teams"; Category = "Communication" }
+
+    # 16. Gaming
+    "Steam"                 = @{ Id = "Valve.Steam"; Name = "Steam Client"; Category = "Gaming" }
+    "Epic Games"            = @{ Id = "EpicGames.EpicGamesLauncher"; Name = "Epic Games Launcher"; Category = "Gaming" }
+    "EA App"                = @{ Id = "ElectronicArts.EADesktop"; Name = "EA Desktop App"; Category = "Gaming" }
+    "Ubisoft Connect"       = @{ Id = "Ubisoft.Connect"; Name = "Ubisoft Connect"; Category = "Gaming" }
+    "Riot Client"           = @{ Id = "RiotGames.RiotClient"; Name = "Riot Client"; Category = "Gaming" }
+    "Xbox"                  = @{ Id = "Microsoft.GamingApp"; Name = "Xbox App"; Category = "Gaming" }
+
+    # 17. Security & Privacy
+    "Bitwarden"             = @{ Id = "Bitwarden.Bitwarden"; Name = "Bitwarden Password Manager"; Category = "Security & Privacy" }
+    "Malwarebytes"          = @{ Id = "Malwarebytes.Malwarebytes"; Name = "Malwarebytes Anti-Malware"; Category = "Security & Privacy" }
+    "Proton VPN"            = @{ Id = "Proton.ProtonVPN"; Name = "Proton VPN"; Category = "Security & Privacy" }
+}
 $Script:PackageGroups = [ordered]@{
+    "Office"         = @("Microsoft 365", "WPS Office", "LibreOffice", "Notepad++", "Adobe Acrobat Reader")
+    "Cloud"          = @("Google Drive", "OneDrive", "Dropbox", "MEGA")
+    "Remote"         = @("AnyDesk", "TeamViewer", "RustDesk", "PuTTY")
+    "Graphics"       = @("Adobe Photoshop", "GIMP", "Paint.NET", "Inkscape")
+    "AITools"        = @("ChatGPT", "Google Gemini", "Claude", "Microsoft Copilot", "Perplexity")
+    "Backup"         = @("Macrium Reflect", "AOMEI Backupper", "EaseUS Todo Backup")
+    "System"         = @("CPU-Z", "GPU-Z", "HWiNFO", "CrystalDiskInfo", "Speccy")
+    "Network"        = @("WireGuard", "OpenVPN Connect", "Tailscale", "ZeroTier")
+    "Downloads"      = @("qBittorrent", "Free Download Manager", "IDM")
+    "Database"       = @("MySQL Workbench", "DBeaver", "FileZilla", "pgAdmin")
     "Browsers"       = @("Google Chrome", "Mozilla Firefox", "Microsoft Edge", "Brave", "Opera")
     "Developer"      = @("VS Code", "Git", "Python", "Node.js", "Notepad++")
     "Multimedia"     = @("VLC Media Player", "Spotify", "OBS Studio", "Audacity", "HandBrake")
@@ -108,12 +160,8 @@ $Script:PackageGroups = [ordered]@{
     "Communication"  = @("WhatsApp", "Telegram", "Discord", "Zoom", "Microsoft Teams")
     "Gaming"         = @("Steam", "Epic Games", "EA App", "Ubisoft Connect", "Riot Client", "Xbox")
     "Security"       = @("Bitwarden", "Malwarebytes", "Proton VPN")
-    "RemoteIT"       = @("AnyDesk", "UltraViewer", "TeamViewer", "RustDesk", "PuTTY", "WinSCP")
-    "Office"         = @("Microsoft 365", "Microsoft Office 2024", "Microsoft Office 2021", "LibreOffice", "Adobe Acrobat Reader", "Notion")
-    "Essential"      = @("Google Chrome", "Mozilla Firefox", "Notepad++", "Python", "7-Zip", "VLC Media Player", "Avro Keyboard", "AnyDesk", "UltraViewer")
+    "Essential"      = @("Google Chrome", "Mozilla Firefox", "Notepad++", "Python", "7-Zip", "VLC Media Player", "Avro Keyboard", "AnyDesk", "ChatGPT")
 }
-
-# DNS Provider Presets
 $Script:DnsPresets = [ordered]@{
     "1" = @{ Name = "Cloudflare DNS (1.1.1.1 / 1.0.0.1)"; Primary = "1.1.1.1"; Secondary = "1.0.0.1" }
     "2" = @{ Name = "Google Public DNS (8.8.8.8 / 8.8.4.4)"; Primary = "8.8.8.8"; Secondary = "8.8.4.4" }
@@ -852,70 +900,56 @@ function Show-SoftwareSelector {
 
 function Show-SoftwareMenu {
     $options = @(
-        @{ Num = "1";  Title = "Web Browsers";        Desc = "Chrome, Firefox, Edge, Brave, Opera" }
-        @{ Num = "2";  Title = "Developer & Coding";  Desc = "VS Code, Git, Python, Node, Notepad++" }
-        @{ Num = "3";  Title = "Multimedia Creators"; Desc = "VLC, Spotify, OBS Studio, HandBrake" }
-        @{ Num = "4";  Title = "Utilities & Tools";   Desc = "7-Zip, WinRAR, Everything, PowerToys" }
-        @{ Num = "5";  Title = "Communication";       Desc = "WhatsApp, Telegram, Discord, Teams" }
-        @{ Num = "6";  Title = "Gaming Launchers";    Desc = "Steam, Epic Games, EA, Ubisoft, Xbox" }
-        @{ Num = "7";  Title = "Security & Privacy";  Desc = "Bitwarden, Malwarebytes, Proton VPN" }
-        @{ Num = "8";  Title = "Remote Access & IT";  Desc = "AnyDesk, UltraViewer, TeamViewer" }
-        @{ Num = "9";  Title = "Office Productivity"; Desc = "Microsoft 365, LibreOffice, Notion" }
-        @{ Num = "10"; Title = "Essential Quick Pack";Desc = "Curated pack for fresh Windows setup" }
-        @{ Num = "11"; Title = "Complete Catalog";    Desc = "Browse all verified software packages" }
-        @{ Num = "12"; Title = "Audit Installed Apps";Desc = "Scan PC for installed catalog apps" }
-        @{ Num = "13"; Title = "Refresh Winget Cache";Desc = "Update package source repositories" }
+        @{ Num = "1";  Title = "Office & Productivity";Desc = "Microsoft 365, WPS Office, LibreOffice" }
+        @{ Num = "2";  Title = "Cloud & Storage";      Desc = "Google Drive, OneDrive, Dropbox, MEGA" }
+        @{ Num = "3";  Title = "Remote Access";        Desc = "AnyDesk, TeamViewer, RustDesk, PuTTY" }
+        @{ Num = "4";  Title = "Graphics & Design";    Desc = "Photoshop, GIMP, Paint.NET, Inkscape" }
+        @{ Num = "5";  Title = "AI Tools Suite";       Desc = "ChatGPT, Gemini, Claude, Copilot" }
+        @{ Num = "6";  Title = "Backup & Recovery";    Desc = "Macrium Reflect, AOMEI, EaseUS" }
+        @{ Num = "7";  Title = "System & Hardware";    Desc = "CPU-Z, GPU-Z, HWiNFO, CrystalDiskInfo" }
+        @{ Num = "8";  Title = "Network Tools";        Desc = "WireGuard, OpenVPN, Tailscale, ZeroTier" }
+        @{ Num = "9";  Title = "Download Tools";       Desc = "qBittorrent, FDM, IDM accelerator" }
+        @{ Num = "10"; Title = "Database & Server";    Desc = "DBeaver, MySQL Workbench, FileZilla" }
+        @{ Num = "11"; Title = "Web Browsers";         Desc = "Chrome, Firefox, Edge, Brave, Opera" }
+        @{ Num = "12"; Title = "Developer & Coding";   Desc = "VS Code, Git, Python, Node.js" }
+        @{ Num = "13"; Title = "Multimedia Creators";  Desc = "VLC, Spotify, OBS Studio, HandBrake" }
+        @{ Num = "14"; Title = "Utilities & Tools";    Desc = "7-Zip, WinRAR, Everything, PowerToys" }
+        @{ Num = "15"; Title = "Communication";        Desc = "WhatsApp, Telegram, Discord, Teams" }
+        @{ Num = "16"; Title = "Gaming Launchers";     Desc = "Steam, Epic Games, EA, Ubisoft, Xbox" }
+        @{ Num = "17"; Title = "Security & Privacy";   Desc = "Bitwarden, Malwarebytes, Proton VPN" }
+        @{ Num = "18"; Title = "Essential Quick Pack"; Desc = "Curated standard pack for fresh PC" }
+        @{ Num = "19"; Title = "Complete Catalog";     Desc = "Browse all verified software packages" }
     )
 
     do {
         Show-Banner
         Show-ModuleHeader -ModuleTitle "MODULE 1: SOFTWARE INSTALLER (WINGET APPLICATION CATALOG)" -Subtitle "Interactive Selection • Zero Auto-Install • Single-Window Deployment"
-        Show-OptionTable -Options $options -PromptRange "0-13"
+        Show-OptionTable -Options $options -PromptRange "0-19"
         $choice = Read-Host
 
         switch ($choice) {
-            "1"  { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Browsers"] -GroupTitle "Web Browsers" }
-            "2"  { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Developer"] -GroupTitle "Developer & Coding" }
-            "3"  { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Multimedia"] -GroupTitle "Multimedia" }
-            "4"  { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Utilities"] -GroupTitle "Utilities & Tools" }
-            "5"  { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Communication"] -GroupTitle "Communication" }
-            "6"  { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Gaming"] -GroupTitle "Gaming Launchers" }
-            "7"  { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Security"] -GroupTitle "Security & Privacy" }
-            "8"  { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["RemoteIT"] -GroupTitle "Remote Access & IT" }
-            "9"  { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Office"] -GroupTitle "Office & Productivity" }
-            "10" { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Essential"] -GroupTitle "Essential Quick Pack" }
-            "11" { Show-SoftwareSelector -PackageKeys @($Script:SoftwareCatalog.Keys) -GroupTitle "Complete Software Catalog" }
-            "12" {
-                if (-not (Test-Winget)) { Pause-Toolkit; break }
-                Show-Banner
-                Write-Section "Checking Installation Status of Catalog Applications"
-                foreach ($k in $Script:SoftwareCatalog.Keys) {
-                    $pkg = $Script:SoftwareCatalog[$k]
-                    $installed = Get-InstalledPackage -PackageId $pkg.Id -PackageName $pkg.Name
-                    if ($installed) {
-                        Write-Host "  [INSTALLED] " -ForegroundColor Green -NoNewline
-                    } else {
-                        Write-Host "  [AVAILABLE] " -ForegroundColor DarkGray -NoNewline
-                    }
-                    Write-Host "$($pkg.Name) ($($pkg.Id))"
-                }
-                Pause-Toolkit
-            }
-            "13" {
-                if (-not (Test-Winget)) { Pause-Toolkit; break }
-                Write-Section "Refreshing Winget Package Sources"
-                $wingetExe = Get-WingetPath
-                & $wingetExe source update
-                Write-Success "Winget sources updated successfully."
-                Pause-Toolkit
-            }
+            "1"  { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Office"] -GroupTitle "Office & Productivity" }
+            "2"  { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Cloud"] -GroupTitle "Cloud & Storage" }
+            "3"  { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Remote"] -GroupTitle "Remote Access" }
+            "4"  { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Graphics"] -GroupTitle "Graphics & Design" }
+            "5"  { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["AITools"] -GroupTitle "AI Tools" }
+            "6"  { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Backup"] -GroupTitle "Backup & Recovery" }
+            "7"  { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["System"] -GroupTitle "System & Hardware" }
+            "8"  { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Network"] -GroupTitle "Network Tools" }
+            "9"  { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Downloads"] -GroupTitle "Download Tools" }
+            "10" { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Database"] -GroupTitle "Database & Server" }
+            "11" { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Browsers"] -GroupTitle "Web Browsers" }
+            "12" { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Developer"] -GroupTitle "Developer & Coding" }
+            "13" { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Multimedia"] -GroupTitle "Multimedia" }
+            "14" { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Utilities"] -GroupTitle "Utilities & Tools" }
+            "15" { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Communication"] -GroupTitle "Communication" }
+            "16" { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Gaming"] -GroupTitle "Gaming Launchers" }
+            "17" { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Security"] -GroupTitle "Security & Privacy" }
+            "18" { Show-SoftwareSelector -PackageKeys $Script:PackageGroups["Essential"] -GroupTitle "Essential Quick Pack" }
+            "19" { Show-SoftwareSelector -PackageKeys @($Script:SoftwareCatalog.Keys) -GroupTitle "Complete Software Catalog" }
         }
     } while ($choice -ne "0")
 }
-
-# ============================================================================
-# MODULE 2: DEBLOAT & PRIVACY HARDENING
-# ============================================================================
 
 function Show-DebloatMenu {
     $options = @(

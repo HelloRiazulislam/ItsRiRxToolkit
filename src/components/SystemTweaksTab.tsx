@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Wrench,
   ShieldCheck,
@@ -11,7 +11,9 @@ import {
   Check,
   Terminal,
   RotateCcw,
-  CheckCircle2
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { SYSTEM_TWEAKS, SystemTweak } from '../data/toolkitCatalog';
 import { generateBatchInstaller, generatePowerShellInstaller, generateOneLineCommand, triggerFileDownload } from '../utils/scriptGenerator';
@@ -31,6 +33,69 @@ export const SystemTweaksTab: React.FC<SystemTweaksTabProps> = ({
 }) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('All');
+
+  // Category Slider refs and states
+  const tweakScrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeftState, setScrollLeftState] = useState(0);
+
+  const checkScrollability = () => {
+    if (tweakScrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = tweakScrollRef.current;
+      setCanScrollLeft(scrollLeft > 5);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 5);
+    }
+  };
+
+  useEffect(() => {
+    checkScrollability();
+    window.addEventListener('resize', checkScrollability);
+    return () => window.removeEventListener('resize', checkScrollability);
+  }, []);
+
+  const slideLeft = () => {
+    if (tweakScrollRef.current) {
+      tweakScrollRef.current.scrollBy({ left: -260, behavior: 'smooth' });
+      setTimeout(checkScrollability, 300);
+    }
+  };
+
+  const slideRight = () => {
+    if (tweakScrollRef.current) {
+      tweakScrollRef.current.scrollBy({ left: 260, behavior: 'smooth' });
+      setTimeout(checkScrollability, 300);
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!tweakScrollRef.current) return;
+    setIsDragging(true);
+    setStartX(e.pageX - tweakScrollRef.current.offsetLeft);
+    setScrollLeftState(tweakScrollRef.current.scrollLeft);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !tweakScrollRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - tweakScrollRef.current.offsetLeft;
+    const walk = (x - startX) * 1.5;
+    tweakScrollRef.current.scrollLeft = scrollLeftState - walk;
+    checkScrollability();
+  };
+
+  const handleMouseUpOrLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    if (tweakScrollRef.current && Math.abs(e.deltaY) > 0) {
+      tweakScrollRef.current.scrollLeft += e.deltaY * 1.2;
+      checkScrollability();
+    }
+  };
 
   const categories = [
     'All',
@@ -255,26 +320,74 @@ export const SystemTweaksTab: React.FC<SystemTweaksTabProps> = ({
         </div>
       )}
 
-      {/* Category Pills Glass Bar */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-        {categories.map((cat) => {
-          const isSelected = activeCategory === cat;
-          return (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-150 flex items-center gap-2 cursor-pointer backdrop-blur-md ${
-                isSelected
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/25 border-transparent'
-                  : isDark
-                  ? 'bg-zinc-900/50 text-zinc-400 hover:text-zinc-200 border border-white/10 hover:border-white/20'
-                  : 'bg-white/70 text-slate-600 hover:text-slate-900 border border-white/90 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:bg-white'
-              }`}
-            >
-              {cat}
-            </button>
-          );
-        })}
+      {/* Category Pills Glass Slider with Left/Right Buttons, Mouse Wheel & Drag to Slide */}
+      <div className="relative flex items-center gap-2">
+        {/* Left Slide Button */}
+        <button
+          onClick={slideLeft}
+          disabled={!canScrollLeft}
+          className={`shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all cursor-pointer z-10 backdrop-blur-md ${
+            canScrollLeft
+              ? isDark
+                ? 'bg-zinc-800/90 hover:bg-zinc-700 text-white border border-white/10 shadow-md'
+                : 'bg-white/90 hover:bg-white text-slate-800 border border-slate-200/80 shadow-md'
+              : 'opacity-30 cursor-not-allowed text-slate-400'
+          }`}
+          title="Scroll Left"
+          aria-label="Scroll Categories Left"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+
+        {/* Scrollable Category Row */}
+        <div
+          ref={tweakScrollRef}
+          onScroll={checkScrollability}
+          onWheel={handleWheel}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUpOrLeave}
+          onMouseLeave={handleMouseUpOrLeave}
+          className={`flex items-center gap-2 overflow-x-auto py-1 scroll-smooth scrollbar-none select-none flex-1 ${
+            isDragging ? 'cursor-grabbing' : 'cursor-grab'
+          }`}
+        >
+          {categories.map((cat) => {
+            const isSelected = activeCategory === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-150 flex items-center gap-2 cursor-pointer backdrop-blur-md shrink-0 ${
+                  isSelected
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/25 border-transparent'
+                    : isDark
+                    ? 'bg-zinc-900/50 text-zinc-400 hover:text-zinc-200 border border-white/10 hover:border-white/20'
+                    : 'bg-white/70 text-slate-600 hover:text-slate-900 border border-white/90 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:bg-white'
+                }`}
+              >
+                {cat}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Right Slide Button */}
+        <button
+          onClick={slideRight}
+          disabled={!canScrollRight}
+          className={`shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all cursor-pointer z-10 backdrop-blur-md ${
+            canScrollRight
+              ? isDark
+                ? 'bg-zinc-800/90 hover:bg-zinc-700 text-white border border-white/10 shadow-md'
+                : 'bg-white/90 hover:bg-white text-slate-800 border border-slate-200/80 shadow-md'
+              : 'opacity-30 cursor-not-allowed text-slate-400'
+          }`}
+          title="Scroll Right"
+          aria-label="Scroll Categories Right"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Tweaks Cards Grid with Frosted Glass styling */}
