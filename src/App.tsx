@@ -91,8 +91,17 @@ export default function App() {
 
   const batLauncherCode = `@echo off
 :: ============================================================================
-::  ItsRiRx Windows Tool Kit - 1-Click Desktop Launcher
-::  Compatibility: Windows 10, Windows 11 (64-bit)
+::   ██╗████████╗███████╗██████╗ ██╗██████╗ ██╗  ██╗
+::   ██║╚══██╔══╝██╔════╝██╔══██╗██║██╔══██╗╚██╗██╔╝
+::   ██║   ██║   ███████╗██████╔╝██║██████╔╝ ╚███╔╝   WINDOWS TOOL KIT
+::   ██║   ██║   ╚════██║██╔══██╗██║██╔══██╗ ██╔██╗   Version 1.2.0
+::   ██║   ██║   ███████║██║  ██║██║██║  ██║██╔╝ ██╗
+::   ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
+:: ============================================================================
+::  Project      : ItsRiRx Windows Tool Kit - 1-Click Desktop Launcher
+::  Website      : https://itsrirx-toolkit.vercel.app
+::  Created by   : Riazul Islam
+::  Compatibility: Windows 10, Windows 11 (64-bit Architecture)
 :: ============================================================================
 title ItsRiRx Windows Tool Kit
 color 0b
@@ -107,6 +116,8 @@ if %errorlevel% neq 0 (
 cls
 echo ============================================================================
 echo   ItsRiRx Windows Tool Kit - Launching remote suite...
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   Created by : Riazul Islam
 echo ============================================================================
 echo.
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$url = 'https://raw.githubusercontent.com/itsrirx/WindowsToolKit/main/toolkit.ps1'; try { irm $url | iex } catch { irm 'https://itsrirx-toolkit.vercel.app/i' | iex }"
@@ -117,8 +128,17 @@ pause >nul`;
 
   const setupRirxCode = `@echo off
 :: ============================================================================
-::  ItsRiRx Windows Tool Kit - Universal 'rirx' Setup & Binary Installer
-::  Compatibility: Windows 10, Windows 11 (64-bit)
+::   ██╗████████╗███████╗██████╗ ██╗██████╗ ██╗  ██╗
+::   ██║╚══██╔══╝██╔════╝██╔══██╗██║██╔══██╗╚██╗██╔╝
+::   ██║   ██║   ███████╗██████╔╝██║██████╔╝ ╚███╔╝   WINDOWS TOOL KIT
+::   ██║   ██║   ╚════██║██╔══██╗██║██╔══██╗ ██╔██╗   Version 1.2.0
+::   ██║   ██║   ███████║██║  ██║██║██║  ██║██╔╝ ██╗
+::   ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
+:: ============================================================================
+::  Project      : ItsRiRx Universal 'rirx' Setup & Binary Installer
+::  Website      : https://itsrirx-toolkit.vercel.app
+::  Created by   : Riazul Islam
+::  Compatibility: Windows 10, Windows 11 (64-bit Architecture)
 :: ============================================================================
 title Setup 'rirx' Command Everywhere
 color 0b
@@ -134,6 +154,8 @@ if %errorlevel% neq 0 (
 cls
 echo ============================================================================
 echo   ItsRiRx Windows Tool Kit - 1-Click 'rirx' Command Setup
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   Created by : Riazul Islam
 echo ============================================================================
 echo.
 echo [*] Step 1: Installing global 'rirx.cmd' and 'rirx.ps1' binaries to System32...
@@ -627,13 +649,17 @@ pause >nul`;
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
             <span className={isDark ? 'text-zinc-300' : 'text-slate-700'}>
-              ItsRiRx Windows Tool Kit v1.2.0 Minimalist
+              ItsRiRx Windows Tool Kit
+            </span>
+            <span className={isDark ? 'text-zinc-600' : 'text-slate-300'}>·</span>
+            <span className="text-cyan-600 dark:text-cyan-400 font-semibold">
+              Created by: Riazul Islam
             </span>
           </div>
           <div>
             Launcher: <code className={isDark ? 'text-zinc-400' : 'text-slate-600'}>irm {endpointUrl} | iex</code>
           </div>
-          <div>Built with PowerShell for Power Users & SysAdmins.</div>
+          <div>https://itsrirx-toolkit.vercel.app</div>
         </div>
       </footer>
     </div>

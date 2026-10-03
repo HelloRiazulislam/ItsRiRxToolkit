@@ -386,6 +386,16 @@ function Show-Banner {
 
     Write-Host "  ├────────────────────────────────────────────────────────────────────────┤" -ForegroundColor DarkCyan
 
+    # Branding & Creator credit line (strictly 68 chars inside)
+    $siteText = "Site: https://itsrirx-toolkit.vercel.app"
+    $authorText = "Created by: Riazul Islam"
+    Write-Host "  │  " -NoNewline -ForegroundColor DarkCyan
+    Write-Host "$($siteText.PadRight(40))" -NoNewline -ForegroundColor Cyan
+    Write-Host "$($authorText.PadLeft(28))" -NoNewline -ForegroundColor Green
+    Write-Host "  │" -ForegroundColor DarkCyan
+
+    Write-Host "  ├────────────────────────────────────────────────────────────────────────┤" -ForegroundColor DarkCyan
+
     # Host & Session line (strictly 68 chars inside)
     $hostRaw = "$env:COMPUTERNAME ($env:USERNAME)"
     if ($hostRaw.Length -gt 28) { $hostRaw = $hostRaw.Substring(0, 25) + "..." }

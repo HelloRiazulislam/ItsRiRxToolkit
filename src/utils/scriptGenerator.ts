@@ -10,6 +10,7 @@ export function getTweakById(id: string): SystemTweak | undefined {
 
 /**
  * Generates an auto-elevating, self-contained .bat silent installer for selected applications and tweaks
+ * with rich ItsRiRx toolkit branding & creator credits (Created by: Riazul Islam)
  */
 export function generateBatchInstaller(
   selectedAppIds: string[],
@@ -23,11 +24,21 @@ export function generateBatchInstaller(
 
   let script = `@echo off
 :: ============================================================================
-::  ItsRiRx Windows Tool Kit - Automated Silent Setup & Deployment
-::  Generated: ${dateStr}
-::  Compatibility: Windows 10, Windows 11 (64-bit)
+::   ██╗████████╗███████╗██████╗ ██╗██████╗ ██╗  ██╗
+::   ██║╚══██╔══╝██╔════╝██╔══██╗██║██╔══██╗╚██╗██╔╝
+::   ██║   ██║   ███████╗██████╔╝██║██████╔╝ ╚███╔╝   WINDOWS TOOL KIT
+::   ██║   ██║   ╚════██║██╔══██╗██║██╔══██╗ ██╔██╗   Version 1.2.0
+::   ██║   ██║   ███████║██║  ██║██║██║  ██║██╔╝ ██╗
+::   ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
 :: ============================================================================
-title ${bundleTitle}
+::  Project    : ItsRiRx Windows Tool Kit (Automated Deployment Script)
+::  Website    : https://itsrirx-toolkit.vercel.app
+::  Created by : Riazul Islam
+::  Target     : ${bundleTitle}
+::  Generated  : ${dateStr}
+::  Support    : Windows 10, Windows 11 (64-bit Architecture)
+:: ============================================================================
+title ${bundleTitle} - ItsRiRx Windows Tool Kit
 color 0b
 
 :: 1. Self-Elevate to Administrator if running unprivileged
@@ -42,7 +53,10 @@ if %errorlevel% neq 0 (
 cls
 echo ============================================================================
 echo   ItsRiRx Windows Tool Kit - Automated Silent Deployment
-echo   Selected Apps: ${apps.length}  ^|  Selected System Optimizations: ${tweaks.length}
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   Created by : Riazul Islam
+echo   Setup Item : ${bundleTitle}
+echo   Queue      : ${apps.length} Application(s) ^| ${tweaks.length} System Optimization(s)
 echo ============================================================================
 echo.
 
@@ -99,7 +113,9 @@ echo.
   }
 
   script += `echo ============================================================================
-echo   [COMPLETED] Automated setup and deployment has finished!
+echo   [COMPLETED] Automated setup and deployment has finished successfully!
+echo   Toolkit    : https://itsrirx-toolkit.vercel.app
+echo   Created by : Riazul Islam
 echo ============================================================================
 echo.
 powershell.exe -NoProfile -Command "[console]::beep(800,200); [console]::beep(1000,300)" >nul 2>&1
@@ -110,7 +126,7 @@ pause
 }
 
 /**
- * Generates a clean standalone PowerShell (.ps1) script for selected applications and tweaks
+ * Generates a clean standalone PowerShell (.ps1) script with branding & creator credits
  */
 export function generatePowerShellInstaller(
   selectedAppIds: string[],
@@ -123,15 +139,21 @@ export function generatePowerShellInstaller(
   const dateStr = new Date().toISOString().split('T')[0];
 
   let script = `# ============================================================================
-#  ItsRiRx Windows Tool Kit - Automated Silent Setup & Deployment (PowerShell)
-#  Generated: ${dateStr}
+#   ItsRiRx Windows Tool Kit - Automated Silent Setup & Deployment (PowerShell)
+#   Website    : https://itsrirx-toolkit.vercel.app
+#   Created by : Riazul Islam
+#   Target     : ${bundleTitle}
+#   Generated  : ${dateStr}
 # ============================================================================
 #Requires -RunAsAdministrator
 
-$Host.UI.RawUI.WindowTitle = "${bundleTitle}"
+$Host.UI.RawUI.WindowTitle = "${bundleTitle} - ItsRiRx Windows Tool Kit"
 Write-Host "============================================================================" -ForegroundColor Cyan
 Write-Host "  ItsRiRx Windows Tool Kit - Automated Silent Deployment" -ForegroundColor White
-Write-Host "  Apps: ${apps.length} | System Tweaks: ${tweaks.length}" -ForegroundColor DarkCyan
+Write-Host "  Website    : https://itsrirx-toolkit.vercel.app" -ForegroundColor Cyan
+Write-Host "  Created by : Riazul Islam" -ForegroundColor Green
+Write-Host "  Target     : ${bundleTitle}" -ForegroundColor Yellow
+Write-Host "  Queue      : ${apps.length} Application(s) | ${tweaks.length} System Optimization(s)" -ForegroundColor DarkCyan
 Write-Host "============================================================================" -ForegroundColor Cyan
 Write-Host ""
 `;
@@ -153,74 +175,73 @@ try {
   }
 
   if (apps.length > 0) {
-    script += `Write-Host "--- STAGE 2: SILENT APPLICATION INSTALLATION ---" -ForegroundColor Yellow
-$appsToInstall = @(
+    script += `Write-Host "--- STAGE 2: SILENT APPLICATION DEPLOYMENT VIA WINGET ---" -ForegroundColor Yellow
+$wingetCmd = (Get-Command winget -ErrorAction SilentlyContinue).Source
+if (-not $wingetCmd) {
+    $wingetCmd = "$env:LOCALAPPDATA\\Microsoft\\WindowsApps\\winget.exe"
+}
 `;
-    apps.forEach((a) => {
-      script += `    @{ Id = '${a.id}'; Name = '${a.name}' }
+    apps.forEach((app, idx) => {
+      script += `Write-Host "[${idx + 1}/${apps.length}] Installing ${app.name} (${app.id})..." -ForegroundColor White
+try {
+    Start-Process -FilePath $wingetCmd -ArgumentList @("install", "--id", "${app.id}", "-e", "--silent", "--accept-package-agreements", "--accept-source-agreements", "--disable-interactivity") -NoNewWindow -Wait
+    Write-Host "  [OK] ${app.name} installed successfully." -ForegroundColor Green
+} catch {
+    Write-Host "  [!] Error installing ${app.name}: $($_.Exception.Message)" -ForegroundColor Red
+}
 `;
     });
-    script += `)
-
-$wingetExe = "winget"
-if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-    if (Test-Path "$env:LOCALAPPDATA\\Microsoft\\WindowsApps\\winget.exe") {
-        $wingetExe = "$env:LOCALAPPDATA\\Microsoft\\WindowsApps\\winget.exe"
-    }
-}
-
-$idx = 1
-foreach ($app in $appsToInstall) {
-    Write-Host "[$idx/$($appsToInstall.Count)] Downloading & Silently Installing: $($app.Name) ($($app.Id))..." -ForegroundColor Cyan
-    $p = Start-Process -FilePath $wingetExe -ArgumentList @("install", "--id", $app.Id, "-e", "--silent", "--accept-package-agreements", "--accept-source-agreements", "--disable-interactivity") -NoNewWindow -Wait -PassThru
-    if ($p.ExitCode -eq 0) {
-        Write-Host "  [SUCCESS] $($app.Name) installed!" -ForegroundColor Green
-    } else {
-        Write-Host "  [INFO] $($app.Name) exit code: $($p.ExitCode)" -ForegroundColor DarkGray
-    }
-    $idx++
-}
-
-Write-Host ""
-Write-Host "[SUCCESS] All selected applications processed!" -ForegroundColor Green
-[console]::beep(800,200); [console]::beep(1000,300)
+    script += `Write-Host ""
 `;
   }
+
+  script += `Write-Host "============================================================================" -ForegroundColor Cyan
+Write-Host "  [SUCCESS] All queued operations completed!" -ForegroundColor Green
+Write-Host "  Toolkit    : https://itsrirx-toolkit.vercel.app" -ForegroundColor Cyan
+Write-Host "  Created by : Riazul Islam" -ForegroundColor White
+Write-Host "============================================================================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "Press any key to exit..." -ForegroundColor DarkGray
+[void][System.Console]::ReadKey($true)
+`;
 
   return script;
 }
 
 /**
- * Generates an instant 1-line command to copy & run directly in PowerShell
+ * Generates an instant 1-line PowerShell command string to execute in terminal
  */
-export function generateOneLineCommand(selectedAppIds: string[], selectedTweakIds: string[] = []): string {
-  const appIds = selectedAppIds.join("','");
-  const tweakList = selectedTweakIds.map(getTweakById).filter(Boolean) as SystemTweak[];
-
+export function generateOneLineCommand(
+  selectedAppIds: string[],
+  selectedTweakIds: string[] = []
+): string {
   const parts: string[] = [];
 
-  if (tweakList.length > 0) {
-    tweakList.forEach((t) => parts.push(t.psCode));
-  }
+  const tweaks = selectedTweakIds.map(getTweakById).filter(Boolean) as SystemTweak[];
+  tweaks.forEach((t) => {
+    parts.push(t.psCode.trim());
+  });
 
-  if (selectedAppIds.length > 0) {
-    parts.push(`@('${appIds}') | ForEach-Object { winget install --id $_ -e --silent --accept-package-agreements --accept-source-agreements --disable-interactivity }`);
+  const apps = selectedAppIds.map(getAppById).filter(Boolean) as SoftwareApp[];
+  if (apps.length > 0) {
+    const ids = apps.map((a) => `'${a.id}'`).join(',');
+    parts.push(`@(${ids}) | ForEach-Object { winget install --id $_ -e --silent --accept-package-agreements --accept-source-agreements --disable-interactivity }`);
   }
 
   return parts.join('; ');
 }
 
 /**
- * Downloads a string as a file in the browser
+ * Triggers a native file download in the browser
  */
 export function triggerFileDownload(filename: string, content: string): void {
   const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
