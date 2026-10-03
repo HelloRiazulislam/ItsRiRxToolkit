@@ -190,6 +190,98 @@ app.get('/api/script', (req, res) => {
   return res.status(200).send(getToolkitScript());
 });
 
+// 6. Dynamic Bundle Download API: /api/bundle.bat and /api/bundle.ps1
+app.get(['/api/bundle.bat', '/download/bundle.bat'], (req, res) => {
+  const appsParam = (req.query.apps as string) || '';
+  const apps = appsParam ? appsParam.split(',').filter(Boolean) : [];
+
+  let script = `@echo off
+:: ============================================================================
+::  ItsRiRx Windows Tool Kit - Automated Silent Application Deployment
+:: ============================================================================
+title ItsRiRx Silent Software Deployment
+color 0b
+
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [*] Administrator rights required for silent installation.
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
+    exit /b
+)
+
+cls
+echo ============================================================================
+echo   ItsRiRx Windows Tool Kit - Automated Silent Deployment
+echo   Total Packages to Deploy: ${apps.length}
+echo ============================================================================
+echo.
+
+set WINGET_CMD=winget
+where winget >nul 2>&1
+if %errorlevel% neq 0 (
+    if exist "%LOCALAPPDATA%\\Microsoft\\WindowsApps\\winget.exe" (
+        set WINGET_CMD="%LOCALAPPDATA%\\Microsoft\\WindowsApps\\winget.exe"
+    )
+)
+
+echo [*] Initializing package manager...
+%WINGET_CMD% source update --accept-source-agreements >nul 2>&1
+echo.
+`;
+
+  apps.forEach((app, idx) => {
+    script += `echo [${idx + 1}/${apps.length}] Installing ${app}...
+%WINGET_CMD% install --id ${app} -e --silent --accept-package-agreements --accept-source-agreements --disable-interactivity
+echo.
+`;
+  });
+
+  script += `echo ============================================================================
+echo   [COMPLETED] Automated silent deployment finished!
+echo ============================================================================
+pause
+`;
+
+  res.setHeader('Content-Type', 'application/x-bat; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="ItsRiRx-Silent-Installer.bat"');
+  return res.status(200).send(script);
+});
+
+app.get(['/api/bundle.ps1', '/download/bundle.ps1'], (req, res) => {
+  const appsParam = (req.query.apps as string) || '';
+  const apps = appsParam ? appsParam.split(',').filter(Boolean) : [];
+
+  let script = `# ============================================================================
+#  ItsRiRx Windows Tool Kit - Automated Silent Application Deployment
+# ============================================================================
+#Requires -RunAsAdministrator
+
+Write-Host "ItsRiRx Silent Software Deployment (${apps.length} applications)" -ForegroundColor Cyan
+$apps = @('${apps.join("','")}')
+
+$wingetExe = "winget"
+if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+    if (Test-Path "$env:LOCALAPPDATA\\Microsoft\\WindowsApps\\winget.exe") {
+        $wingetExe = "$env:LOCALAPPDATA\\Microsoft\\WindowsApps\\winget.exe"
+    }
+}
+
+$idx = 1
+foreach ($app in $apps) {
+    if ([string]::IsNullOrWhiteSpace($app)) { continue }
+    Write-Host "[$idx/$($apps.Count)] Installing $app..." -ForegroundColor Cyan
+    Start-Process -FilePath $wingetExe -ArgumentList @("install", "--id", $app, "-e", "--silent", "--accept-package-agreements", "--accept-source-agreements", "--disable-interactivity") -NoNewWindow -Wait
+    $idx++
+}
+
+Write-Host "All applications processed successfully!" -ForegroundColor Green
+`;
+
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="ItsRiRx-Silent-Installer.ps1"');
+  return res.status(200).send(script);
+});
+
 // 4. Mount Vite in dev or static files in production
 async function startServer() {
   if (!isProduction) {
