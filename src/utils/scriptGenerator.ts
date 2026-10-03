@@ -46,7 +46,7 @@ net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo [*] Administrator privileges required for silent installation.
     echo [*] Requesting UAC elevation...
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
+    powershell.exe -NoProfile -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
     exit /b
 )
 
