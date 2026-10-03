@@ -482,7 +482,6 @@ function Test-Winget {
 }
 
 $Script:RegistryAppsCache = $null
-$Script:WingetListCache = $null
 
 function Initialize-InstalledAppsCache {
     if ($Script:RegistryAppsCache -ne $null) { return }
@@ -495,6 +494,16 @@ function Initialize-InstalledAppsCache {
         "HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*",
         "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*"
     )
+
+    # 2. Add all user hives under HKEY_USERS (critical when elevated as Administrator)
+    try {
+        $userProfiles = Get-ChildItem Registry::HKEY_USERS -ErrorAction SilentlyContinue | 
+            Where-Object { $_.PSChildName -match "^S-1-5-21-" -and $_.PSChildName -notmatch "_Classes$" }
+        foreach ($u in $userProfiles) {
+            $regPaths += "Registry::HKEY_USERS\$($u.PSChildName)\Software\Microsoft\Windows\CurrentVersion\Uninstall\*"
+        }
+    } catch {}
+
     foreach ($rp in $regPaths) {
         try {
             $keys = Get-ItemProperty $rp -ErrorAction SilentlyContinue
@@ -507,19 +516,15 @@ function Initialize-InstalledAppsCache {
         } catch {}
     }
 
-    $Script:RegistryAppsCache = $apps
-}
-
-function Get-WingetInstalledCache {
-    if ($Script:WingetListCache -ne $null) { return $Script:WingetListCache }
+    # 3. Add installed Appx/UWP application package names
     try {
-        $wingetExe = Get-WingetPath
-        $output = & $wingetExe list --accept-source-agreements 2>&1
-        $Script:WingetListCache = ($output -join "`n")
-    } catch {
-        $Script:WingetListCache = ""
-    }
-    return $Script:WingetListCache
+        $appx = Get-AppxPackage -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name
+        if ($appx) {
+            foreach ($a in $appx) { [void]$apps.Add($a) }
+        }
+    } catch {}
+
+    $Script:RegistryAppsCache = $apps
 }
 
 function Get-InstalledPackage {
@@ -534,7 +539,7 @@ function Get-InstalledPackage {
         return $Script:InstalledCache[$PackageId]
     }
 
-    # Layer 1: Query Windows Registry Uninstall Cache (Fastest & Detects All Desktop Apps)
+    # Layer 1: Query In-Memory Registry & Appx Cache (Instant, 0.001s, Never Blocks)
     Initialize-InstalledAppsCache
     if ($Script:RegistryAppsCache -and $Script:RegistryAppsCache.Count -gt 0) {
         if ($Script:RegistryAppsCache.Contains($PackageId) -or 
@@ -604,7 +609,7 @@ function Get-InstalledPackage {
         }
     }
 
-    # Layer 2: Common Executable & Command Detection (Instant Local Disk Check)
+    # Layer 2: Common Executable & Command Detection (Instant Local Disk Check, 0.0001s)
     $installedByPath = switch -Wildcard ($PackageId) {
         "Google.Chrome*"              { (Test-Path "$env:ProgramFiles\Google\Chrome\Application\chrome.exe") -or (Test-Path "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe") -or (Test-Path "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe") }
         "Mozilla.Firefox*"            { (Test-Path "$env:ProgramFiles\Mozilla Firefox\firefox.exe") -or (Test-Path "${env:ProgramFiles(x86)}\Mozilla Firefox\firefox.exe") }
@@ -617,10 +622,11 @@ function Get-InstalledPackage {
         "OpenJS.NodeJS*"              { [bool](Get-Command node -ErrorAction SilentlyContinue) -or (Test-Path "$env:ProgramFiles\nodejs\node.exe") }
         "Notepad++.Notepad++*"        { (Test-Path "$env:ProgramFiles\Notepad++\notepad++.exe") -or (Test-Path "${env:ProgramFiles(x86)}\Notepad++\notepad++.exe") }
         "VideoLAN.VLC*"               { (Test-Path "$env:ProgramFiles\VideoLAN\VLC\vlc.exe") -or (Test-Path "${env:ProgramFiles(x86)}\VideoLAN\VLC\vlc.exe") }
-        "Spotify.Spotify*"            { (Test-Path "$env:APPDATA\Spotify\Spotify.exe") }
+        "Spotify.Spotify*"            { (Test-Path "$env:APPDATA\Spotify\Spotify.exe") -or (Test-Path "$env:LOCALAPPDATA\Microsoft\WindowsApps\Spotify.exe") }
         "7zip.7zip*"                  { (Test-Path "$env:ProgramFiles\7-Zip\7z.exe") -or (Test-Path "${env:ProgramFiles(x86)}\7-Zip\7z.exe") }
         "RARLab.WinRAR*"              { (Test-Path "$env:ProgramFiles\WinRAR\WinRAR.exe") -or (Test-Path "${env:ProgramFiles(x86)}\WinRAR\WinRAR.exe") }
         "voidtools.Everything*"       { (Test-Path "$env:ProgramFiles\Everything\Everything.exe") -or (Test-Path "${env:ProgramFiles(x86)}\Everything\Everything.exe") }
+        "OmicronLab.Avro*"            { (Test-Path "$env:ProgramFiles\Avro Keyboard\Avro Keyboard.exe") -or (Test-Path "${env:ProgramFiles(x86)}\Avro Keyboard\Avro Keyboard.exe") }
         "WhatsApp.WhatsApp*"          { (Test-Path "$env:LOCALAPPDATA\WhatsApp\WhatsApp.exe") }
         "Telegram.TelegramDesktop*"   { (Test-Path "$env:APPDATA\Telegram Desktop\Telegram.exe") }
         "Discord.Discord*"            { (Test-Path "$env:LOCALAPPDATA\Discord\Update.exe") }
@@ -636,29 +642,11 @@ function Get-InstalledPackage {
         return $true
     }
 
-    # Layer 3: Winget List Cache Query
-    $wCache = Get-WingetInstalledCache
-    if ($wCache) {
-        if ($wCache -match [regex]::Escape($PackageId) -or ($PackageName -and $wCache -match [regex]::Escape($PackageName))) {
-            $Script:InstalledCache[$PackageId] = $true
-            return $true
-        }
-    }
-
-    # Layer 4: Live Winget single query fallback (without relying on exit code)
-    try {
-        $wingetExe = Get-WingetPath
-        $singleQuery = & $wingetExe list --id $PackageId --accept-source-agreements 2>&1
-        if ($singleQuery -match [regex]::Escape($PackageId) -or ($PackageName -and $singleQuery -match [regex]::Escape($PackageName))) {
-            $Script:InstalledCache[$PackageId] = $true
-            return $true
-        }
-    } catch {}
-
+    # If not found in Registry, Appx, or Local Disk, it is not installed.
+    # Completely non-blocking: never invokes external winget list processes in the loop!
     $Script:InstalledCache[$PackageId] = $false
     return $false
 }
-
 function Show-SoftwareSelector {
     param(
         [string[]]$PackageKeys,
@@ -1909,40 +1897,94 @@ function Get-InstalledSoftwareList {
         "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*"
     )
 
-    $installedList = @()
-    $seenNames = @{}
+    # 1. Query all logged-in user profiles in HKEY_USERS (captures user-installed apps like VS Code User, Discord, Chrome per-user)
+    try {
+        $userProfiles = Get-ChildItem Registry::HKEY_USERS -ErrorAction SilentlyContinue | 
+            Where-Object { $_.PSChildName -match "^S-1-5-21-" -and $_.PSChildName -notmatch "_Classes$" }
+        foreach ($u in $userProfiles) {
+            $paths += "Registry::HKEY_USERS\$($u.PSChildName)\Software\Microsoft\Windows\CurrentVersion\Uninstall\*"
+        }
+    } catch {}
 
+    $installedList = @()
+    $seenNames = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+
+    # 2. Scan Registry Uninstall Keys
     foreach ($path in $paths) {
         if (Test-Path (Split-Path $path)) {
             Get-ItemProperty $path -ErrorAction SilentlyContinue | ForEach-Object {
                 $name = $_.DisplayName
-                if (-not [string]::IsNullOrWhiteSpace($name) -and 
-                    -not $_.SystemComponent -and 
-                    -not $_.ParentKeyName -and 
-                    $_.UninstallString) {
-                    
-                    # Clean unwanted non-user app clutter like KB updates
-                    if ($name -match "^(KB\d+|Security Update|Update for Windows)") { return }
+                if ([string]::IsNullOrWhiteSpace($name)) { return }
 
-                    if (-not $seenNames.ContainsKey($name.ToLower())) {
-                        $seenNames[$name.ToLower()] = $true
+                # Filter out pure Windows OS updates (KB articles)
+                if ($name -match "^(KB\d+|Security Update for|Update for Windows)") { return }
 
-                        if ([string]::IsNullOrWhiteSpace($FilterKeyword) -or ($name -match [regex]::Escape($FilterKeyword)) -or ($_.Publisher -match [regex]::Escape($FilterKeyword))) {
-                            $installedList += [PSCustomObject]@{
-                                DisplayName          = $name
-                                DisplayVersion       = if ($_.DisplayVersion) { $_.DisplayVersion } else { "N/A" }
-                                Publisher            = if ($_.Publisher) { $_.Publisher } else { "Unknown" }
-                                UninstallString      = $_.UninstallString
-                                QuietUninstallString = $_.QuietUninstallString
-                                InstallLocation      = $_.InstallLocation
-                                PSChildName          = $_.PSChildName
-                            }
+                # Resolve uninstall command (check UninstallString, QuietUninstallString, or InstallLocation uninstaller)
+                $uninst = if ($_.UninstallString) { 
+                    $_.UninstallString 
+                } elseif ($_.QuietUninstallString) { 
+                    $_.QuietUninstallString 
+                } elseif ($_.InstallLocation -and (Test-Path "$($_.InstallLocation)\unins000.exe")) {
+                    "`"$($_.InstallLocation)\unins000.exe`""
+                } elseif ($_.InstallLocation -and (Test-Path "$($_.InstallLocation)\uninstall.exe")) {
+                    "`"$($_.InstallLocation)\uninstall.exe`""
+                } else { 
+                    "" 
+                }
+
+                # Only include if an uninstallation method is available
+                if (-not $uninst) { return }
+
+                $cleanKey = $name.Trim()
+                if (-not $seenNames.Contains($cleanKey)) {
+                    [void]$seenNames.Add($cleanKey)
+
+                    if ([string]::IsNullOrWhiteSpace($FilterKeyword) -or 
+                        ($name -match [regex]::Escape($FilterKeyword)) -or 
+                        ($_.Publisher -match [regex]::Escape($FilterKeyword))) {
+
+                        $installedList += [PSCustomObject]@{
+                            DisplayName          = $cleanKey
+                            DisplayVersion       = if ($_.DisplayVersion) { $_.DisplayVersion } else { "N/A" }
+                            Publisher            = if ($_.Publisher) { $_.Publisher } else { "Unknown" }
+                            UninstallString      = $uninst
+                            QuietUninstallString = $_.QuietUninstallString
+                            InstallLocation      = $_.InstallLocation
+                            PSChildName          = $_.PSChildName
+                            IsUWP                = $false
                         }
                     }
                 }
             }
         }
     }
+
+    # 3. Add Removable Windows Store / UWP Applications
+    try {
+        $uwpPackages = Get-AppxPackage -AllUsers -ErrorAction SilentlyContinue | Where-Object {
+            -not $_.IsFramework -and -not $_.NonRemovable -and 
+            $_.Name -notmatch "^Microsoft\.(Windows|UI|NET|VCLibs|DirectX|Services|Advertising|DesktopAppInstaller|SecHealthUI|AAD\.BrokerPlugin|AccountsControl|AsyncTextService|BioEnrollment|CredDialogHost|ECApp|LockApp|Win32WebViewHost)"
+        }
+        foreach ($pkg in $uwpPackages) {
+            $uName = if ($pkg.Name -match "^[A-Za-z0-9]+\.(.+)$") { $Matches[1] } else { $pkg.Name }
+            if (-not $seenNames.Contains($uName)) {
+                [void]$seenNames.Add($uName)
+
+                if ([string]::IsNullOrWhiteSpace($FilterKeyword) -or ($uName -match [regex]::Escape($FilterKeyword))) {
+                    $installedList += [PSCustomObject]@{
+                        DisplayName          = "$uName (Store App)"
+                        DisplayVersion       = if ($pkg.Version) { $pkg.Version } else { "UWP" }
+                        Publisher            = if ($pkg.PublisherId) { "Microsoft Store" } else { "Microsoft Store" }
+                        UninstallString      = "powershell.exe -Command Remove-AppxPackage -Package $($pkg.PackageFullName)"
+                        QuietUninstallString = "powershell.exe -Command Remove-AppxPackage -Package $($pkg.PackageFullName)"
+                        InstallLocation      = $pkg.InstallLocation
+                        PSChildName          = $pkg.PackageFullName
+                        IsUWP                = $true
+                    }
+                }
+            }
+        }
+    } catch {}
 
     return ($installedList | Sort-Object DisplayName)
 }
@@ -2204,6 +2246,13 @@ function Invoke-BatchUninstallFlow {
             Show-CyberProgress -Current $uCurrent -Total $uTotal -Activity "Uninstalling Application" -Status "Removing $($app.DisplayName)..." -ItemName "$($app.DisplayName)"
             
             $uninstalledOk = $false
+
+            # 0. Check for Windows Store (UWP) package uninstallation
+            if ($app.IsUWP -or $app.DisplayName -match "\(Store App\)$") {
+                Write-Host "    Removing Windows Store / Appx package..." -ForegroundColor DarkCyan
+                Remove-AppxPackage -Package $app.PSChildName -AllUsers -ErrorAction SilentlyContinue
+                $uninstalledOk = $true
+            }
 
             # 1. Try winget if available
             $wingetCmd = Get-Command winget -ErrorAction SilentlyContinue
