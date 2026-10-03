@@ -302,34 +302,64 @@ function Show-CyberProgress {
 function Show-Banner {
     Clear-Host
     $isAdmin = Test-IsAdmin
-    $adminStatus = if ($isAdmin) { "Administrator [Elevated]" } else { "Standard User [Restricted]" }
+    $adminStatus = if ($isAdmin) { "Elevated [Admin]" } else { "Restricted [User]" }
     $adminColor  = if ($isAdmin) { "Green" } else { "Yellow" }
     
     $telem = Get-SystemTelemetry
 
-    # Minimalist Header Banner (Strict 76 characters width)
+    # Polished Aesthetic Header Banner (Strict 76 characters width)
     Write-Host ""
     Write-Host "  ┌────────────────────────────────────────────────────────────────────────┐" -ForegroundColor DarkCyan
     
-    $titleLeft = "ITSRIRX WINDOWS TOOLKIT"
-    $titleRight = "v1.2.0 Minimalist"
-    $spaces1 = [math]::Max(1, (68 - $titleLeft.Length - $titleRight.Length))
-    $line1 = "  │  " + $titleLeft + (" " * $spaces1) + $titleRight + "  │"
-    Write-Host $line1 -ForegroundColor Cyan
-    
-    $hostLeft = "Host: $env:COMPUTERNAME ($env:USERNAME)"
-    if ($hostLeft.Length -gt 38) { $hostLeft = $hostLeft.Substring(0, 35) + "..." }
-    $statusRight = "Status: $adminStatus"
-    $spaces2 = [math]::Max(1, (68 - $hostLeft.Length - $statusRight.Length))
-    $line2 = "  │  " + $hostLeft + (" " * $spaces2) + $statusRight + "  │"
-    Write-Host $line2 -ForegroundColor White
+    Write-Host "  │  " -NoNewline -ForegroundColor DarkCyan
+    Write-Host "██╗████████╗███████╗██████╗ ██╗██████╗ ██╗  ██╗" -NoNewline -ForegroundColor Cyan
+    Write-Host "   WINDOWS TOOL KIT  " -NoNewline -ForegroundColor White
+    Write-Host "  │" -ForegroundColor DarkCyan
+
+    Write-Host "  │  " -NoNewline -ForegroundColor DarkCyan
+    Write-Host "██║╚══██╔══╝██╔════╝██╔══██╗██║██╔══██╗╚██╗██╔╝" -NoNewline -ForegroundColor Cyan
+    Write-Host "   v1.2.0 Minimalist " -NoNewline -ForegroundColor DarkGray
+    Write-Host "  │" -ForegroundColor DarkCyan
+
+    Write-Host "  │  " -NoNewline -ForegroundColor DarkCyan
+    Write-Host "██║   ██║   ███████╗██████╔╝██║██████╔╝ ╚███╔╝ " -NoNewline -ForegroundColor Cyan
+    Write-Host "   PowerShell Suite  " -NoNewline -ForegroundColor DarkGray
+    Write-Host "  │" -ForegroundColor DarkCyan
+
+    Write-Host "  │  " -NoNewline -ForegroundColor DarkCyan
+    Write-Host "██║   ██║   ╚════██║██╔══██╗██║██╔══██╗ ██╔██╗ " -NoNewline -ForegroundColor Cyan
+    Write-Host "   Remote Admin Tools" -NoNewline -ForegroundColor DarkGray
+    Write-Host "  │" -ForegroundColor DarkCyan
+
+    Write-Host "  │  " -NoNewline -ForegroundColor DarkCyan
+    Write-Host "╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝" -NoNewline -ForegroundColor Cyan
+    Write-Host "   Single-Window     " -NoNewline -ForegroundColor DarkGray
+    Write-Host "  │" -ForegroundColor DarkCyan
 
     Write-Host "  ├────────────────────────────────────────────────────────────────────────┤" -ForegroundColor DarkCyan
-    
-    $telemStr = "CPU: $($telem.CpuPercent)%  │  RAM: $($telem.RamUsedGb)/$($telem.RamTotalGb) GB ($($telem.RamPercent)%)  │  $($telem.OsBuild)"
-    if ($telemStr.Length -gt 68) { $telemStr = $telemStr.Substring(0, 65) + "..." }
-    $line3 = "  │  " + $telemStr.PadRight(68) + "  │"
-    Write-Host $line3 -ForegroundColor DarkGray
+
+    # Host & Session line (strictly 68 chars inside)
+    $hostRaw = "$env:COMPUTERNAME ($env:USERNAME)"
+    if ($hostRaw.Length -gt 28) { $hostRaw = $hostRaw.Substring(0, 25) + "..." }
+    $hostFormatted = ("Host: " + $hostRaw).PadRight(35)
+    $statusFormatted = ("Session: " + $adminStatus).PadLeft(33)
+
+    Write-Host "  │  " -NoNewline -ForegroundColor DarkCyan
+    Write-Host "$hostFormatted" -NoNewline -ForegroundColor White
+    Write-Host "$statusFormatted" -NoNewline -ForegroundColor $adminColor
+    Write-Host "  │" -ForegroundColor DarkCyan
+
+    # Telemetry line
+    $cpuStr  = "CPU: $($telem.CpuPercent)%"
+    $ramStr  = "RAM: $($telem.RamUsedGb)/$($telem.RamTotalGb) GB ($($telem.RamPercent)%)"
+    $osStr   = "$($telem.OsBuild)"
+    $tCombined = "$cpuStr  │  $ramStr  │  $osStr"
+    if ($tCombined.Length -gt 68) { $tCombined = $tCombined.Substring(0, 65) + "..." }
+    $tPadded = $tCombined.PadRight(68)
+
+    Write-Host "  │  " -NoNewline -ForegroundColor DarkCyan
+    Write-Host "$tPadded" -NoNewline -ForegroundColor Yellow
+    Write-Host "  │" -ForegroundColor DarkCyan
 
     Write-Host "  └────────────────────────────────────────────────────────────────────────┘" -ForegroundColor DarkCyan
     Write-Host ""
@@ -361,17 +391,36 @@ function Show-OptionTable {
         [array]$Options,
         [string]$PromptRange = ""
     )
-    Write-Host "  ┌──────┬─────────────────────────────────────────────────────────────────┐" -ForegroundColor DarkCyan
-    Write-Host "  │ NUM  │ FEATURE / OPTION DESCRIPTION                                    │" -ForegroundColor Cyan
-    Write-Host "  ├──────┼─────────────────────────────────────────────────────────────────┤" -ForegroundColor DarkCyan
+    Write-Host "  ┌──────┬────────────────────────────┬────────────────────────────────────┐" -ForegroundColor DarkCyan
+    Write-Host "  │ NUM  │ FEATURE / OPTION           │ DESCRIPTION                        │" -ForegroundColor Cyan
+    Write-Host "  ├──────┼────────────────────────────┼────────────────────────────────────┤" -ForegroundColor DarkCyan
     foreach ($opt in $Options) {
         $numStr = "[$($opt.Num)]".PadRight(4)
-        $cleanText = ($opt.Text -replace "[\uD800-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u27BF]", "").Trim()
-        if ($cleanText.Length -gt 63) { $cleanText = $cleanText.Substring(0, 60) + "..." }
-        $textPadded = $cleanText.PadRight(63)
-        Write-Host "  │ $numStr │ $textPadded │" -ForegroundColor White
+        
+        $featStr = if ($opt.Title) { $opt.Title } elseif ($opt.Feature) { $opt.Feature } else { "" }
+        $descStr = if ($opt.Desc) { $opt.Desc } elseif ($opt.Description) { $opt.Description } else { "" }
+        
+        if (-not $featStr -and $opt.Text) {
+            $rawText = ($opt.Text -replace "[\uD800-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u27BF]", "").Trim()
+            if ($rawText -match "^(.+?)\s*[:(–—-–]\s*(.+?)\)?$") {
+                $featStr = $Matches[1].Trim()
+                $descStr = $Matches[2].Trim()
+            } else {
+                $featStr = $rawText
+                $descStr = "Execute system optimization"
+            }
+        }
+
+        # Truncate and pad strictly to exact column widths
+        if ($featStr.Length -gt 26) { $featStr = $featStr.Substring(0, 23) + "..." }
+        $featPadded = $featStr.PadRight(26)
+
+        if ($descStr.Length -gt 34) { $descStr = $descStr.Substring(0, 31) + "..." }
+        $descPadded = $descStr.PadRight(34)
+
+        Write-Host "  │ $numStr │ $featPadded │ $descPadded │" -ForegroundColor White
     }
-    Write-Host "  └──────┴─────────────────────────────────────────────────────────────────┘" -ForegroundColor DarkCyan
+    Write-Host "  └──────┴────────────────────────────┴────────────────────────────────────┘" -ForegroundColor DarkCyan
     Write-Host ""
     Write-Host "  [0] Return to Main Dashboard" -ForegroundColor DarkGray
     Write-Host ""
@@ -432,22 +481,179 @@ function Test-Winget {
     return $true
 }
 
+$Script:RegistryAppsCache = $null
+$Script:WingetListCache = $null
+
+function Initialize-InstalledAppsCache {
+    if ($Script:RegistryAppsCache -ne $null) { return }
+
+    $apps = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+
+    # 1. Scan 64-bit and 32-bit Machine & User Registry Uninstall paths
+    $regPaths = @(
+        "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*",
+        "HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*",
+        "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*"
+    )
+    foreach ($rp in $regPaths) {
+        try {
+            $keys = Get-ItemProperty $rp -ErrorAction SilentlyContinue
+            if ($keys) {
+                foreach ($k in $keys) {
+                    if ($k.DisplayName) { [void]$apps.Add($k.DisplayName.Trim()) }
+                    if ($k.PSChildName) { [void]$apps.Add($k.PSChildName.Trim()) }
+                }
+            }
+        } catch {}
+    }
+
+    $Script:RegistryAppsCache = $apps
+}
+
+function Get-WingetInstalledCache {
+    if ($Script:WingetListCache -ne $null) { return $Script:WingetListCache }
+    try {
+        $wingetExe = Get-WingetPath
+        $output = & $wingetExe list --accept-source-agreements 2>&1
+        $Script:WingetListCache = ($output -join "`n")
+    } catch {
+        $Script:WingetListCache = ""
+    }
+    return $Script:WingetListCache
+}
+
 function Get-InstalledPackage {
-    param([string]$PackageId)
-    
+    param(
+        [string]$PackageId,
+        [string]$PackageName = ""
+    )
+
+    if ([string]::IsNullOrWhiteSpace($PackageId)) { return $false }
+
     if ($Script:InstalledCache.ContainsKey($PackageId)) {
         return $Script:InstalledCache[$PackageId]
     }
 
-    try {
-        $wingetExe = Get-WingetPath
-        $result = & $wingetExe list --id $PackageId --exact --accept-source-agreements 2>$null
-        if ($LASTEXITCODE -eq 0 -and ($result -match [regex]::Escape($PackageId))) {
+    # Layer 1: Query Windows Registry Uninstall Cache (Fastest & Detects All Desktop Apps)
+    Initialize-InstalledAppsCache
+    if ($Script:RegistryAppsCache -and $Script:RegistryAppsCache.Count -gt 0) {
+        if ($Script:RegistryAppsCache.Contains($PackageId) -or 
+            ($PackageName -and $Script:RegistryAppsCache.Contains($PackageName))) {
+            $Script:InstalledCache[$PackageId] = $true
+            return $true
+        }
+
+        # Targeted pattern match against registered display names
+        $matched = $false
+        foreach ($regApp in $Script:RegistryAppsCache) {
+            switch -Wildcard ($PackageId) {
+                "Google.Chrome*"              { if ($regApp -match "(?i)Google Chrome") { $matched = $true } }
+                "Mozilla.Firefox*"            { if ($regApp -match "(?i)Mozilla Firefox") { $matched = $true } }
+                "Microsoft.Edge*"             { if ($regApp -match "(?i)Microsoft Edge") { $matched = $true } }
+                "Brave.Brave*"                { if ($regApp -match "(?i)Brave") { $matched = $true } }
+                "Opera.Opera*"                { if ($regApp -match "(?i)Opera\b") { $matched = $true } }
+                "Microsoft.VisualStudioCode*" { if ($regApp -match "(?i)Visual Studio Code") { $matched = $true } }
+                "Git.Git*"                    { if ($regApp -match "(?i)\bGit\b") { $matched = $true } }
+                "Python.Python*"              { if ($regApp -match "(?i)Python\s+\d") { $matched = $true } }
+                "OpenJS.NodeJS*"              { if ($regApp -match "(?i)Node\.js") { $matched = $true } }
+                "Notepad++.Notepad++*"        { if ($regApp -match "(?i)Notepad\+\+") { $matched = $true } }
+                "VideoLAN.VLC*"               { if ($regApp -match "(?i)VLC") { $matched = $true } }
+                "Spotify.Spotify*"            { if ($regApp -match "(?i)Spotify") { $matched = $true } }
+                "OBSProject.OBSStudio*"       { if ($regApp -match "(?i)OBS Studio") { $matched = $true } }
+                "Audacity.Audacity*"          { if ($regApp -match "(?i)Audacity") { $matched = $true } }
+                "HandBrake.HandBrake*"        { if ($regApp -match "(?i)HandBrake") { $matched = $true } }
+                "7zip.7zip*"                  { if ($regApp -match "(?i)7-Zip") { $matched = $true } }
+                "RARLab.WinRAR*"              { if ($regApp -match "(?i)WinRAR") { $matched = $true } }
+                "voidtools.Everything*"       { if ($regApp -match "(?i)Everything\b") { $matched = $true } }
+                "Microsoft.PowerToys*"        { if ($regApp -match "(?i)PowerToys") { $matched = $true } }
+                "Rufus.Rufus*"                { if ($regApp -match "(?i)Rufus") { $matched = $true } }
+                "ShareX.ShareX*"              { if ($regApp -match "(?i)ShareX") { $matched = $true } }
+                "OmicronLab.Avro*"            { if ($regApp -match "(?i)Avro") { $matched = $true } }
+                "WhatsApp.WhatsApp*"          { if ($regApp -match "(?i)WhatsApp") { $matched = $true } }
+                "Telegram.TelegramDesktop*"   { if ($regApp -match "(?i)Telegram") { $matched = $true } }
+                "Discord.Discord*"            { if ($regApp -match "(?i)Discord") { $matched = $true } }
+                "Zoom.Zoom*"                  { if ($regApp -match "(?i)Zoom") { $matched = $true } }
+                "Microsoft.Teams*"            { if ($regApp -match "(?i)Microsoft Teams") { $matched = $true } }
+                "Valve.Steam*"                { if ($regApp -match "(?i)Steam\b") { $matched = $true } }
+                "EpicGames.EpicGamesLauncher*"{ if ($regApp -match "(?i)Epic Games") { $matched = $true } }
+                "ElectronicArts.EADesktop*"   { if ($regApp -match "(?i)EA (Desktop|App)") { $matched = $true } }
+                "Ubisoft.Connect*"            { if ($regApp -match "(?i)Ubisoft") { $matched = $true } }
+                "RiotGames.RiotClient*"       { if ($regApp -match "(?i)Riot") { $matched = $true } }
+                "Microsoft.GamingApp*"        { if ($regApp -match "(?i)Xbox") { $matched = $true } }
+                "Bitwarden.Bitwarden*"        { if ($regApp -match "(?i)Bitwarden") { $matched = $true } }
+                "Malwarebytes.Malwarebytes*"  { if ($regApp -match "(?i)Malwarebytes") { $matched = $true } }
+                "Proton.ProtonVPN*"           { if ($regApp -match "(?i)Proton") { $matched = $true } }
+                "AnyDeskSoftwareGmbH.AnyDesk*"{ if ($regApp -match "(?i)AnyDesk") { $matched = $true } }
+                "UltraViewer.UltraViewer*"    { if ($regApp -match "(?i)UltraViewer") { $matched = $true } }
+                "TeamViewer.TeamViewer*"      { if ($regApp -match "(?i)TeamViewer") { $matched = $true } }
+                "RustDesk.RustDesk*"          { if ($regApp -match "(?i)RustDesk") { $matched = $true } }
+                "PuTTY.PuTTY*"                { if ($regApp -match "(?i)PuTTY") { $matched = $true } }
+                "WinSCP.WinSCP*"              { if ($regApp -match "(?i)WinSCP") { $matched = $true } }
+                "Microsoft.Office*"           { if ($regApp -match "(?i)Microsoft (Office|365)") { $matched = $true } }
+                "TheDocumentFoundation.LibreOffice*" { if ($regApp -match "(?i)LibreOffice") { $matched = $true } }
+                "Adobe.Acrobat.Reader*"       { if ($regApp -match "(?i)Adobe Acrobat") { $matched = $true } }
+                "Notion.Notion*"              { if ($regApp -match "(?i)Notion") { $matched = $true } }
+                default {
+                    if ($PackageName -and $regApp -match [regex]::Escape($PackageName)) { $matched = $true }
+                }
+            }
+            if ($matched) {
+                $Script:InstalledCache[$PackageId] = $true
+                return $true
+            }
+        }
+    }
+
+    # Layer 2: Common Executable & Command Detection (Instant Local Disk Check)
+    $installedByPath = switch -Wildcard ($PackageId) {
+        "Google.Chrome*"              { (Test-Path "$env:ProgramFiles\Google\Chrome\Application\chrome.exe") -or (Test-Path "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe") -or (Test-Path "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe") }
+        "Mozilla.Firefox*"            { (Test-Path "$env:ProgramFiles\Mozilla Firefox\firefox.exe") -or (Test-Path "${env:ProgramFiles(x86)}\Mozilla Firefox\firefox.exe") }
+        "Microsoft.Edge*"             { (Test-Path "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe") -or (Test-Path "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe") }
+        "Brave.Brave*"                { (Test-Path "$env:ProgramFiles\BraveSoftware\Brave-Browser\Application\brave.exe") -or (Test-Path "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\Application\brave.exe") }
+        "Opera.Opera*"                { (Test-Path "$env:LOCALAPPDATA\Programs\Opera\opera.exe") -or (Test-Path "$env:ProgramFiles\Opera\opera.exe") }
+        "Microsoft.VisualStudioCode*" { (Test-Path "$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe") -or (Test-Path "$env:ProgramFiles\Microsoft VS Code\Code.exe") }
+        "Git.Git*"                    { [bool](Get-Command git -ErrorAction SilentlyContinue) -or (Test-Path "$env:ProgramFiles\Git\cmd\git.exe") -or (Test-Path "${env:ProgramFiles(x86)}\Git\cmd\git.exe") }
+        "Python.Python*"              { [bool](Get-Command python -ErrorAction SilentlyContinue) -or (Test-Path "$env:LOCALAPPDATA\Programs\Python") }
+        "OpenJS.NodeJS*"              { [bool](Get-Command node -ErrorAction SilentlyContinue) -or (Test-Path "$env:ProgramFiles\nodejs\node.exe") }
+        "Notepad++.Notepad++*"        { (Test-Path "$env:ProgramFiles\Notepad++\notepad++.exe") -or (Test-Path "${env:ProgramFiles(x86)}\Notepad++\notepad++.exe") }
+        "VideoLAN.VLC*"               { (Test-Path "$env:ProgramFiles\VideoLAN\VLC\vlc.exe") -or (Test-Path "${env:ProgramFiles(x86)}\VideoLAN\VLC\vlc.exe") }
+        "Spotify.Spotify*"            { (Test-Path "$env:APPDATA\Spotify\Spotify.exe") }
+        "7zip.7zip*"                  { (Test-Path "$env:ProgramFiles\7-Zip\7z.exe") -or (Test-Path "${env:ProgramFiles(x86)}\7-Zip\7z.exe") }
+        "RARLab.WinRAR*"              { (Test-Path "$env:ProgramFiles\WinRAR\WinRAR.exe") -or (Test-Path "${env:ProgramFiles(x86)}\WinRAR\WinRAR.exe") }
+        "voidtools.Everything*"       { (Test-Path "$env:ProgramFiles\Everything\Everything.exe") -or (Test-Path "${env:ProgramFiles(x86)}\Everything\Everything.exe") }
+        "WhatsApp.WhatsApp*"          { (Test-Path "$env:LOCALAPPDATA\WhatsApp\WhatsApp.exe") }
+        "Telegram.TelegramDesktop*"   { (Test-Path "$env:APPDATA\Telegram Desktop\Telegram.exe") }
+        "Discord.Discord*"            { (Test-Path "$env:LOCALAPPDATA\Discord\Update.exe") }
+        "Valve.Steam*"                { (Test-Path "${env:ProgramFiles(x86)}\Steam\steam.exe") -or (Test-Path "$env:ProgramFiles\Steam\steam.exe") }
+        "AnyDeskSoftwareGmbH.AnyDesk*"{ (Test-Path "${env:ProgramFiles(x86)}\AnyDesk\AnyDesk.exe") -or (Test-Path "$env:ProgramFiles\AnyDesk\AnyDesk.exe") }
+        "UltraViewer.UltraViewer*"    { (Test-Path "${env:ProgramFiles(x86)}\UltraViewer\UltraViewer_Desktop.exe") -or (Test-Path "$env:ProgramFiles\UltraViewer\UltraViewer_Desktop.exe") }
+        "PuTTY.PuTTY*"                { (Test-Path "$env:ProgramFiles\PuTTY\putty.exe") -or (Test-Path "${env:ProgramFiles(x86)}\PuTTY\putty.exe") }
+        "WinSCP.WinSCP*"              { (Test-Path "${env:ProgramFiles(x86)}\WinSCP\WinSCP.exe") -or (Test-Path "$env:ProgramFiles\WinSCP\WinSCP.exe") }
+        default { $false }
+    }
+    if ($installedByPath) {
+        $Script:InstalledCache[$PackageId] = $true
+        return $true
+    }
+
+    # Layer 3: Winget List Cache Query
+    $wCache = Get-WingetInstalledCache
+    if ($wCache) {
+        if ($wCache -match [regex]::Escape($PackageId) -or ($PackageName -and $wCache -match [regex]::Escape($PackageName))) {
             $Script:InstalledCache[$PackageId] = $true
             return $true
         }
     }
-    catch {}
+
+    # Layer 4: Live Winget single query fallback (without relying on exit code)
+    try {
+        $wingetExe = Get-WingetPath
+        $singleQuery = & $wingetExe list --id $PackageId --accept-source-agreements 2>&1
+        if ($singleQuery -match [regex]::Escape($PackageId) -or ($PackageName -and $singleQuery -match [regex]::Escape($PackageName))) {
+            $Script:InstalledCache[$PackageId] = $true
+            return $true
+        }
+    } catch {}
 
     $Script:InstalledCache[$PackageId] = $false
     return $false
@@ -480,7 +686,7 @@ function Show-SoftwareSelector {
     foreach ($key in $PackageKeys) {
         if ($Script:SoftwareCatalog.Contains($key)) {
             $pkg = $Script:SoftwareCatalog[$key]
-            $isInstalled = Get-InstalledPackage -PackageId $pkg.Id
+            $isInstalled = Get-InstalledPackage -PackageId $pkg.Id -PackageName $pkg.Name
             
             $boxSymbol  = if ($isInstalled) { "[OK]" } else { "[ ]" }
             $boxColor   = if ($isInstalled) { "DarkGray" } else { "Yellow" }
@@ -611,7 +817,7 @@ function Show-SoftwareSelector {
         $currentIdx++
         Show-CyberProgress -Current $currentIdx -Total $totalApps -Activity "Software Deployment" -Status "Downloading & Installing $($item.Name)..." -ItemName "$($item.Name) [$($item.Id)]"
         
-        $isInstalled = Get-InstalledPackage -PackageId $item.Id
+        $isInstalled = Get-InstalledPackage -PackageId $item.Id -PackageName $item.Name
         if ($isInstalled) {
             Write-SkipMessage "$($item.Name) - Already installed"
             $skipCount++
@@ -631,7 +837,7 @@ function Show-SoftwareSelector {
             } else {
                 # Verify installation in case Winget returned a non-zero code but installed successfully
                 Start-Sleep -Seconds 1
-                $verified = Get-InstalledPackage -PackageId $item.Id
+                $verified = Get-InstalledPackage -PackageId $item.Id -PackageName $item.Name
                 if ($verified) {
                     Write-Success "$($item.Name) - Verified installed!"
                     $Script:InstalledCache[$item.Id] = $true
@@ -658,19 +864,19 @@ function Show-SoftwareSelector {
 
 function Show-SoftwareMenu {
     $options = @(
-        @{ Num = "1";  Text = "Web Browsers: Chrome, Firefox, Edge, Brave, Opera" }
-        @{ Num = "2";  Text = "Developer & Coding: VS Code, Git, Python, Node.js, Notepad++" }
-        @{ Num = "3";  Text = "Multimedia: VLC Media Player, Spotify, OBS Studio, HandBrake" }
-        @{ Num = "4";  Text = "Utilities & Tools: 7-Zip, WinRAR, Everything, PowerToys, Rufus" }
-        @{ Num = "5";  Text = "Communication: WhatsApp, Telegram, Discord, Zoom, Teams" }
-        @{ Num = "6";  Text = "Gaming Launchers: Steam, Epic Games, EA App, Ubisoft, Riot" }
-        @{ Num = "7";  Text = "Security & Privacy: Bitwarden, Malwarebytes, Proton VPN" }
-        @{ Num = "8";  Text = "Remote Access & IT: AnyDesk, UltraViewer, TeamViewer, PuTTY" }
-        @{ Num = "9";  Text = "Office & Productivity: Microsoft 365, LibreOffice, Adobe Reader" }
-        @{ Num = "10"; Text = "Essential Pack: Curated instant pack for fresh Windows setup" }
-        @{ Num = "11"; Text = "Complete Catalog: Browse and select from all verified packages" }
-        @{ Num = "12"; Text = "Audit Installed Apps: Scan PC for installed catalog apps" }
-        @{ Num = "13"; Text = "Refresh Winget Cache: Update winget package source repositories" }
+        @{ Num = "1";  Title = "Web Browsers";        Desc = "Chrome, Firefox, Edge, Brave, Opera" }
+        @{ Num = "2";  Title = "Developer & Coding";  Desc = "VS Code, Git, Python, Node, Notepad++" }
+        @{ Num = "3";  Title = "Multimedia Creators"; Desc = "VLC, Spotify, OBS Studio, HandBrake" }
+        @{ Num = "4";  Title = "Utilities & Tools";   Desc = "7-Zip, WinRAR, Everything, PowerToys" }
+        @{ Num = "5";  Title = "Communication";       Desc = "WhatsApp, Telegram, Discord, Teams" }
+        @{ Num = "6";  Title = "Gaming Launchers";    Desc = "Steam, Epic Games, EA, Ubisoft, Xbox" }
+        @{ Num = "7";  Title = "Security & Privacy";  Desc = "Bitwarden, Malwarebytes, Proton VPN" }
+        @{ Num = "8";  Title = "Remote Access & IT";  Desc = "AnyDesk, UltraViewer, TeamViewer" }
+        @{ Num = "9";  Title = "Office Productivity"; Desc = "Microsoft 365, LibreOffice, Notion" }
+        @{ Num = "10"; Title = "Essential Quick Pack";Desc = "Curated pack for fresh Windows setup" }
+        @{ Num = "11"; Title = "Complete Catalog";    Desc = "Browse all verified software packages" }
+        @{ Num = "12"; Title = "Audit Installed Apps";Desc = "Scan PC for installed catalog apps" }
+        @{ Num = "13"; Title = "Refresh Winget Cache";Desc = "Update package source repositories" }
     )
 
     do {
@@ -697,7 +903,7 @@ function Show-SoftwareMenu {
                 Write-Section "Checking Installation Status of Catalog Applications"
                 foreach ($k in $Script:SoftwareCatalog.Keys) {
                     $pkg = $Script:SoftwareCatalog[$k]
-                    $installed = Get-InstalledPackage -PackageId $pkg.Id
+                    $installed = Get-InstalledPackage -PackageId $pkg.Id -PackageName $pkg.Name
                     if ($installed) {
                         Write-Host "  [INSTALLED] " -ForegroundColor Green -NoNewline
                     } else {
@@ -725,13 +931,13 @@ function Show-SoftwareMenu {
 
 function Show-DebloatMenu {
     $options = @(
-        @{ Num = "1"; Text = "Disable Telemetry & Diagnostic Data Tracking (Safe registry tweaks)" }
-        @{ Num = "2"; Text = "Disable Bing Search & Web Results in Start Menu (Speeds up search)" }
-        @{ Num = "3"; Text = "Restore Classic Windows 10 Context Menu in Windows 11 (No 'Show more')" }
-        @{ Num = "4"; Text = "Revert to Modern Windows 11 Context Menu (Restore default)" }
-        @{ Num = "5"; Text = "Disable Cortana & Search Telemetry" }
-        @{ Num = "6"; Text = "Disable Activity History & Advertising ID" }
-        @{ Num = "7"; Text = "Remove Pre-Installed UWP Bloatware (Feedback, Tips, Maps, Weather, Xbox)" }
+        @{ Num = "1"; Title = "Disable Telemetry";     Desc = "Stop DiagTrack & diagnostic tracking" }
+        @{ Num = "2"; Title = "Disable Bing in Start"; Desc = "Instant local search without web lag" }
+        @{ Num = "3"; Title = "Classic Context Menu";  Desc = "Restore Win 10 full right-click menu" }
+        @{ Num = "4"; Title = "Modern Context Menu";   Desc = "Revert to default Windows 11 style" }
+        @{ Num = "5"; Title = "Disable Cortana";       Desc = "Turn off Cortana voice search daemon" }
+        @{ Num = "6"; Title = "Disable Activity Feed"; Desc = "Disable activity history & ad tracking" }
+        @{ Num = "7"; Title = "Remove Bloatware UWP";  Desc = "Purge Feedback, Tips, Maps, Weather" }
     )
 
     do {
@@ -850,12 +1056,12 @@ function Show-DebloatMenu {
 
 function Show-PerformanceMenu {
     $options = @(
-        @{ Num = "1"; Text = "Unlock & Activate 'Ultimate Performance' Power Scheme" }
-        @{ Num = "2"; Text = "Activate 'High Performance' Power Scheme" }
-        @{ Num = "3"; Text = "Disable Windows Game DVR / Background Screen Recording (Boosts FPS)" }
-        @{ Num = "4"; Text = "Disable Mouse Acceleration (1:1 Raw Input Precision)" }
-        @{ Num = "5"; Text = "Optimize Visual Effects for Performance (Disable unnecessary animations)" }
-        @{ Num = "6"; Text = "Disable Windows Search Indexing for Drive C: (Reduces SSD load)" }
+        @{ Num = "1"; Title = "Ultimate Performance";  Desc = "Unlock & activate maximum power plan" }
+        @{ Num = "2"; Title = "High Performance";      Desc = "Switch to Windows High Performance" }
+        @{ Num = "3"; Title = "Disable Game DVR";      Desc = "Stop background recording to boost FPS" }
+        @{ Num = "4"; Title = "Disable Mouse Accel";   Desc = "Enable raw 1:1 mouse input precision" }
+        @{ Num = "5"; Title = "Visual Effects Speed";  Desc = "Disable slow minimize animations" }
+        @{ Num = "6"; Title = "Disable Search Index";  Desc = "Reduce background SSD read/writes" }
     )
 
     do {
@@ -926,11 +1132,11 @@ function Show-PerformanceMenu {
 
 function Show-SafetyMenu {
     $options = @(
-        @{ Num = "1"; Text = "Create 1-Click System Restore Point (Immediate snapshot)" }
-        @{ Num = "2"; Text = "List All Active System Restore Points" }
-        @{ Num = "3"; Text = "Monitor Active Listening TCP/UDP Ports & Associated Processes" }
-        @{ Num = "4"; Text = "Update Microsoft Defender Signatures" }
-        @{ Num = "5"; Text = "Run Microsoft Defender Quick Security Scan" }
+        @{ Num = "1"; Title = "Create Restore Point";  Desc = "Instant system checkpoint snapshot" }
+        @{ Num = "2"; Title = "List Restore Points";   Desc = "Display all available checkpoints" }
+        @{ Num = "3"; Title = "Monitor Open Ports";    Desc = "Audit active listening TCP/UDP ports" }
+        @{ Num = "4"; Title = "Update Defender";       Desc = "Download latest antivirus definitions" }
+        @{ Num = "5"; Title = "Run Defender Scan";     Desc = "Perform quick malware & threat audit" }
     )
 
     do {
@@ -1020,11 +1226,11 @@ function Show-SafetyMenu {
 
 function Show-DeveloperMenu {
     $options = @(
-        @{ Num = "1"; Text = "Enable WSL 2 (Windows Subsystem for Linux)" }
-        @{ Num = "2"; Text = "Enable Windows Sandbox (Isolated testing environment)" }
-        @{ Num = "3"; Text = "Enable Hyper-V Hypervisor & Management Tools" }
-        @{ Num = "4"; Text = "Enable Virtual Machine Platform" }
-        @{ Num = "5"; Text = "Check Status of Windows Virtualization Features" }
+        @{ Num = "1"; Title = "Enable WSL 2";          Desc = "Windows Subsystem for Linux engine" }
+        @{ Num = "2"; Title = "Enable Windows Sandbox";Desc = "Isolated disposable testing environment" }
+        @{ Num = "3"; Title = "Enable Hyper-V";        Desc = "Native hardware hypervisor & tools" }
+        @{ Num = "4"; Title = "Virtual Machine Plat";  Desc = "Required platform for containers" }
+        @{ Num = "5"; Title = "Check Feature Status";  Desc = "Inspect current virtualization state" }
     )
 
     do {
@@ -1091,10 +1297,10 @@ function Show-DeveloperMenu {
 
 function Show-BatteryMenu {
     $options = @(
-        @{ Num = "1"; Text = "Generate & Open Full Battery Health Report (HTML)" }
-        @{ Num = "2"; Text = "Instant Battery Capacity & Wear Level Audit (Console view)" }
-        @{ Num = "3"; Text = "Generate Sleep Study Report (Identifies standby battery drain)" }
-        @{ Num = "4"; Text = "List All Available System Power Schemes" }
+        @{ Num = "1"; Title = "Battery Health Report"; Desc = "Generate full HTML battery diagnostics" }
+        @{ Num = "2"; Title = "Battery Degradation";   Desc = "Inspect charge cycle wear & capacity" }
+        @{ Num = "3"; Title = "Sleep Study Report";    Desc = "Analyze standby & sleep power drains" }
+        @{ Num = "4"; Title = "List Power Schemes";    Desc = "View configured system power plans" }
     )
 
     do {
@@ -1164,12 +1370,12 @@ function Show-BatteryMenu {
 
 function Show-RepairMenu {
     $options = @(
-        @{ Num = "1"; Text = "System File Checker (SFC /scannow repair corrupted files)" }
-        @{ Num = "2"; Text = "DISM Health Inspection (CheckHealth & ScanHealth)" }
-        @{ Num = "3"; Text = "DISM Restore Health (Download & repair corrupted image)" }
-        @{ Num = "4"; Text = "CHKDSK Inspection (Read-only file system check for Drive C:)" }
-        @{ Num = "5"; Text = "Windows Update Repair (Purge SoftwareDistribution & restart services)" }
-        @{ Num = "6"; Text = "DISM Component Store Cleanup (Clean superseded packages)" }
+        @{ Num = "1"; Title = "SFC Scannow";          Desc = "Scan & repair corrupted system files" }
+        @{ Num = "2"; Title = "DISM Check Health";    Desc = "Inspect Windows component store state" }
+        @{ Num = "3"; Title = "DISM Restore Health";  Desc = "Download & repair corrupted OS image" }
+        @{ Num = "4"; Title = "CHKDSK Drive C:";      Desc = "Read-only file system integrity audit" }
+        @{ Num = "5"; Title = "Repair Windows Update";Desc = "Purge SoftwareDistribution & reset" }
+        @{ Num = "6"; Title = "Component Store Clean";Desc = "Clean superseded update packages" }
     )
 
     do {
@@ -1277,13 +1483,13 @@ function Remove-FolderContentsSafely {
 
 function Show-CleanupMenu {
     $options = @(
-        @{ Num = "1"; Text = "Clean User Temporary Files ($env:TEMP)" }
-        @{ Num = "2"; Text = "Clean Windows System Temp ($env:SystemRoot\Temp)" }
-        @{ Num = "3"; Text = "Empty Recycle Bin (All drives)" }
-        @{ Num = "4"; Text = "Find Top 15 Largest Files on Drive C: (Locate hidden storage hogs)" }
-        @{ Num = "5"; Text = "Manual SSD TRIM & ReTrim Optimization (Optimize-Volume -ReTrim)" }
-        @{ Num = "6"; Text = "Launch Windows Native Disk Cleanup (cleanmgr.exe)" }
-        @{ Num = "7"; Text = "Clean Web Browser Caches (Chrome, Edge, Firefox)" }
+        @{ Num = "1"; Title = "Clean User Temp";       Desc = "Purge temporary user profile files" }
+        @{ Num = "2"; Title = "Clean System Temp";     Desc = "Purge Windows OS temporary files" }
+        @{ Num = "3"; Title = "Empty Recycle Bin";     Desc = "Permanently clear deleted trash" }
+        @{ Num = "4"; Title = "Top 15 Largest Files";  Desc = "Scan Drive C: for large disk hogs" }
+        @{ Num = "5"; Title = "Manual SSD TRIM";       Desc = "Execute Optimize-Volume ReTrim" }
+        @{ Num = "6"; Title = "Windows Disk Cleanup";  Desc = "Launch native cleanmgr.exe tool" }
+        @{ Num = "7"; Title = "Clean Browser Cache";   Desc = "Clear Chrome, Edge & Firefox cache" }
     )
 
     do {
@@ -1419,15 +1625,15 @@ function Test-Internet {
 
 function Show-NetworkMenu {
     $options = @(
-        @{ Num = "1"; Text = "Show Active IP Configuration (IPv4, IPv6, Gateway, Adapters)" }
-        @{ Num = "2"; Text = "Ping Response Test (ICMP test to 8.8.8.8 or custom host)" }
-        @{ Num = "3"; Text = "3-Point Internet Connectivity Validation (Gateway, DNS, HTTPS)" }
-        @{ Num = "4"; Text = "Flush DNS Client Resolver Cache (Clear-DnsClientCache)" }
-        @{ Num = "5"; Text = "Switch DNS Server Provider (Cloudflare 1.1.1.1, Google 8.8.8.8, Quad9)" }
-        @{ Num = "6"; Text = "Show Hardware Network Adapters & Link Speeds" }
-        @{ Num = "7"; Text = "Show WiFi Interface & Signal Information" }
-        @{ Num = "8"; Text = "Show Saved WiFi Profiles (Safe display)" }
-        @{ Num = "9"; Text = "Perform Full Network Stack Reset (Winsock, IP, DNS flush)" }
+        @{ Num = "1"; Title = "Active IP Config";      Desc = "View IPv4, IPv6, Gateway & DNS" }
+        @{ Num = "2"; Title = "Ping Response Test";    Desc = "Test ICMP latency to 8.8.8.8" }
+        @{ Num = "3"; Title = "3-Point Connectivity";  Desc = "Validate Gateway, DNS & HTTPS link" }
+        @{ Num = "4"; Title = "Flush DNS Resolver";    Desc = "Clear local DNS client cache" }
+        @{ Num = "5"; Title = "Switch DNS Provider";   Desc = "Set Cloudflare, Google or Quad9" }
+        @{ Num = "6"; Title = "Hardware Adapters";     Desc = "List network interfaces & link speed" }
+        @{ Num = "7"; Title = "WiFi Signal Status";    Desc = "Display current wireless diagnostics" }
+        @{ Num = "8"; Title = "Saved WiFi Profiles";   Desc = "List saved wireless network names" }
+        @{ Num = "9"; Title = "Full Network Reset";    Desc = "Reset Winsock, TCP/IP stack & flush" }
     )
 
     do {
@@ -1546,16 +1752,16 @@ function Show-NetworkMenu {
 
 function Show-SystemMenu {
     $options = @(
-        @{ Num = "1"; Text = "Windows OS & System Uptime Details" }
-        @{ Num = "2"; Text = "Processor (CPU) Specifications & Physical Cores" }
-        @{ Num = "3"; Text = "Physical Memory (RAM) Module Frequencies & Slots" }
-        @{ Num = "4"; Text = "Graphics Adapters (GPU) & Video VRAM" }
-        @{ Num = "5"; Text = "Official Windows Activation & Licensing Status" }
-        @{ Num = "6"; Text = "Launch Task Manager (taskmgr.exe)" }
-        @{ Num = "7"; Text = "Launch Device Manager (devmgmt.msc)" }
-        @{ Num = "8"; Text = "Launch Registry Editor (regedit.exe)" }
-        @{ Num = "9"; Text = "Launch Windows Services Console (services.msc)" }
-        @{ Num = "10"; Text = "Launch Disk Management (diskmgmt.msc)" }
+        @{ Num = "1";  Title = "OS & System Uptime";    Desc = "View Windows edition, build & uptime" }
+        @{ Num = "2";  Title = "Processor (CPU) Info";  Desc = "View CPU model, cores & clock speed" }
+        @{ Num = "3";  Title = "Physical Memory (RAM)"; Desc = "View RAM module frequency & slots" }
+        @{ Num = "4";  Title = "Graphics Adapter (GPU)";Desc = "View GPU model & video memory (VRAM)" }
+        @{ Num = "5";  Title = "Windows License Status";Desc = "Check official activation details" }
+        @{ Num = "6";  Title = "Launch Task Manager";   Desc = "Open Windows Task Manager console" }
+        @{ Num = "7";  Title = "Device Manager";        Desc = "Open Windows Device Manager (msc)" }
+        @{ Num = "8";  Title = "Registry Editor";       Desc = "Open Windows Registry Editor tool" }
+        @{ Num = "9";  Title = "Services Console";      Desc = "Open Windows Services console" }
+        @{ Num = "10"; Title = "Disk Management";       Desc = "Open Windows Disk Management tool" }
     )
 
     do {
@@ -1643,11 +1849,11 @@ function Show-SystemMenu {
 
 function Show-QuickMenu {
     $options = @(
-        @{ Num = "1"; Text = "Flush DNS Resolver Cache" }
-        @{ Num = "2"; Text = "Fast Internet Connectivity Test" }
-        @{ Num = "3"; Text = "Restart Windows Explorer Process (Clean fix for taskbar freeze)" }
-        @{ Num = "4"; Text = "Create Immediate System Restore Point" }
-        @{ Num = "5"; Text = "Install Essential Applications (Interactive Checkbox Selector)" }
+        @{ Num = "1"; Title = "Flush DNS Cache";       Desc = "Instant 1-click DNS cache purge" }
+        @{ Num = "2"; Title = "Test Internet Link";     Desc = "Quick 3-point connectivity test" }
+        @{ Num = "3"; Title = "Restart Explorer";       Desc = "Clean fix for taskbar & shell freeze" }
+        @{ Num = "4"; Title = "Quick Restore Point";    Desc = "Instant 1-click safety checkpoint" }
+        @{ Num = "5"; Title = "Essential Apps Pack";    Desc = "Install curated standard PC setup" }
     )
 
     do {
@@ -2050,11 +2256,11 @@ function Invoke-BatchUninstallFlow {
 
 function Show-UninstallerMenu {
     $options = @(
-        @{ Num = "1"; Text = "📋 View & Select From All Installed Desktop Applications (Multi-Select)" }
-        @{ Num = "2"; Text = "🔍 Search Application by Name & Batch Uninstall" }
-        @{ Num = "3"; Text = "🧹 Clean Uninstall + Deep Leftover Data Wipe (AppData & ProgramData)" }
-        @{ Num = "4"; Text = "📦 Uninstall Windows Store (UWP) Apps (Multi-Select via Appx)" }
-        @{ Num = "5"; Text = "🔍 Deep Residue Scan (Inspect orphaned AppData folders)" }
+        @{ Num = "1"; Title = "All Installed Desktop"; Desc = "Multi-select batch uninstaller list" }
+        @{ Num = "2"; Title = "Search by Name";        Desc = "Filter software by keyword & remove" }
+        @{ Num = "3"; Title = "Clean & Leftover Wipe"; Desc = "Uninstall with AppData/ProgramData wipe" }
+        @{ Num = "4"; Title = "Uninstall UWP Apps";    Desc = "Remove Windows Store Appx packages" }
+        @{ Num = "5"; Title = "Deep Residue Scan";     Desc = "Inspect orphaned leftover folders" }
     )
 
     do {
