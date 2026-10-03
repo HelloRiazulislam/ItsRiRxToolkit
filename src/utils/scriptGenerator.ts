@@ -10,7 +10,7 @@ export function getTweakById(id: string): SystemTweak | undefined {
 
 /**
  * Generates an auto-elevating, self-contained .bat silent installer for selected applications and tweaks
- * with rich ItsRiRx toolkit branding & creator credits (Created by: Riazul Islam)
+ * with ItsRiRx toolkit branding & creator credit once in the header
  */
 export function generateBatchInstaller(
   selectedAppIds: string[],
@@ -74,7 +74,7 @@ if %errorlevel% neq 0 (
   if (tweaks.length > 0) {
     script += `
 echo ----------------------------------------------------------------------------
-echo  STAGE 1: APPLYING SYSTEM TWEAKS & OPTIMIZATIONS
+echo  STAGE 1: APPLYING SYSTEM TWEAKS AND OPTIMIZATIONS
 echo ----------------------------------------------------------------------------
 echo.
 `;
@@ -100,7 +100,7 @@ echo.
 `;
 
     apps.forEach((app, idx) => {
-      script += `echo [${idx + 1}/${apps.length}] Downloading ^& Silently Installing: ${app.name} (${app.id})...
+      script += `echo [${idx + 1}/${apps.length}] Downloading and Silently Installing: ${app.name} (${app.id})...
 %WINGET_CMD% install --id ${app.id} -e --silent --accept-package-agreements --accept-source-agreements --disable-interactivity
 if %errorlevel% equ 0 (
     echo   [SUCCESS] ${app.name} installed successfully!
@@ -115,7 +115,6 @@ echo.
   script += `echo ============================================================================
 echo   [COMPLETED] Automated setup and deployment has finished successfully!
 echo   Toolkit    : https://itsrirx-toolkit.vercel.app
-echo   Created by : Riazul Islam
 echo ============================================================================
 echo.
 powershell.exe -NoProfile -Command "[console]::beep(800,200); [console]::beep(1000,300)" >nul 2>&1
@@ -126,7 +125,7 @@ pause
 }
 
 /**
- * Generates a clean standalone PowerShell (.ps1) script with branding & creator credits
+ * Generates a clean standalone PowerShell (.ps1) script with branding & creator credit once in the header
  */
 export function generatePowerShellInstaller(
   selectedAppIds: string[],
@@ -198,7 +197,6 @@ try {
   script += `Write-Host "============================================================================" -ForegroundColor Cyan
 Write-Host "  [SUCCESS] All queued operations completed!" -ForegroundColor Green
 Write-Host "  Toolkit    : https://itsrirx-toolkit.vercel.app" -ForegroundColor Cyan
-Write-Host "  Created by : Riazul Islam" -ForegroundColor White
 Write-Host "============================================================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Press any key to exit..." -ForegroundColor DarkGray
