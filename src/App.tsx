@@ -6,6 +6,7 @@ import {
   ShieldCheck,
   Zap,
   Boxes,
+  Sparkles,
   Download,
   Sun,
   Moon,
@@ -89,7 +90,7 @@ export default function App() {
     setIsDark((prev) => !prev);
   };
 
-  const endpointUrl = `${hostUrl}/i`;
+  const endpointUrl = hostUrl ? `${hostUrl}/i` : 'https://itsrirx-toolkit.vercel.app/i';
   const psCommand = `irm ${endpointUrl} | iex`;
   const cmdCommand = `powershell -NoProfile -ExecutionPolicy Bypass -Command "irm ${endpointUrl} | iex"`;
 
@@ -465,74 +466,148 @@ pause >nul`;
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 space-y-6 relative z-10">
-        {/* Instant Remote PowerShell Endpoint Hero Strip */}
+        {/* Instant Remote PowerShell Endpoint Hero Strip - Gorgeous Premium Glass Deck */}
         {activeTab !== 'install' && (
           <section
-            className={`rounded-3xl p-5 md:p-6 backdrop-blur-2xl transition-all duration-300 relative overflow-hidden ${
+            className={`rounded-3xl p-5 md:p-6 backdrop-blur-2xl transition-all duration-300 relative overflow-hidden border ${
               isDark
-                ? 'bg-zinc-900/50 border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.25)]'
-                : 'bg-white/65 border border-white/90 shadow-[0_8px_32px_rgba(0,0,0,0.03)]'
+                ? 'bg-zinc-900/75 border-zinc-800/90 shadow-[0_12px_40px_rgba(0,0,0,0.35)]'
+                : 'bg-white/80 border-slate-200/90 shadow-[0_12px_36px_rgba(0,0,0,0.04)]'
             }`}
           >
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span
-                    className={`text-xs font-semibold uppercase tracking-wider ${
-                      isDark ? 'text-emerald-400' : 'text-emerald-600'
-                    }`}
-                  >
-                    Instant Remote PowerShell Endpoint
-                  </span>
+            {/* Subtle ambient lighting effects */}
+            <div
+              className={`absolute -top-20 -right-20 w-72 h-72 rounded-full blur-3xl pointer-events-none opacity-40 transition-opacity ${
+                isDark ? 'bg-purple-600/20' : 'bg-purple-200/50'
+              }`}
+            />
+            <div
+              className={`absolute -bottom-20 -left-20 w-72 h-72 rounded-full blur-3xl pointer-events-none opacity-30 transition-opacity ${
+                isDark ? 'bg-emerald-600/15' : 'bg-emerald-200/40'
+              }`}
+            />
+
+            <div className="relative z-10 space-y-4">
+              {/* Top Row: Title, Live Status Indicator & Quick Launcher Buttons */}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div className="space-y-1 max-w-xl">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-2 w-2 relative">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                    </span>
+                    <span
+                      className={`text-xs font-bold uppercase tracking-wider ${
+                        isDark ? 'text-emerald-400' : 'text-emerald-600'
+                      }`}
+                    >
+                      Instant Remote PowerShell Endpoint
+                    </span>
+                    <span
+                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                        isDark
+                          ? 'bg-zinc-800/80 text-zinc-300 border-zinc-700/80'
+                          : 'bg-slate-100 text-slate-600 border-slate-200'
+                      }`}
+                    >
+                      Windows 10 & 11
+                    </span>
+                  </div>
+                  <h2 className={`text-base sm:text-lg font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    Launch the entire 12-Module Suite directly in your Windows Terminal
+                  </h2>
                 </div>
-                <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                  Launch the entire 12-Module Suite directly in your Windows Terminal:
-                </p>
+
+                {/* 1-Click Launchers */}
+                <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                  {/* Desktop launcher (.bat) */}
+                  <button
+                    onClick={() => handleDownloadFile('ItsRiRx-ToolKit.bat', batLauncherCode, 'Desktop Launcher (.bat)')}
+                    className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs shadow-sm hover:shadow-purple-500/25 transition-all active:scale-95 cursor-pointer flex items-center gap-2"
+                    title="Download 1-Click Batch Desktop Launcher"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Desktop Launcher (.bat)</span>
+                  </button>
+
+                  {/* Setup 'rirx' Command (.bat) */}
+                  <button
+                    onClick={() => handleDownloadFile('Setup-rirx-Command.bat', setupRirxCode, "Setup 'rirx' Command (.bat)")}
+                    className={`px-4 py-2.5 rounded-xl font-semibold text-xs border transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 ${
+                      isDark
+                        ? 'bg-zinc-800/90 hover:bg-zinc-700/90 text-emerald-400 border-emerald-500/30 hover:border-emerald-500/50'
+                        : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
+                    }`}
+                    title="Install global 'rirx' terminal command"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>Setup 'rirx' Command</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Just Desktop Launcher, Setup RiRx Command, Copy CMD - Nothing else */}
-              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-                {/* Desktop launcher (.bat) */}
-                <button
-                  onClick={() => handleDownloadFile('ItsRiRx-ToolKit.bat', batLauncherCode, 'Desktop Launcher (.bat)')}
-                  className="px-4 py-2.5 rounded-full bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-sm transition-all active:scale-95 cursor-pointer flex items-center gap-2 shrink-0"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Desktop Launcher (.bat)</span>
-                </button>
-
-                {/* Setup RiRx Command Box */}
-                <div
-                  className={`flex items-center gap-2 rounded-full px-4 py-2 border transition-all ${
-                    isDark
-                      ? 'bg-zinc-950/80 border-zinc-800 text-purple-300'
-                      : 'bg-slate-100/90 border-slate-200/90 text-purple-700 shadow-sm'
-                  }`}
-                >
-                  <Terminal className="w-3.5 h-3.5 text-purple-500 shrink-0" />
-                  <code className="text-xs font-mono font-semibold select-all">
-                    irm https://itsrirx-toolkit.vercel.app/setup.ps1 | iex
-                  </code>
+              {/* Dedicated Terminal Command Bar */}
+              <div
+                className={`rounded-2xl p-2.5 sm:p-3 border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all ${
+                  isDark
+                    ? 'bg-black/60 border-zinc-800/90 text-zinc-100 shadow-inner'
+                    : 'bg-slate-50 border-slate-200/90 text-slate-800 shadow-inner'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 px-2 flex-1 min-w-0">
+                  <div
+                    className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border ${
+                      isDark
+                        ? 'bg-purple-950/60 border-purple-800/50 text-purple-400'
+                        : 'bg-purple-100 border-purple-200 text-purple-700'
+                    }`}
+                  >
+                    <Terminal className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="flex items-center gap-1.5 font-mono text-xs sm:text-[13px] truncate select-all">
+                    <span className="text-purple-600 dark:text-purple-400 font-bold shrink-0">irm</span>
+                    <span className="font-semibold text-slate-700 dark:text-zinc-200 truncate">{endpointUrl}</span>
+                    <span className="text-purple-600 dark:text-purple-400 font-bold shrink-0">| iex</span>
+                  </div>
                 </div>
 
-                {/* Copy CMD Button */}
-                <button
-                  onClick={() => handleCopy('powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://itsrirx-toolkit.vercel.app/setup.ps1 | iex"', 'CMD command')}
-                  className={`px-4 py-2.5 rounded-full font-semibold text-xs border transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 shrink-0 ${
-                    isDark
-                      ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border-zinc-700'
-                      : 'bg-white hover:bg-slate-100 text-slate-800 border-slate-200 shadow-sm'
-                  }`}
-                  title="Copy CMD command"
-                >
-                  {copiedType === 'CMD command' ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-500" />
-                  ) : (
-                    <Copy className="w-3.5 h-3.5" />
-                  )}
-                  <span>Copy CMD</span>
-                </button>
+                <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                  {/* Copy PowerShell Command Button */}
+                  <button
+                    onClick={() => handleCopy(psCommand, 'PowerShell command')}
+                    className={`px-3.5 py-1.5 rounded-xl font-medium text-xs border transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 ${
+                      isDark
+                        ? 'bg-zinc-800/90 hover:bg-zinc-700 text-zinc-200 border-zinc-700'
+                        : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200 shadow-sm'
+                    }`}
+                    title="Copy PowerShell Command"
+                  >
+                    {copiedType === 'PowerShell command' ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-500" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                    <span>Copy PS</span>
+                  </button>
+
+                  {/* Copy CMD Command Button */}
+                  <button
+                    onClick={() => handleCopy(cmdCommand, 'CMD command')}
+                    className={`px-3.5 py-1.5 rounded-xl font-medium text-xs border transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 ${
+                      isDark
+                        ? 'bg-purple-950/40 hover:bg-purple-900/60 text-purple-300 border-purple-800/60'
+                        : 'bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200 shadow-sm'
+                    }`}
+                    title="Copy command for standard Command Prompt (cmd.exe)"
+                  >
+                    {copiedType === 'CMD command' ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-500" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                    <span>Copy CMD</span>
+                  </button>
+                </div>
               </div>
             </div>
           </section>
