@@ -109,7 +109,8 @@ export const SOFTWARE_APPS: SoftwareApp[] = [
   { id: 'Opera.Opera', name: 'Opera Browser', category: 'Web Browsers', desc: 'Feature-rich web browser with built-in VPN and social messenger sidebar', icon: 'Globe' },
 
   // 12. Developer & Coding
-  { id: 'Microsoft.VisualStudioCode', name: 'Visual Studio Code', category: 'Developer & Coding', desc: 'Industry standard code editor with extensions, debugging & terminal', icon: 'Code2', popular: true },
+  { id: 'Microsoft.VisualStudioCode', name: 'Microsoft Visual Studio Code', category: 'Developer & Coding', desc: 'Industry standard code editor with extensions, debugging & terminal', icon: 'Code2', popular: true },
+  { id: 'Microsoft.VisualStudioCode.Insiders', name: 'Microsoft Visual Studio Code Insiders', category: 'Developer & Coding', desc: 'Daily preview build of Visual Studio Code with cutting-edge features', icon: 'Code2', popular: true },
   { id: 'Git.Git', name: 'Git for Windows', category: 'Developer & Coding', desc: 'Distributed version control system and Git Bash CLI environment', icon: 'Code2', popular: true },
   { id: 'Python.Python.3.14', name: 'Python 3', category: 'Developer & Coding', desc: 'Powerful high-level programming language and PIP package manager', icon: 'Code2', popular: true },
   { id: 'OpenJS.NodeJS.LTS', name: 'Node.js (LTS)', category: 'Developer & Coding', desc: 'JavaScript runtime environment with NPM package manager', icon: 'Code2', popular: true },
@@ -128,7 +129,8 @@ export const SOFTWARE_APPS: SoftwareApp[] = [
   { id: 'voidtools.Everything', name: 'Everything Search', category: 'Utilities & Tools', desc: 'Instant millisecond filename search engine for Windows NTFS', icon: 'Wrench', popular: true },
   { id: 'Microsoft.PowerToys', name: 'Microsoft PowerToys', category: 'Utilities & Tools', desc: 'System utilities for power users (FancyZones, ColorPicker, Run)', icon: 'Wrench', popular: true },
   { id: 'Rufus.Rufus', name: 'Rufus USB Creator', category: 'Utilities & Tools', desc: 'Create bootable USB drives for Windows and Linux installations', icon: 'Wrench' },
-  { id: 'ShareX.ShareX', name: 'ShareX Screen Capture', category: 'Utilities & Tools', desc: 'Advanced screen capture, file sharing and productivity tool', icon: 'Wrench' },
+  { id: 'ShareX.ShareX', name: 'ShareX', category: 'Utilities & Tools', desc: 'Advanced screen capture, file sharing and productivity tool', icon: 'Wrench', popular: true },
+  { id: 'File-New-Project.EarTrumpet', name: 'EarTrumpet', category: 'Utilities & Tools', desc: 'Powerful volume control and per-app audio mixer for Windows', icon: 'Wrench', popular: true },
   { id: 'OmicronLab.Avro', name: 'Avro Keyboard', category: 'Utilities & Tools', desc: 'Standard phonetic Bangla typing software for Windows', icon: 'Wrench', popular: true },
 
   // 15. Communication
@@ -316,8 +318,8 @@ export const SYSTEM_TWEAKS: SystemTweak[] = [
     moduleNum: '04',
     desc: 'Extracts all active sound, Wi-Fi, chipset & display drivers to Desktop\\Windows_Drivers_Backup before reinstalling Windows.',
     recommended: false,
-    psCode: `$dest = "$env:USERPROFILE\\Desktop\\Windows_Drivers_Backup"; New-Item -ItemType Directory -Path $dest -Force -ErrorAction SilentlyContinue | Out-Null; Export-WindowsDriver -Online -Destination $dest; Write-Host "All system drivers exported to Desktop\\Windows_Drivers_Backup" -ForegroundColor Green`,
-    batCode: `powershell -Command "$dest = \"$env:USERPROFILE\\Desktop\\Windows_Drivers_Backup\"; New-Item -ItemType Directory -Path $dest -Force | Out-Null; Export-WindowsDriver -Online -Destination $dest"`
+    psCode: `$dest = Join-Path ([Environment]::GetFolderPath('Desktop')) 'Windows_Drivers_Backup'; if (!(Test-Path $dest)) { New-Item -ItemType Directory -Path $dest -Force | Out-Null }; Export-WindowsDriver -Online -Destination $dest; Write-Host "All system drivers exported to: $dest" -ForegroundColor Green`,
+    batCode: `set "DEST=%USERPROFILE%\\Desktop\\Windows_Drivers_Backup" & if not exist "%DEST%" mkdir "%DEST%" & dism.exe /Online /Export-Driver /Destination:"%DEST%"`
   },
   {
     id: 'update_defender_quick_scan',

@@ -6,32 +6,24 @@ import {
   ShieldCheck,
   Zap,
   Boxes,
-  Sparkles,
   Download,
-  FolderDown,
   Sun,
   Moon,
-  ChevronDown,
-  ChevronUp,
   Share2,
-  Undo2,
-  Key,
-  HardDriveDownload,
-  RotateCcw
+  RotateCcw,
+  ArrowRight
 } from 'lucide-react';
 import { SoftwareInstallerTab } from './components/SoftwareInstallerTab';
 import { SystemTweaksTab } from './components/SystemTweaksTab';
+import { InstallScreen } from './components/InstallScreen';
 import {
   generateBatchInstaller,
-  generateRollbackScript,
-  generateOemKeyExtractorScript,
-  generateDriverBackupScript,
   triggerFileDownload
 } from './utils/scriptGenerator';
 import { SOFTWARE_APPS, SYSTEM_TWEAKS } from './data/toolkitCatalog';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'apps' | 'tweaks'>('apps');
+  const [activeTab, setActiveTab] = useState<'apps' | 'tweaks' | 'install'>('apps');
   const [selectedApps, setSelectedApps] = useState<string[]>([]);
   const [selectedTweaks, setSelectedTweaks] = useState<string[]>([]);
   const [copiedType, setCopiedType] = useState<string | null>(null);
@@ -47,8 +39,6 @@ export default function App() {
     }
     return false;
   });
-
-  const [showCliReference, setShowCliReference] = useState<boolean>(false);
 
   useEffect(() => {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://itsrirx-toolkit.vercel.app';
@@ -380,20 +370,20 @@ pause >nul`;
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className={`font-extrabold tracking-tight text-base ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                <span className={`font-bold tracking-tight text-base ${isDark ? 'text-white' : 'text-slate-900'}`}>
                   ItsRiRx Windows Tool Kit
                 </span>
                 <span
-                  className={`text-[10px] px-2 py-0.5 rounded-md font-mono font-bold ${
+                  className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
                     isDark
                       ? 'bg-white/10 text-cyan-400 border border-white/10'
                       : 'bg-cyan-50 text-cyan-700 border border-cyan-200/60'
                   }`}
                 >
-                  v1.2.0 Minimalist
+                  v1.2.0
                 </span>
               </div>
-              <p className={`text-xs font-mono hidden sm:block ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+              <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
                 Web Application & Remote Suite
               </p>
             </div>
@@ -411,9 +401,9 @@ pause >nul`;
             >
               <button
                 onClick={() => setActiveTab('apps')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer ${
                   activeTab === 'apps'
-                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/25'
+                    ? 'bg-purple-600 text-white shadow-sm'
                     : isDark
                     ? 'text-zinc-400 hover:text-white'
                     : 'text-slate-600 hover:text-slate-900'
@@ -423,8 +413,8 @@ pause >nul`;
                 <span>Software Store</span>
                 {selectedApps.length > 0 && (
                   <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
-                      activeTab === 'apps' ? 'bg-white/20 text-white' : 'bg-cyan-500 text-white'
+                    className={`text-[11px] px-1.5 py-0.2 rounded-full font-medium ${
+                      activeTab === 'apps' ? 'bg-white/20 text-white' : 'bg-purple-500 text-white'
                     }`}
                   >
                     {selectedApps.length}
@@ -434,9 +424,9 @@ pause >nul`;
 
               <button
                 onClick={() => setActiveTab('tweaks')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer ${
                   activeTab === 'tweaks'
-                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/25'
+                    ? 'bg-emerald-600 text-white shadow-sm'
                     : isDark
                     ? 'text-zinc-400 hover:text-white'
                     : 'text-slate-600 hover:text-slate-900'
@@ -446,7 +436,7 @@ pause >nul`;
                 <span>System Tweaks</span>
                 {selectedTweaks.length > 0 && (
                   <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                    className={`text-[11px] px-1.5 py-0.2 rounded-full font-medium ${
                       activeTab === 'tweaks' ? 'bg-white/20 text-white' : 'bg-emerald-500 text-white'
                     }`}
                   >
@@ -475,64 +465,78 @@ pause >nul`;
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 space-y-6 relative z-10">
-        {/* Quick Launch Hero Strip */}
-        <section
-          className={`rounded-3xl p-5 md:p-6 backdrop-blur-2xl transition-all duration-300 relative overflow-hidden ${
-            isDark
-              ? 'bg-zinc-900/50 border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.25)]'
-              : 'bg-white/65 border border-white/90 shadow-[0_8px_32px_rgba(0,0,0,0.03)]'
-          }`}
-        >
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span
-                  className={`text-xs font-mono font-bold uppercase tracking-wider ${
-                    isDark ? 'text-emerald-400' : 'text-emerald-600'
+        {/* Instant Remote PowerShell Endpoint Hero Strip */}
+        {activeTab !== 'install' && (
+          <section
+            className={`rounded-3xl p-5 md:p-6 backdrop-blur-2xl transition-all duration-300 relative overflow-hidden ${
+              isDark
+                ? 'bg-zinc-900/50 border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.25)]'
+                : 'bg-white/65 border border-white/90 shadow-[0_8px_32px_rgba(0,0,0,0.03)]'
+            }`}
+          >
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span
+                    className={`text-xs font-semibold uppercase tracking-wider ${
+                      isDark ? 'text-emerald-400' : 'text-emerald-600'
+                    }`}
+                  >
+                    Instant Remote PowerShell Endpoint
+                  </span>
+                </div>
+                <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                  Launch the entire 12-Module Suite directly in your Windows Terminal:
+                </p>
+              </div>
+
+              {/* Just Desktop Launcher, Setup RiRx Command, Copy CMD - Nothing else */}
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                {/* Desktop launcher (.bat) */}
+                <button
+                  onClick={() => handleDownloadFile('ItsRiRx-ToolKit.bat', batLauncherCode, 'Desktop Launcher (.bat)')}
+                  className="px-4 py-2.5 rounded-full bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-sm transition-all active:scale-95 cursor-pointer flex items-center gap-2 shrink-0"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Desktop Launcher (.bat)</span>
+                </button>
+
+                {/* Setup RiRx Command Box */}
+                <div
+                  className={`flex items-center gap-2 rounded-full px-4 py-2 border transition-all ${
+                    isDark
+                      ? 'bg-zinc-950/80 border-zinc-800 text-purple-300'
+                      : 'bg-slate-100/90 border-slate-200/90 text-purple-700 shadow-sm'
                   }`}
                 >
-                  Instant Remote PowerShell Endpoint
-                </span>
-              </div>
-              <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                Launch the entire 12-Module Suite directly in your Windows Terminal:
-              </p>
-            </div>
+                  <Terminal className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                  <code className="text-xs font-mono font-semibold select-all">
+                    irm https://itsrirx-toolkit.vercel.app/setup.ps1 | iex
+                  </code>
+                </div>
 
-            {/* Quick Command Glass Box */}
-            <div
-              className={`flex items-center gap-2 rounded-2xl px-4 py-2.5 max-w-md w-full justify-between transition-all backdrop-blur-md ${
-                isDark
-                  ? 'bg-black/40 border border-white/10'
-                  : 'bg-slate-100/80 border border-slate-200/80 shadow-sm'
-              }`}
-            >
-              <code
-                className={`text-xs font-mono truncate select-all ${
-                  isDark ? 'text-cyan-300' : 'text-cyan-700 font-bold'
-                }`}
-              >
-                {psCommand}
-              </code>
-              <button
-                onClick={() => handleCopy(psCommand, 'PowerShell command')}
-                className={`p-1.5 rounded-xl transition-all cursor-pointer shrink-0 active:scale-90 ${
-                  isDark
-                    ? 'bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 hover:text-white'
-                    : 'bg-white hover:bg-slate-200 text-slate-700 shadow-sm'
-                }`}
-                title="Copy Command"
-              >
-                {copiedType === 'PowerShell command' ? (
-                  <Check className="w-4 h-4 text-emerald-500" />
-                ) : (
-                  <Copy className="w-4 h-4" />
-                )}
-              </button>
+                {/* Copy CMD Button */}
+                <button
+                  onClick={() => handleCopy('powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://itsrirx-toolkit.vercel.app/setup.ps1 | iex"', 'CMD command')}
+                  className={`px-4 py-2.5 rounded-full font-semibold text-xs border transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                    isDark
+                      ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border-zinc-700'
+                      : 'bg-white hover:bg-slate-100 text-slate-800 border-slate-200 shadow-sm'
+                  }`}
+                  title="Copy CMD command"
+                >
+                  {copiedType === 'CMD command' ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-500" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                  )}
+                  <span>Copy CMD</span>
+                </button>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* Tab 1: Software Installer */}
         {activeTab === 'apps' && (
@@ -540,6 +544,7 @@ pause >nul`;
             selectedApps={selectedApps}
             setSelectedApps={setSelectedApps}
             onNotify={showToast}
+            onNavigateToInstall={() => setActiveTab('install')}
             isDark={isDark}
           />
         )}
@@ -550,26 +555,49 @@ pause >nul`;
             selectedTweaks={selectedTweaks}
             setSelectedTweaks={setSelectedTweaks}
             onNotify={showToast}
+            onNavigateToInstall={() => setActiveTab('install')}
             isDark={isDark}
           />
         )}
 
-        {/* Combined Setup Floating Bar if items are selected */}
-        {totalSelectedCount > 0 && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900/90 dark:bg-zinc-900/90 border border-cyan-400/80 text-white px-5 py-3 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.35)] flex flex-wrap items-center gap-3 backdrop-blur-2xl animate-in fade-in slide-in-from-bottom-5 duration-200">
+        {/* Tab 3: Ready to Install Screen matching user reference image */}
+        {activeTab === 'install' && (
+          <InstallScreen
+            selectedApps={selectedApps}
+            setSelectedApps={setSelectedApps}
+            selectedTweaks={selectedTweaks}
+            setSelectedTweaks={setSelectedTweaks}
+            onNotify={showToast}
+            onNavigateToApps={() => setActiveTab('apps')}
+            onNavigateToTweaks={() => setActiveTab('tweaks')}
+            isDark={isDark}
+          />
+        )}
+
+        {/* Combined Setup Floating Bar if items are selected and not already in install screen */}
+        {totalSelectedCount > 0 && activeTab !== 'install' && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900/90 dark:bg-zinc-900/90 border border-purple-500/80 text-white px-5 py-3 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.35)] flex flex-wrap items-center gap-3 backdrop-blur-2xl animate-in fade-in slide-in-from-bottom-5 duration-200">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
-              <span className="text-xs font-bold text-cyan-300 font-mono">
+              <span className="w-2.5 h-2.5 rounded-full bg-purple-400 animate-ping" />
+              <span className="text-xs font-bold text-purple-200">
                 {selectedApps.length} Apps + {selectedTweaks.length} Tweaks
               </span>
             </div>
 
             <div className="flex items-center gap-2">
               <button
-                onClick={handleDownloadCombinedSetup}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 shadow-lg shadow-cyan-500/30 transition-all cursor-pointer active:scale-95"
+                onClick={() => setActiveTab('install')}
+                className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer active:scale-95"
               >
-                <Download className="w-4 h-4" /> Download .bat
+                Go to Install ({totalSelectedCount}) <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                onClick={handleDownloadCombinedSetup}
+                className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/10 backdrop-blur-md flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                title="Direct 1-Click .bat download"
+              >
+                <Download className="w-3.5 h-3.5" /> .bat
               </button>
 
               <button
@@ -577,7 +605,7 @@ pause >nul`;
                 className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/10 backdrop-blur-md flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
                 title="Copy shareable configuration link"
               >
-                <Share2 className="w-3.5 h-3.5 text-cyan-300" /> Share Link
+                <Share2 className="w-3.5 h-3.5 text-purple-300" /> Share
               </button>
 
               <button
@@ -590,217 +618,6 @@ pause >nul`;
             </div>
           </div>
         )}
-
-        {/* Collapsible Section: 1-Click Launchers, Standalone Utilities & Full 12-Module Reference */}
-        <section
-          className={`rounded-3xl overflow-hidden backdrop-blur-2xl transition-all duration-300 ${
-            isDark
-              ? 'bg-zinc-900/40 border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.2)]'
-              : 'bg-white/60 border border-white/90 shadow-[0_8px_30px_rgba(0,0,0,0.02)]'
-          }`}
-        >
-          <button
-            onClick={() => setShowCliReference((prev) => !prev)}
-            className={`w-full p-5 text-left flex items-center justify-between transition-colors cursor-pointer ${
-              isDark ? 'hover:bg-zinc-800/40' : 'hover:bg-white/60'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-colors ${
-                  isDark
-                    ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
-                    : 'bg-cyan-50 text-cyan-700 border border-cyan-200/60'
-                }`}
-              >
-                <FolderDown className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className={`font-bold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                  Desktop Launchers, Standalone Utilities & Full 12-Module Reference
-                </h3>
-                <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                  Download zero-setup .bat launchers, rollback scripts, driver backup & product key tools
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs font-mono font-semibold text-cyan-600 dark:text-cyan-400">
-              <span>{showCliReference ? 'Hide Reference' : 'Show Reference'}</span>
-              {showCliReference ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            </div>
-          </button>
-
-          {showCliReference && (
-            <div
-              className={`p-6 border-t space-y-6 animate-in fade-in duration-150 backdrop-blur-xl ${
-                isDark ? 'border-white/10 bg-zinc-950/40' : 'border-slate-100 bg-slate-50/50'
-              }`}
-            >
-              {/* 1-Click Desktop Launchers & Standalone Tools */}
-              <div className="space-y-3">
-                <h4 className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
-                  1-Click Desktop Scripts (.bat)
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  <button
-                    onClick={() => handleDownloadFile('ItsRiRx-ToolKit.bat', batLauncherCode, 'Desktop Launcher (.bat)')}
-                    className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition-all cursor-pointer backdrop-blur-xl ${
-                      isDark
-                        ? 'bg-zinc-900/60 border-white/10 hover:border-cyan-500/50 hover:bg-zinc-800/80 shadow-md'
-                        : 'bg-white/80 border-white/90 hover:border-cyan-400 hover:bg-white shadow-[0_4px_16px_rgba(0,0,0,0.03)]'
-                    }`}
-                  >
-                    <div className="w-8 h-8 rounded-xl bg-cyan-500/10 text-cyan-500 border border-cyan-500/20 flex items-center justify-center shrink-0">
-                      <Download className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h4 className={`font-bold text-xs ${isDark ? 'text-white' : 'text-slate-900'}`}>Desktop Launcher</h4>
-                      <p className={`text-[11px] font-mono mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>ItsRiRx-ToolKit.bat</p>
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => handleDownloadFile('Setup-rirx-Command.bat', setupRirxCode, 'rirx Command Setup (.bat)')}
-                    className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition-all cursor-pointer backdrop-blur-xl ${
-                      isDark
-                        ? 'bg-zinc-900/60 border-white/10 hover:border-emerald-500/50 hover:bg-zinc-800/80 shadow-md'
-                        : 'bg-white/80 border-white/90 hover:border-emerald-400 hover:bg-white shadow-[0_4px_16px_rgba(0,0,0,0.03)]'
-                    }`}
-                  >
-                    <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center shrink-0">
-                      <Sparkles className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h4 className={`font-bold text-xs ${isDark ? 'text-white' : 'text-slate-900'}`}>Setup 'rirx' Command</h4>
-                      <p className={`text-[11px] font-mono mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>Win + R & Terminal shortcut</p>
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => handleCopy(cmdCommand, 'CMD command')}
-                    className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition-all cursor-pointer backdrop-blur-xl ${
-                      isDark
-                        ? 'bg-zinc-900/60 border-white/10 hover:border-blue-500/50 hover:bg-zinc-800/80 shadow-md'
-                        : 'bg-white/80 border-white/90 hover:border-blue-400 hover:bg-white shadow-[0_4px_16px_rgba(0,0,0,0.03)]'
-                    }`}
-                  >
-                    <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-500 border border-blue-500/20 flex items-center justify-center shrink-0">
-                      <Copy className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h4 className={`font-bold text-xs ${isDark ? 'text-white' : 'text-slate-900'}`}>Copy CMD Command</h4>
-                      <p className={`text-[11px] font-mono mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>For Command Prompt</p>
-                    </div>
-                  </button>
-
-                  {/* Rollback Script Button */}
-                  <button
-                    onClick={() => handleDownloadFile('ItsRiRx-Rollback-Tweaks.bat', generateRollbackScript(), 'Rollback Script (.bat)')}
-                    className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition-all cursor-pointer backdrop-blur-xl ${
-                      isDark
-                        ? 'bg-zinc-900/60 border-white/10 hover:border-amber-500/50 hover:bg-zinc-800/80 shadow-md'
-                        : 'bg-white/80 border-white/90 hover:border-amber-400 hover:bg-white shadow-[0_4px_16px_rgba(0,0,0,0.03)]'
-                    }`}
-                  >
-                    <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center justify-center shrink-0">
-                      <Undo2 className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h4 className={`font-bold text-xs ${isDark ? 'text-white' : 'text-slate-900'}`}>Rollback Tweaks</h4>
-                      <p className={`text-[11px] font-mono mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>Restore Windows defaults</p>
-                    </div>
-                  </button>
-
-                  {/* Extract OEM Key Button */}
-                  <button
-                    onClick={() => handleDownloadFile('Extract-Windows-Key.bat', generateOemKeyExtractorScript(), 'OEM Product Key Extractor (.bat)')}
-                    className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition-all cursor-pointer backdrop-blur-xl ${
-                      isDark
-                        ? 'bg-zinc-900/60 border-white/10 hover:border-cyan-500/50 hover:bg-zinc-800/80 shadow-md'
-                        : 'bg-white/80 border-white/90 hover:border-cyan-400 hover:bg-white shadow-[0_4px_16px_rgba(0,0,0,0.03)]'
-                    }`}
-                  >
-                    <div className="w-8 h-8 rounded-xl bg-cyan-500/10 text-cyan-500 border border-cyan-500/20 flex items-center justify-center shrink-0">
-                      <Key className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h4 className={`font-bold text-xs ${isDark ? 'text-white' : 'text-slate-900'}`}>Extract OEM License Key</h4>
-                      <p className={`text-[11px] font-mono mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>Save BIOS key to Desktop</p>
-                    </div>
-                  </button>
-
-                  {/* Backup All Drivers Button */}
-                  <button
-                    onClick={() => handleDownloadFile('Backup-All-Drivers.bat', generateDriverBackupScript(), 'All Drivers Backup (.bat)')}
-                    className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition-all cursor-pointer backdrop-blur-xl ${
-                      isDark
-                        ? 'bg-zinc-900/60 border-white/10 hover:border-emerald-500/50 hover:bg-zinc-800/80 shadow-md'
-                        : 'bg-white/80 border-white/90 hover:border-emerald-400 hover:bg-white shadow-[0_4px_16px_rgba(0,0,0,0.03)]'
-                    }`}
-                  >
-                    <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center shrink-0">
-                      <HardDriveDownload className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h4 className={`font-bold text-xs ${isDark ? 'text-white' : 'text-slate-900'}`}>Backup All Device Drivers</h4>
-                      <p className={`text-[11px] font-mono mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>Export Wi-Fi, audio & GPU</p>
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              {/* All 12 Modules Table */}
-              <div className="space-y-3">
-                <h4 className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
-                  Terminal Suite Modules (12 Modules)
-                </h4>
-                <div
-                  className={`border rounded-2xl overflow-hidden font-mono text-xs backdrop-blur-xl ${
-                    isDark ? 'border-white/10' : 'border-slate-200'
-                  }`}
-                >
-                  <div
-                    className={`grid grid-cols-12 p-3.5 font-bold border-b ${
-                      isDark ? 'bg-zinc-900/80 text-cyan-400 border-white/10' : 'bg-slate-100/80 text-cyan-700 border-slate-200'
-                    }`}
-                  >
-                    <div className="col-span-1">NUM</div>
-                    <div className="col-span-4">MODULE</div>
-                    <div className="col-span-7">DESCRIPTION & CAPABILITIES</div>
-                  </div>
-
-                  {[
-                    { num: '[01]', name: 'Software Installer', desc: 'Curated apps across 17 domains with multi-select checkboxes' },
-                    { num: '[02]', name: 'Debloat & Windows 11', desc: 'Disable telemetry, Bing search, Copilot, classic context menu & UWP bloatware' },
-                    { num: '[03]', name: 'Performance & Gaming', desc: 'Unlock Ultimate Power plan, Game DVR disable, low latency ping & 1:1 mouse input' },
-                    { num: '[04]', name: 'Safety & Restore', desc: '1-click restore points, OEM product key extractor, driver backup & Defender scan' },
-                    { num: '[05]', name: 'Developer Tools', desc: 'WSL2, Windows Sandbox, Hyper-V and container platform activation' },
-                    { num: '[06]', name: 'Battery & Power', desc: 'Health analytics, battery wear degradation & sleep study reports' },
-                    { num: '[07]', name: 'Windows System Repair', desc: 'SFC scannow, DISM RestoreHealth & Windows Update reset' },
-                    { num: '[08]', name: 'Disk Cleanup & Storage', desc: 'Temp cleaner, hibernation off (free 8-32GB) & manual SSD TRIM retrim' },
-                    { num: '[09]', name: 'Network Diagnostics', desc: 'Ping test, 3-point link check, Cloudflare/Google DNS switcher & flush' },
-                    { num: '[10]', name: 'System Info & Utilities', desc: 'Hardware specs, Windows licensing status, devmgmt & diskmgmt' },
-                    { num: '[11]', name: 'Instant Quick Actions', desc: 'Instant DNS flush, Explorer taskbar freeze fix & quick restore point' },
-                    { num: '[12]', name: 'App Uninstaller', desc: 'Batch multi-select uninstaller with AppData leftover deep wipe' }
-                  ].map((m) => (
-                    <div
-                      key={m.num}
-                      className={`grid grid-cols-12 p-3.5 border-b transition-colors ${
-                        isDark
-                          ? 'border-white/5 hover:bg-zinc-800/40 text-zinc-300'
-                          : 'border-slate-100 hover:bg-white text-slate-700'
-                      }`}
-                    >
-                      <div className="col-span-1 text-cyan-600 dark:text-cyan-400 font-bold">{m.num}</div>
-                      <div className={`col-span-4 font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{m.name}</div>
-                      <div className={`col-span-7 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>{m.desc}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-        </section>
 
         {/* Security & Architecture Note */}
         <section
@@ -816,15 +633,15 @@ pause >nul`;
           </div>
           <p className={`text-xs leading-relaxed ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
             The ItsRiRx Windows Tool Kit is built strictly for authorized system administration and maintenance. All generated batch (
-            <code className="text-cyan-600 dark:text-cyan-400 font-mono font-semibold">.bat</code>) and PowerShell (
-            <code className="text-cyan-600 dark:text-cyan-400 font-mono font-semibold">.ps1</code>) scripts use native Windows utilities and official Microsoft Winget APIs. No telemetry, user credentials, or system profiles are ever transmitted to external servers.
+            <span className="text-cyan-600 dark:text-cyan-400 font-semibold">.bat</span>) and PowerShell (
+            <span className="text-cyan-600 dark:text-cyan-400 font-semibold">.ps1</span>) scripts use native Windows utilities and official Microsoft Winget APIs. No telemetry, user credentials, or system profiles are ever transmitted to external servers.
           </p>
         </section>
       </main>
 
       {/* Footer */}
       <footer
-        className={`border-t py-6 text-xs font-mono transition-colors backdrop-blur-xl ${
+        className={`border-t py-6 text-xs transition-colors backdrop-blur-xl ${
           isDark ? 'border-white/10 bg-[#090b10]/80 text-zinc-500' : 'border-slate-200/80 bg-white/70 text-slate-500'
         }`}
       >

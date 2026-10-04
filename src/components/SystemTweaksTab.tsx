@@ -16,7 +16,8 @@ import {
   ChevronRight,
   Undo2,
   Key,
-  HardDriveDownload
+  HardDriveDownload,
+  ArrowRight
 } from 'lucide-react';
 import { SYSTEM_TWEAKS, SystemTweak } from '../data/toolkitCatalog';
 import {
@@ -33,6 +34,7 @@ interface SystemTweaksTabProps {
   selectedTweaks: string[];
   setSelectedTweaks: React.Dispatch<React.SetStateAction<string[]>>;
   onNotify: (msg: string) => void;
+  onNavigateToInstall?: () => void;
   isDark?: boolean;
 }
 
@@ -40,6 +42,7 @@ export const SystemTweaksTab: React.FC<SystemTweaksTabProps> = ({
   selectedTweaks,
   setSelectedTweaks,
   onNotify,
+  onNavigateToInstall,
   isDark = false
 }) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -259,12 +262,12 @@ export const SystemTweaksTab: React.FC<SystemTweaksTabProps> = ({
                 <Zap className="w-3.5 h-3.5" /> Web System Optimizer
               </span>
               <span className={isDark ? 'text-zinc-600' : 'text-slate-300'}>·</span>
-              <span className={`font-mono ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+              <span className={`font-normal ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
                 1-Click Repairs & Optimizations
               </span>
             </div>
 
-            <h2 className={`text-2xl md:text-3xl font-extrabold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <h2 className={`text-2xl md:text-3xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Windows Performance & Repair Suite
             </h2>
 
@@ -277,7 +280,7 @@ export const SystemTweaksTab: React.FC<SystemTweaksTabProps> = ({
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <button
               onClick={selectRecommended}
-              className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/25 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold text-xs flex items-center gap-2 shadow-md shadow-emerald-500/25 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
             >
               <CheckCircle2 className="w-4 h-4" /> Select Recommended
             </button>
@@ -285,7 +288,7 @@ export const SystemTweaksTab: React.FC<SystemTweaksTabProps> = ({
             {selectedTweaks.length > 0 && (
               <button
                 onClick={clearSelection}
-                className={`px-3.5 py-2.5 rounded-2xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                className={`px-3.5 py-2.5 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
                   isDark
                     ? 'border-white/10 hover:bg-zinc-800 text-zinc-300 hover:text-white'
                     : 'border-slate-200 hover:bg-slate-100 text-slate-700'
@@ -299,13 +302,13 @@ export const SystemTweaksTab: React.FC<SystemTweaksTabProps> = ({
 
         {/* Quick Utility Tools Strip: Rollback, Key Extractor, Driver Backup */}
         <div className={`mt-6 pt-5 border-t flex flex-wrap items-center justify-between gap-3 text-xs ${isDark ? 'border-white/10' : 'border-slate-200/80'}`}>
-          <span className={`font-semibold flex items-center gap-1.5 ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
+          <span className={`font-medium flex items-center gap-1.5 ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
             <Sparkles className="w-3.5 h-3.5 text-emerald-500" /> Standalone Utilities:
           </span>
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handleDownloadRollback}
-              className={`px-3 py-1.5 rounded-xl border font-mono font-medium flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 ${
+              className={`px-3 py-1.5 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 ${
                 isDark
                   ? 'bg-zinc-800/80 hover:bg-zinc-700/80 border-white/10 text-amber-400 hover:text-amber-300'
                   : 'bg-white hover:bg-slate-50 border-slate-200 text-amber-700 shadow-sm'
@@ -317,7 +320,7 @@ export const SystemTweaksTab: React.FC<SystemTweaksTabProps> = ({
 
             <button
               onClick={handleDownloadOemKeyExtractor}
-              className={`px-3 py-1.5 rounded-xl border font-mono font-medium flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 ${
+              className={`px-3 py-1.5 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 ${
                 isDark
                   ? 'bg-zinc-800/80 hover:bg-zinc-700/80 border-white/10 text-cyan-400 hover:text-cyan-300'
                   : 'bg-white hover:bg-slate-50 border-slate-200 text-cyan-700 shadow-sm'
@@ -329,7 +332,7 @@ export const SystemTweaksTab: React.FC<SystemTweaksTabProps> = ({
 
             <button
               onClick={handleDownloadDriverBackup}
-              className={`px-3 py-1.5 rounded-xl border font-mono font-medium flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 ${
+              className={`px-3 py-1.5 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 ${
                 isDark
                   ? 'bg-zinc-800/80 hover:bg-zinc-700/80 border-white/10 text-emerald-400 hover:text-emerald-300'
                   : 'bg-white hover:bg-slate-50 border-slate-200 text-emerald-700 shadow-sm'
@@ -363,6 +366,14 @@ export const SystemTweaksTab: React.FC<SystemTweaksTabProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+            {onNavigateToInstall && (
+              <button
+                onClick={onNavigateToInstall}
+                className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md transition-all active:scale-95 cursor-pointer"
+              >
+                Go to Install ({selectedTweaks.length}) <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
             <button
               onClick={handleDownloadBatch}
               className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 transition-all active:scale-95 cursor-pointer"
@@ -488,25 +499,25 @@ export const SystemTweaksTab: React.FC<SystemTweaksTabProps> = ({
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <span
-                        className={`text-[10px] font-mono px-2 py-0.5 rounded-md border font-bold ${getModuleBadgeColor(
+                        className={`text-[11px] px-2 py-0.5 rounded-md border font-medium ${getModuleBadgeColor(
                           tweak.moduleNum
                         )}`}
                       >
-                        MODULE {tweak.moduleNum}
+                        Module {tweak.moduleNum}
                       </span>
                       {tweak.recommended && (
                         <span
-                          className={`text-[10px] font-mono px-2 py-0.5 rounded-md border font-bold ${
+                          className={`text-[11px] px-2 py-0.5 rounded-md border font-medium ${
                             isDark
                               ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                               : 'bg-emerald-100 text-emerald-800 border-emerald-200'
                           }`}
                         >
-                          RECOMMENDED
+                          Recommended
                         </span>
                       )}
                     </div>
-                    <h4 className={`font-extrabold text-base tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    <h4 className={`font-bold text-base tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
                       {tweak.title}
                     </h4>
                   </div>
@@ -532,11 +543,11 @@ export const SystemTweaksTab: React.FC<SystemTweaksTabProps> = ({
 
               {/* Bottom bar with action buttons */}
               <div
-                className={`pt-3 border-t flex items-center justify-between text-xs font-mono ${
-                  isDark ? 'border-white/5 text-zinc-500' : 'border-slate-100 text-slate-400'
+                className={`pt-3 border-t flex items-center justify-between text-xs ${
+                  isDark ? 'border-white/5 text-zinc-400' : 'border-slate-100 text-slate-500'
                 }`}
               >
-                <span className="text-[11px] truncate max-w-[170px] sm:max-w-[220px]">
+                <span className="text-xs truncate max-w-[170px] sm:max-w-[220px]">
                   {tweak.category}
                 </span>
 

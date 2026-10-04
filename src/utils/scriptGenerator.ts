@@ -327,8 +327,9 @@ echo   Website    : https://itsrirx-toolkit.vercel.app
 echo   Created by : Riazul Islam
 echo ============================================================================
 echo.
-echo [*] Querying BIOS/UEFI embedded license tables...
-powershell.exe -NoProfile -Command "$k = (Get-CimInstance -Query 'select * from SoftwareLicensingService').OA3xOriginalProductKey; if ($k) { Write-Host '>>> FOUND OEM PRODUCT KEY: ' -NoNewline -ForegroundColor Green; Write-Host $k -ForegroundColor Yellow; 'Windows OEM Product Key: ' + $k | Out-File \"$env:USERPROFILE\\Desktop\\Windows_OEM_Product_Key.txt\"; Write-Host '>>> Saved to Desktop\\Windows_OEM_Product_Key.txt' -ForegroundColor Cyan } else { Write-Host 'No OEM BIOS key detected (Retail / Digital Entitlement License).' -ForegroundColor Yellow }"
+echo [*] Querying BIOS/UEFI embedded license tables (MSDM / OA3)...
+echo.
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$desktop = [Environment]::GetFolderPath('Desktop'); $k = (Get-CimInstance -Query 'select * from SoftwareLicensingService').OA3xOriginalProductKey; if ($k) { Write-Host '=====================================================' -ForegroundColor Cyan; Write-Host '>>> FOUND OEM PRODUCT KEY: ' -NoNewline -ForegroundColor Green; Write-Host $k -ForegroundColor Yellow; Write-Host '=====================================================' -ForegroundColor Cyan; $outPath = Join-Path $desktop 'Windows_OEM_Product_Key.txt'; ('Windows OEM Product Key: ' + $k) | Out-File -FilePath $outPath -Encoding utf8; Write-Host '>>> Saved key to Desktop\\Windows_OEM_Product_Key.txt' -ForegroundColor Green } else { Write-Host 'No OEM BIOS key detected (Retail / Digital Entitlement License).' -ForegroundColor Yellow }"
 echo.
 echo Press any key to exit...
 pause >nul
@@ -357,15 +358,36 @@ echo   Website    : https://itsrirx-toolkit.vercel.app
 echo   Created by : Riazul Islam
 echo ============================================================================
 echo.
-echo [*] Exporting all active drivers to Desktop\\Windows_Drivers_Backup...
+
+:: Detect Desktop directory (including OneDrive redirected Desktop)
+set "DEST=%USERPROFILE%\\Desktop\\Windows_Drivers_Backup"
+if exist "%USERPROFILE%\\OneDrive\\Desktop" set "DEST=%USERPROFILE%\\OneDrive\\Desktop\\Windows_Drivers_Backup"
+
+echo [*] Target Directory: "%DEST%"
+echo [*] Exporting all third-party drivers (Wi-Fi, GPU, Audio, Bluetooth, Chipset)...
 echo [*] This might take 1-2 minutes depending on your storage speed...
 echo.
-powershell.exe -NoProfile -Command "$dest = \"$env:USERPROFILE\\Desktop\\Windows_Drivers_Backup\"; New-Item -ItemType Directory -Path $dest -Force | Out-Null; Export-WindowsDriver -Online -Destination $dest; Write-Host '>>> ALL DRIVERS BACKED UP SUCCESSFULLY TO Desktop\\Windows_Drivers_Backup' -ForegroundColor Green"
+
+if not exist "%DEST%" mkdir "%DEST%" >nul 2>&1
+
+:: Method 1: Native Windows DISM Export (Fastest, 100%% reliable, shows progress)
+dism.exe /Online /Export-Driver /Destination:"%DEST%"
+
+if %errorlevel% neq 0 (
+    echo.
+    echo [*] Falling back to PowerShell Export-WindowsDriver...
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$d = '%DEST%'; if (!(Test-Path $d)) { New-Item -ItemType Directory -Path $d -Force | Out-Null }; Export-WindowsDriver -Online -Destination $d"
+)
+
 echo.
 echo ============================================================================
-echo   [COMPLETED] Driver Backup finished!
-echo   Toolkit    : https://itsrirx-toolkit.vercel.app
+echo   [SUCCESS] Driver Backup Finished!
+echo   All drivers safely saved to:
+echo   "%DEST%"
 echo ============================================================================
+echo.
+echo [*] Opening backup folder in File Explorer...
+start "" "%DEST%"
 echo.
 pause
 `;
