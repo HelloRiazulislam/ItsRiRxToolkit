@@ -17,7 +17,6 @@ import {
   Undo2,
   Key,
   HardDriveDownload,
-  Layers,
   RotateCcw
 } from 'lucide-react';
 import { SoftwareInstallerTab } from './components/SoftwareInstallerTab';
@@ -29,7 +28,7 @@ import {
   generateDriverBackupScript,
   triggerFileDownload
 } from './utils/scriptGenerator';
-import { PRESET_BUNDLES, SOFTWARE_APPS, SYSTEM_TWEAKS } from './data/toolkitCatalog';
+import { SOFTWARE_APPS, SYSTEM_TWEAKS } from './data/toolkitCatalog';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'apps' | 'tweaks'>('apps');
@@ -326,12 +325,6 @@ pause >nul`;
     setTimeout(() => setCopiedType(null), 2500);
   };
 
-  const applyPresetBundle = (bundle: typeof PRESET_BUNDLES[number]) => {
-    setSelectedApps(bundle.apps);
-    setSelectedTweaks(bundle.tweaks);
-    showToast(`Applied "${bundle.name}" (${bundle.apps.length} Apps + ${bundle.tweaks.length} Tweaks)!`);
-  };
-
   const handleClearAllSelections = () => {
     setSelectedApps([]);
     setSelectedTweaks([]);
@@ -538,66 +531,6 @@ pause >nul`;
                 )}
               </button>
             </div>
-          </div>
-        </section>
-
-        {/* 1-Click Curated Presets Bar (Gamer, Office, Dev, Low-End PC, IT Admin, AI) */}
-        <section
-          className={`rounded-3xl p-5 backdrop-blur-2xl transition-all duration-300 ${
-            isDark
-              ? 'bg-zinc-900/40 border border-white/10 shadow-[0_6px_24px_rgba(0,0,0,0.2)]'
-              : 'bg-white/60 border border-white/90 shadow-[0_6px_24px_rgba(0,0,0,0.02)]'
-          }`}
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-            <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-cyan-500" />
-              <h3 className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                1-Click Curated Setup Presets
-              </h3>
-              <span className={`text-[11px] font-mono ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>
-                (Apps + Tweaks bundled together)
-              </span>
-            </div>
-            {totalSelectedCount > 0 && (
-              <button
-                onClick={handleShareConfig}
-                className="text-xs font-semibold text-cyan-600 dark:text-cyan-400 hover:underline flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
-              >
-                <Share2 className="w-3.5 h-3.5" /> Share Current Selection Link
-              </button>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-            {PRESET_BUNDLES.map((b) => (
-              <button
-                key={b.id}
-                onClick={() => applyPresetBundle(b)}
-                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer backdrop-blur-md flex flex-col justify-between group active:scale-95 ${
-                  isDark
-                    ? 'bg-zinc-800/50 hover:bg-zinc-800 hover:border-cyan-500/50 border-white/10'
-                    : 'bg-white/80 hover:bg-white hover:border-cyan-400 border-slate-200/80 shadow-sm hover:shadow-md'
-                }`}
-              >
-                <div>
-                  <div className="flex items-center justify-between gap-1 mb-1">
-                    <span className="text-base">{b.name.split(' ')[0]}</span>
-                    <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold ${
-                      isDark ? 'bg-zinc-700/80 text-cyan-300' : 'bg-slate-100 text-slate-700'
-                    }`}>
-                      {b.apps.length}A + {b.tweaks.length}T
-                    </span>
-                  </div>
-                  <h4 className={`text-xs font-bold truncate ${isDark ? 'text-white group-hover:text-cyan-300' : 'text-slate-900 group-hover:text-cyan-700'}`}>
-                    {b.name.split(' ').slice(1).join(' ')}
-                  </h4>
-                  <p className={`text-[10px] mt-0.5 font-mono truncate ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                    {b.badge}
-                  </p>
-                </div>
-              </button>
-            ))}
           </div>
         </section>
 
