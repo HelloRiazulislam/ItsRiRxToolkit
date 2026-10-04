@@ -13,10 +13,21 @@ import {
   RotateCcw,
   CheckCircle2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Undo2,
+  Key,
+  HardDriveDownload
 } from 'lucide-react';
 import { SYSTEM_TWEAKS, SystemTweak } from '../data/toolkitCatalog';
-import { generateBatchInstaller, generatePowerShellInstaller, generateOneLineCommand, triggerFileDownload } from '../utils/scriptGenerator';
+import {
+  generateBatchInstaller,
+  generatePowerShellInstaller,
+  generateOneLineCommand,
+  generateRollbackScript,
+  generateOemKeyExtractorScript,
+  generateDriverBackupScript,
+  triggerFileDownload
+} from '../utils/scriptGenerator';
 
 interface SystemTweaksTabProps {
   selectedTweaks: string[];
@@ -99,12 +110,12 @@ export const SystemTweaksTab: React.FC<SystemTweaksTabProps> = ({
 
   const categories = [
     'All',
-    'Debloat & Privacy',
+    'Debloat & Windows 11',
     'Performance & Gaming',
+    'Safety & Restore',
     'Windows System Repair',
     'Disk Cleanup & Storage',
     'Network Diagnostics & DNS',
-    'Safety & Restore',
     'Instant Quick Actions'
   ];
 
@@ -172,7 +183,25 @@ export const SystemTweaksTab: React.FC<SystemTweaksTabProps> = ({
     }
     const cmd = generateOneLineCommand([], selectedTweaks);
     navigator.clipboard.writeText(cmd);
-    onNotify(`Copied combined execution command for ${selectedTweaks.length} tweaks!`);
+    onNotify(`Copied command for ${selectedTweaks.length} optimizations!`);
+  };
+
+  const handleDownloadRollback = () => {
+    const script = generateRollbackScript();
+    triggerFileDownload('ItsRiRx-Rollback-Tweaks.bat', script);
+    onNotify('Downloaded official Rollback / Undo script (.bat)!');
+  };
+
+  const handleDownloadOemKeyExtractor = () => {
+    const script = generateOemKeyExtractorScript();
+    triggerFileDownload('Extract-Windows-Key.bat', script);
+    onNotify('Downloaded 1-Click OEM Product Key Extractor (.bat)!');
+  };
+
+  const handleDownloadDriverBackup = () => {
+    const script = generateDriverBackupScript();
+    triggerFileDownload('Backup-All-Drivers.bat', script);
+    onNotify('Downloaded 1-Click Driver Backup Script (.bat)!');
   };
 
   const getModuleBadgeColor = (moduleNum: string) => {
@@ -240,33 +269,75 @@ export const SystemTweaksTab: React.FC<SystemTweaksTabProps> = ({
             </h2>
 
             <p className={`text-sm max-w-2xl leading-relaxed ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
-              Direct web access to all core toolkit modules. Execute standalone 1-click fixes or select multiple optimizations to automate system debloating and repair.
+              Debloat Windows 10 & 11, reduce gaming ping, unlock maximum CPU frequency, repair corrupted system files, and purge gigabytes of SSD temporary caches with native automated scripts.
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
+          {/* Action Buttons: Select Recommended, Clear Selection */}
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <button
               onClick={selectRecommended}
-              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer active:scale-95 backdrop-blur-md ${
-                isDark
-                  ? 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40'
-                  : 'bg-emerald-50/80 hover:bg-emerald-100 text-emerald-800 border border-emerald-300/80 shadow-sm'
-              }`}
+              className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/25 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
             >
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Select Recommended
+              <CheckCircle2 className="w-4 h-4" /> Select Recommended
             </button>
+
             {selectedTweaks.length > 0 && (
               <button
                 onClick={clearSelection}
-                className={`px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer active:scale-95 backdrop-blur-md ${
+                className={`px-3.5 py-2.5 rounded-2xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                   isDark
-                    ? 'bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 border border-white/10'
-                    : 'bg-white/80 hover:bg-white text-slate-600 border border-slate-200/80 shadow-sm'
+                    ? 'border-white/10 hover:bg-zinc-800 text-zinc-300 hover:text-white'
+                    : 'border-slate-200 hover:bg-slate-100 text-slate-700'
                 }`}
               >
-                Clear
+                <RotateCcw className="w-3.5 h-3.5" /> Clear ({selectedTweaks.length})
               </button>
             )}
+          </div>
+        </div>
+
+        {/* Quick Utility Tools Strip: Rollback, Key Extractor, Driver Backup */}
+        <div className={`mt-6 pt-5 border-t flex flex-wrap items-center justify-between gap-3 text-xs ${isDark ? 'border-white/10' : 'border-slate-200/80'}`}>
+          <span className={`font-semibold flex items-center gap-1.5 ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
+            <Sparkles className="w-3.5 h-3.5 text-emerald-500" /> Standalone Utilities:
+          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleDownloadRollback}
+              className={`px-3 py-1.5 rounded-xl border font-mono font-medium flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 ${
+                isDark
+                  ? 'bg-zinc-800/80 hover:bg-zinc-700/80 border-white/10 text-amber-400 hover:text-amber-300'
+                  : 'bg-white hover:bg-slate-50 border-slate-200 text-amber-700 shadow-sm'
+              }`}
+              title="Download script to revert tweaks to Windows defaults"
+            >
+              <Undo2 className="w-3.5 h-3.5" /> Rollback Tweaks (.bat)
+            </button>
+
+            <button
+              onClick={handleDownloadOemKeyExtractor}
+              className={`px-3 py-1.5 rounded-xl border font-mono font-medium flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 ${
+                isDark
+                  ? 'bg-zinc-800/80 hover:bg-zinc-700/80 border-white/10 text-cyan-400 hover:text-cyan-300'
+                  : 'bg-white hover:bg-slate-50 border-slate-200 text-cyan-700 shadow-sm'
+              }`}
+              title="Extract embedded Windows OEM product key from BIOS to Desktop"
+            >
+              <Key className="w-3.5 h-3.5" /> Extract OEM Key (.bat)
+            </button>
+
+            <button
+              onClick={handleDownloadDriverBackup}
+              className={`px-3 py-1.5 rounded-xl border font-mono font-medium flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 ${
+                isDark
+                  ? 'bg-zinc-800/80 hover:bg-zinc-700/80 border-white/10 text-emerald-400 hover:text-emerald-300'
+                  : 'bg-white hover:bg-slate-50 border-slate-200 text-emerald-700 shadow-sm'
+              }`}
+              title="Backup all hardware device drivers to Desktop"
+            >
+              <HardDriveDownload className="w-3.5 h-3.5" /> Backup All Drivers (.bat)
+            </button>
           </div>
         </div>
       </div>
@@ -301,18 +372,21 @@ export const SystemTweaksTab: React.FC<SystemTweaksTabProps> = ({
             <button
               onClick={handleDownloadPS1}
               className="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/10 backdrop-blur-md flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+              title="Download PowerShell script"
             >
               <Terminal className="w-4 h-4 text-emerald-400" /> .ps1
             </button>
             <button
               onClick={handleCopyCommand}
               className="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/10 backdrop-blur-md flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+              title="Copy PowerShell command to clipboard"
             >
               <Copy className="w-4 h-4 text-emerald-400" /> Copy Command
             </button>
             <button
               onClick={clearSelection}
               className="p-2.5 rounded-xl bg-white/10 hover:bg-rose-500/20 hover:text-rose-300 text-slate-300 border border-white/10 backdrop-blur-md transition-all cursor-pointer"
+              title="Deselect All"
             >
               <RotateCcw className="w-4 h-4" />
             </button>
@@ -451,51 +525,46 @@ export const SystemTweaksTab: React.FC<SystemTweaksTabProps> = ({
                   </div>
                 </div>
 
-                {/* Description */}
-                <p className={`text-xs leading-relaxed mb-4 ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
+                <p className={`text-xs leading-relaxed mb-4 ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
                   {tweak.desc}
                 </p>
               </div>
 
-              {/* Action buttons */}
+              {/* Bottom bar with action buttons */}
               <div
-                className={`pt-3 border-t flex items-center justify-between gap-2 ${
-                  isDark ? 'border-white/10' : 'border-slate-100'
+                className={`pt-3 border-t flex items-center justify-between text-xs font-mono ${
+                  isDark ? 'border-white/5 text-zinc-500' : 'border-slate-100 text-slate-400'
                 }`}
               >
-                <span className={`text-[11px] font-mono ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                <span className="text-[11px] truncate max-w-[170px] sm:max-w-[220px]">
                   {tweak.category}
                 </span>
 
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={(e) => handleCopySingle(tweak, e)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
-                      isDark
-                        ? 'bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 hover:text-white'
-                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                    className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
+                      copiedId === tweak.id
+                        ? 'bg-emerald-500 text-slate-950 border-emerald-400'
+                        : isDark
+                        ? 'hover:bg-zinc-800 hover:text-white border-white/10 text-zinc-400'
+                        : 'hover:bg-slate-100 hover:text-slate-800 border-slate-200 text-slate-500'
                     }`}
-                    title="Copy PowerShell command to clipboard"
+                    title="Copy PowerShell Command"
                   >
-                    {copiedId === tweak.id ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-500" />
-                    ) : (
-                      <Copy className="w-3.5 h-3.5 text-slate-400" />
-                    )}
-                    <span>Copy</span>
+                    {copiedId === tweak.id ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                   </button>
 
                   <button
                     onClick={(e) => handleDownloadSingle(tweak, e)}
-                    className={`px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                    className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
                       isDark
-                        ? 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                        : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
+                        ? 'hover:bg-zinc-800 hover:text-emerald-400 border-white/10 text-zinc-400'
+                        : 'hover:bg-slate-100 hover:text-emerald-700 border-slate-200 text-slate-500'
                     }`}
-                    title="Download 1-Click .bat Script"
+                    title="Download 1-Click .bat"
                   >
                     <Download className="w-3.5 h-3.5" />
-                    <span>Download .bat</span>
                   </button>
                 </div>
               </div>

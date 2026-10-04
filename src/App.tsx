@@ -12,11 +12,24 @@ import {
   Sun,
   Moon,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Share2,
+  Undo2,
+  Key,
+  HardDriveDownload,
+  Layers,
+  RotateCcw
 } from 'lucide-react';
 import { SoftwareInstallerTab } from './components/SoftwareInstallerTab';
 import { SystemTweaksTab } from './components/SystemTweaksTab';
-import { generateBatchInstaller, triggerFileDownload } from './utils/scriptGenerator';
+import {
+  generateBatchInstaller,
+  generateRollbackScript,
+  generateOemKeyExtractorScript,
+  generateDriverBackupScript,
+  triggerFileDownload
+} from './utils/scriptGenerator';
+import { PRESET_BUNDLES, SOFTWARE_APPS, SYSTEM_TWEAKS } from './data/toolkitCatalog';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'apps' | 'tweaks'>('apps');
@@ -41,6 +54,34 @@ export default function App() {
   useEffect(() => {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://itsrirx-toolkit.vercel.app';
     setHostUrl(origin);
+
+    // Read and parse URL Query Parameters for shareable configurations (?apps=...&tweaks=...)
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const appsParam = params.get('apps');
+      const tweaksParam = params.get('tweaks');
+      let loadedCount = 0;
+
+      if (appsParam) {
+        const appList = appsParam.split(',').filter(Boolean);
+        if (appList.length > 0) {
+          setSelectedApps(appList);
+          loadedCount += appList.length;
+        }
+      }
+
+      if (tweaksParam) {
+        const tweakList = tweaksParam.split(',').filter(Boolean);
+        if (tweakList.length > 0) {
+          setSelectedTweaks(tweakList);
+          loadedCount += tweakList.length;
+        }
+      }
+
+      if (loadedCount > 0) {
+        showToast(`Loaded ${loadedCount} items from shared configuration link!`);
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -270,6 +311,33 @@ pause >nul`;
     showToast(`Downloaded custom setup file (${selectedApps.length} apps, ${selectedTweaks.length} tweaks)!`);
   };
 
+  const handleShareConfig = () => {
+    if (totalSelectedCount === 0) {
+      showToast('Please select at least 1 app or tweak to share!');
+      return;
+    }
+    const params = new URLSearchParams();
+    if (selectedApps.length > 0) params.set('apps', selectedApps.join(','));
+    if (selectedTweaks.length > 0) params.set('tweaks', selectedTweaks.join(','));
+    const shareUrl = `${hostUrl}?${params.toString()}`;
+    navigator.clipboard.writeText(shareUrl);
+    setCopiedType('Share URL');
+    showToast('Copied shareable configuration link to clipboard!');
+    setTimeout(() => setCopiedType(null), 2500);
+  };
+
+  const applyPresetBundle = (bundle: typeof PRESET_BUNDLES[number]) => {
+    setSelectedApps(bundle.apps);
+    setSelectedTweaks(bundle.tweaks);
+    showToast(`Applied "${bundle.name}" (${bundle.apps.length} Apps + ${bundle.tweaks.length} Tweaks)!`);
+  };
+
+  const handleClearAllSelections = () => {
+    setSelectedApps([]);
+    setSelectedTweaks([]);
+    showToast('Cleared all selections');
+  };
+
   return (
     <div
       className={`min-h-screen relative overflow-x-hidden flex flex-col font-sans transition-colors duration-300 selection:bg-cyan-500 selection:text-black ${
@@ -303,7 +371,7 @@ pause >nul`;
         </div>
       )}
 
-      {/* Top Header - Glassmorphic, Minimal, No Custom Builder, No CLI Suite */}
+      {/* Top Header */}
       <header
         className={`border-b sticky top-0 z-30 transition-all duration-300 backdrop-blur-2xl ${
           isDark
@@ -395,7 +463,7 @@ pause >nul`;
               </button>
             </nav>
 
-            {/* Light / Dark Mode Toggle Button with Glass Style */}
+            {/* Light / Dark Mode Toggle Button */}
             <button
               onClick={toggleTheme}
               className={`p-2.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-center backdrop-blur-xl ${
@@ -413,8 +481,8 @@ pause >nul`;
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 space-y-8 relative z-10">
-        {/* Quick Launch Hero Strip with Glass Styling */}
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 space-y-6 relative z-10">
+        {/* Quick Launch Hero Strip */}
         <section
           className={`rounded-3xl p-5 md:p-6 backdrop-blur-2xl transition-all duration-300 relative overflow-hidden ${
             isDark
@@ -473,6 +541,66 @@ pause >nul`;
           </div>
         </section>
 
+        {/* 1-Click Curated Presets Bar (Gamer, Office, Dev, Low-End PC, IT Admin, AI) */}
+        <section
+          className={`rounded-3xl p-5 backdrop-blur-2xl transition-all duration-300 ${
+            isDark
+              ? 'bg-zinc-900/40 border border-white/10 shadow-[0_6px_24px_rgba(0,0,0,0.2)]'
+              : 'bg-white/60 border border-white/90 shadow-[0_6px_24px_rgba(0,0,0,0.02)]'
+          }`}
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+            <div className="flex items-center gap-2">
+              <Layers className="w-4 h-4 text-cyan-500" />
+              <h3 className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                1-Click Curated Setup Presets
+              </h3>
+              <span className={`text-[11px] font-mono ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>
+                (Apps + Tweaks bundled together)
+              </span>
+            </div>
+            {totalSelectedCount > 0 && (
+              <button
+                onClick={handleShareConfig}
+                className="text-xs font-semibold text-cyan-600 dark:text-cyan-400 hover:underline flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+              >
+                <Share2 className="w-3.5 h-3.5" /> Share Current Selection Link
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+            {PRESET_BUNDLES.map((b) => (
+              <button
+                key={b.id}
+                onClick={() => applyPresetBundle(b)}
+                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer backdrop-blur-md flex flex-col justify-between group active:scale-95 ${
+                  isDark
+                    ? 'bg-zinc-800/50 hover:bg-zinc-800 hover:border-cyan-500/50 border-white/10'
+                    : 'bg-white/80 hover:bg-white hover:border-cyan-400 border-slate-200/80 shadow-sm hover:shadow-md'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-1 mb-1">
+                    <span className="text-base">{b.name.split(' ')[0]}</span>
+                    <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold ${
+                      isDark ? 'bg-zinc-700/80 text-cyan-300' : 'bg-slate-100 text-slate-700'
+                    }`}>
+                      {b.apps.length}A + {b.tweaks.length}T
+                    </span>
+                  </div>
+                  <h4 className={`text-xs font-bold truncate ${isDark ? 'text-white group-hover:text-cyan-300' : 'text-slate-900 group-hover:text-cyan-700'}`}>
+                    {b.name.split(' ').slice(1).join(' ')}
+                  </h4>
+                  <p className={`text-[10px] mt-0.5 font-mono truncate ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                    {b.badge}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+
         {/* Tab 1: Software Installer */}
         {activeTab === 'apps' && (
           <SoftwareInstallerTab
@@ -493,25 +621,44 @@ pause >nul`;
           />
         )}
 
-        {/* Combined Setup Floating Bar if BOTH apps and tweaks are selected */}
-        {selectedApps.length > 0 && selectedTweaks.length > 0 && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900/90 dark:bg-zinc-900/90 border border-cyan-400/80 text-white px-5 py-3 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.35)] flex items-center gap-4 backdrop-blur-2xl animate-in fade-in slide-in-from-bottom-5 duration-200">
+        {/* Combined Setup Floating Bar if items are selected */}
+        {totalSelectedCount > 0 && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900/90 dark:bg-zinc-900/90 border border-cyan-400/80 text-white px-5 py-3 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.35)] flex flex-wrap items-center gap-3 backdrop-blur-2xl animate-in fade-in slide-in-from-bottom-5 duration-200">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
               <span className="text-xs font-bold text-cyan-300 font-mono">
-                {selectedApps.length} Apps + {selectedTweaks.length} Tweaks Selected
+                {selectedApps.length} Apps + {selectedTweaks.length} Tweaks
               </span>
             </div>
-            <button
-              onClick={handleDownloadCombinedSetup}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 shadow-lg shadow-cyan-500/30 transition-all cursor-pointer active:scale-95"
-            >
-              <Download className="w-4 h-4" /> Download Combined Setup (.bat)
-            </button>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleDownloadCombinedSetup}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 shadow-lg shadow-cyan-500/30 transition-all cursor-pointer active:scale-95"
+              >
+                <Download className="w-4 h-4" /> Download .bat
+              </button>
+
+              <button
+                onClick={handleShareConfig}
+                className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/10 backdrop-blur-md flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                title="Copy shareable configuration link"
+              >
+                <Share2 className="w-3.5 h-3.5 text-cyan-300" /> Share Link
+              </button>
+
+              <button
+                onClick={handleClearAllSelections}
+                className="p-2 rounded-xl bg-white/10 hover:bg-rose-500/20 hover:text-rose-300 text-slate-300 border border-white/10 backdrop-blur-md transition-all cursor-pointer"
+                title="Clear all selections"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         )}
 
-        {/* Collapsible Section: 1-Click Launchers & 12-Module Suite Reference */}
+        {/* Collapsible Section: 1-Click Launchers, Standalone Utilities & Full 12-Module Reference */}
         <section
           className={`rounded-3xl overflow-hidden backdrop-blur-2xl transition-all duration-300 ${
             isDark
@@ -537,10 +684,10 @@ pause >nul`;
               </div>
               <div>
                 <h3 className={`font-bold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                  Desktop Launchers & Full 12-Module Reference
+                  Desktop Launchers, Standalone Utilities & Full 12-Module Reference
                 </h3>
                 <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                  Download zero-setup .bat launchers or inspect all terminal modules
+                  Download zero-setup .bat launchers, rollback scripts, driver backup & product key tools
                 </p>
               </div>
             </div>
@@ -556,12 +703,12 @@ pause >nul`;
                 isDark ? 'border-white/10 bg-zinc-950/40' : 'border-slate-100 bg-slate-50/50'
               }`}
             >
-              {/* 1-Click Desktop Launchers */}
+              {/* 1-Click Desktop Launchers & Standalone Tools */}
               <div className="space-y-3">
                 <h4 className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
-                  1-Click Desktop Launchers (.bat)
+                  1-Click Desktop Scripts (.bat)
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   <button
                     onClick={() => handleDownloadFile('ItsRiRx-ToolKit.bat', batLauncherCode, 'Desktop Launcher (.bat)')}
                     className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition-all cursor-pointer backdrop-blur-xl ${
@@ -612,10 +759,64 @@ pause >nul`;
                       <p className={`text-[11px] font-mono mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>For Command Prompt</p>
                     </div>
                   </button>
+
+                  {/* Rollback Script Button */}
+                  <button
+                    onClick={() => handleDownloadFile('ItsRiRx-Rollback-Tweaks.bat', generateRollbackScript(), 'Rollback Script (.bat)')}
+                    className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition-all cursor-pointer backdrop-blur-xl ${
+                      isDark
+                        ? 'bg-zinc-900/60 border-white/10 hover:border-amber-500/50 hover:bg-zinc-800/80 shadow-md'
+                        : 'bg-white/80 border-white/90 hover:border-amber-400 hover:bg-white shadow-[0_4px_16px_rgba(0,0,0,0.03)]'
+                    }`}
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center justify-center shrink-0">
+                      <Undo2 className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className={`font-bold text-xs ${isDark ? 'text-white' : 'text-slate-900'}`}>Rollback Tweaks</h4>
+                      <p className={`text-[11px] font-mono mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>Restore Windows defaults</p>
+                    </div>
+                  </button>
+
+                  {/* Extract OEM Key Button */}
+                  <button
+                    onClick={() => handleDownloadFile('Extract-Windows-Key.bat', generateOemKeyExtractorScript(), 'OEM Product Key Extractor (.bat)')}
+                    className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition-all cursor-pointer backdrop-blur-xl ${
+                      isDark
+                        ? 'bg-zinc-900/60 border-white/10 hover:border-cyan-500/50 hover:bg-zinc-800/80 shadow-md'
+                        : 'bg-white/80 border-white/90 hover:border-cyan-400 hover:bg-white shadow-[0_4px_16px_rgba(0,0,0,0.03)]'
+                    }`}
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-cyan-500/10 text-cyan-500 border border-cyan-500/20 flex items-center justify-center shrink-0">
+                      <Key className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className={`font-bold text-xs ${isDark ? 'text-white' : 'text-slate-900'}`}>Extract OEM License Key</h4>
+                      <p className={`text-[11px] font-mono mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>Save BIOS key to Desktop</p>
+                    </div>
+                  </button>
+
+                  {/* Backup All Drivers Button */}
+                  <button
+                    onClick={() => handleDownloadFile('Backup-All-Drivers.bat', generateDriverBackupScript(), 'All Drivers Backup (.bat)')}
+                    className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition-all cursor-pointer backdrop-blur-xl ${
+                      isDark
+                        ? 'bg-zinc-900/60 border-white/10 hover:border-emerald-500/50 hover:bg-zinc-800/80 shadow-md'
+                        : 'bg-white/80 border-white/90 hover:border-emerald-400 hover:bg-white shadow-[0_4px_16px_rgba(0,0,0,0.03)]'
+                    }`}
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                      <HardDriveDownload className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className={`font-bold text-xs ${isDark ? 'text-white' : 'text-slate-900'}`}>Backup All Device Drivers</h4>
+                      <p className={`text-[11px] font-mono mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>Export Wi-Fi, audio & GPU</p>
+                    </div>
+                  </button>
                 </div>
               </div>
 
-              {/* All 12 Modules Table with Frosted Glass Styling */}
+              {/* All 12 Modules Table */}
               <div className="space-y-3">
                 <h4 className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
                   Terminal Suite Modules (12 Modules)
@@ -636,15 +837,15 @@ pause >nul`;
                   </div>
 
                   {[
-                    { num: '[01]', name: 'Software Installer', desc: 'Curated apps across 9 domains with multi-select checkboxes' },
-                    { num: '[02]', name: 'Debloat & Privacy', desc: 'Disable telemetry, Bing search, Cortana & purge UWP bloatware' },
-                    { num: '[03]', name: 'Performance & Gaming', desc: 'Unlock Ultimate Power plan, Game DVR disable, 1:1 mouse input' },
-                    { num: '[04]', name: 'Safety & Restore', desc: '1-click system restore points, active listening ports & Defender scan' },
+                    { num: '[01]', name: 'Software Installer', desc: 'Curated apps across 17 domains with multi-select checkboxes' },
+                    { num: '[02]', name: 'Debloat & Windows 11', desc: 'Disable telemetry, Bing search, Copilot, classic context menu & UWP bloatware' },
+                    { num: '[03]', name: 'Performance & Gaming', desc: 'Unlock Ultimate Power plan, Game DVR disable, low latency ping & 1:1 mouse input' },
+                    { num: '[04]', name: 'Safety & Restore', desc: '1-click restore points, OEM product key extractor, driver backup & Defender scan' },
                     { num: '[05]', name: 'Developer Tools', desc: 'WSL2, Windows Sandbox, Hyper-V and container platform activation' },
                     { num: '[06]', name: 'Battery & Power', desc: 'Health analytics, battery wear degradation & sleep study reports' },
                     { num: '[07]', name: 'Windows System Repair', desc: 'SFC scannow, DISM RestoreHealth & Windows Update reset' },
-                    { num: '[08]', name: 'Disk Cleanup & Storage', desc: 'Temp cleaner, top 15 largest files & manual SSD TRIM retrim' },
-                    { num: '[09]', name: 'Network Diagnostics', desc: 'Ping test, 3-point link check, DNS switcher (Cloudflare/Google) & flush' },
+                    { num: '[08]', name: 'Disk Cleanup & Storage', desc: 'Temp cleaner, hibernation off (free 8-32GB) & manual SSD TRIM retrim' },
+                    { num: '[09]', name: 'Network Diagnostics', desc: 'Ping test, 3-point link check, Cloudflare/Google DNS switcher & flush' },
                     { num: '[10]', name: 'System Info & Utilities', desc: 'Hardware specs, Windows licensing status, devmgmt & diskmgmt' },
                     { num: '[11]', name: 'Instant Quick Actions', desc: 'Instant DNS flush, Explorer taskbar freeze fix & quick restore point' },
                     { num: '[12]', name: 'App Uninstaller', desc: 'Batch multi-select uninstaller with AppData leftover deep wipe' }

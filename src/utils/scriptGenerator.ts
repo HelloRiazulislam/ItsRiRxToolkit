@@ -230,6 +230,148 @@ export function generateOneLineCommand(
 }
 
 /**
+ * Generates an official Rollback / Undo script (.bat) that reverts system tweaks back to Windows defaults
+ */
+export function generateRollbackScript(): string {
+  return `@echo off
+:: ============================================================================
+::   ██╗████████╗███████╗██████╗ ██╗██████╗ ██╗  ██╗
+::   ██║╚══██╔══╝██╔════╝██╔══██╗██║██╔══██╗╚██╗██╔╝
+::   ██║   ██║   ███████╗██████╔╝██║██████╔╝ ╚███╔╝   WINDOWS TOOL KIT
+::   ██║   ██║   ╚════██║██╔══██╗██║██╔══██╗ ██╔██╗   Version 1.2.0
+::   ██║   ██║   ███████║██║  ██║██║██║  ██║██╔╝ ██╗
+::   ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
+:: ============================================================================
+::  Project    : ItsRiRx Windows Tool Kit - Official Rollback & Undo Script
+::  Website    : https://itsrirx-toolkit.vercel.app
+::  Created by : Riazul Islam
+:: ============================================================================
+title ItsRiRx Rollback & Restore Windows Defaults
+color 0b
+
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [*] Administrator privileges required for registry rollback.
+    powershell.exe -NoProfile -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
+    exit /b
+)
+
+cls
+echo ============================================================================
+echo   ItsRiRx Windows Tool Kit - Reverting Tweaks to Windows Defaults
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   Created by : Riazul Islam
+echo ============================================================================
+echo.
+
+echo [1/8] Re-enabling Diagnostic Telemetry services...
+sc config DiagTrack start=auto >nul 2>&1
+sc start DiagTrack >nul 2>&1
+sc config dmwappushservice start=demand >nul 2>&1
+reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /f >nul 2>&1
+echo   [OK] Telemetry defaults restored.
+
+echo [2/8] Restoring Start Menu Bing Search suggestions...
+reg delete "HKCU\\Software\\Policies\\Microsoft\\Windows\\Explorer" /v DisableSearchBoxSuggestions /f >nul 2>&1
+reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Search" /v BingSearchEnabled /f >nul 2>&1
+echo   [OK] Start search restored.
+
+echo [3/8] Restoring Modern Windows 11 Context Menu...
+reg delete "HKCU\\Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}" /f >nul 2>&1
+echo   [OK] Modern Win 11 context menu restored.
+
+echo [4/8] Re-enabling Windows 11 Copilot...
+reg delete "HKCU\\Software\\Policies\\Microsoft\\Windows\\WindowsCopilot" /v TurnOffWindowsCopilot /f >nul 2>&1
+reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsCopilot" /v TurnOffWindowsCopilot /f >nul 2>&1
+echo   [OK] Copilot policies reset.
+
+echo [5/8] Restoring Game DVR defaults...
+reg delete "HKCU\\System\\GameConfigStore" /v GameDVR_Enabled /f >nul 2>&1
+reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v AllowGameDVR /f >nul 2>&1
+echo   [OK] Game DVR restored.
+
+echo [6/8] Restoring standard mouse pointer precision...
+reg add "HKCU\\Control Panel\\Mouse" /v MouseSpeed /t REG_SZ /d 1 /f >nul 2>&1
+echo   [OK] Mouse acceleration restored.
+
+echo [7/8] Re-enabling Hibernation...
+powercfg -h on >nul 2>&1
+echo   [OK] Hibernation re-enabled.
+
+echo [8/8] Restarting Windows Explorer...
+taskkill /f /im explorer.exe >nul 2>&1
+start explorer.exe
+echo   [OK] Explorer refreshed.
+
+echo.
+echo ============================================================================
+echo   [COMPLETED] All tweaks have been safely reverted to Windows defaults!
+echo   Toolkit    : https://itsrirx-toolkit.vercel.app
+echo ============================================================================
+echo.
+pause
+`;
+}
+
+/**
+ * Generates standalone OEM Windows Product Key Extractor (.bat)
+ */
+export function generateOemKeyExtractorScript(): string {
+  return `@echo off
+title Extract Windows OEM Product Key
+color 0b
+cls
+echo ============================================================================
+echo   ItsRiRx Windows OEM Product Key Extractor
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   Created by : Riazul Islam
+echo ============================================================================
+echo.
+echo [*] Querying BIOS/UEFI embedded license tables...
+powershell.exe -NoProfile -Command "$k = (Get-CimInstance -Query 'select * from SoftwareLicensingService').OA3xOriginalProductKey; if ($k) { Write-Host '>>> FOUND OEM PRODUCT KEY: ' -NoNewline -ForegroundColor Green; Write-Host $k -ForegroundColor Yellow; 'Windows OEM Product Key: ' + $k | Out-File \"$env:USERPROFILE\\Desktop\\Windows_OEM_Product_Key.txt\"; Write-Host '>>> Saved to Desktop\\Windows_OEM_Product_Key.txt' -ForegroundColor Cyan } else { Write-Host 'No OEM BIOS key detected (Retail / Digital Entitlement License).' -ForegroundColor Yellow }"
+echo.
+echo Press any key to exit...
+pause >nul
+`;
+}
+
+/**
+ * Generates standalone Driver Backup Script (.bat)
+ */
+export function generateDriverBackupScript(): string {
+  return `@echo off
+title Backup All Windows Drivers to Desktop
+color 0b
+
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [*] Administrator privileges required to export system drivers.
+    powershell.exe -NoProfile -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
+    exit /b
+)
+
+cls
+echo ============================================================================
+echo   ItsRiRx Full Device Driver Backup Tool
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   Created by : Riazul Islam
+echo ============================================================================
+echo.
+echo [*] Exporting all active drivers to Desktop\\Windows_Drivers_Backup...
+echo [*] This might take 1-2 minutes depending on your storage speed...
+echo.
+powershell.exe -NoProfile -Command "$dest = \"$env:USERPROFILE\\Desktop\\Windows_Drivers_Backup\"; New-Item -ItemType Directory -Path $dest -Force | Out-Null; Export-WindowsDriver -Online -Destination $dest; Write-Host '>>> ALL DRIVERS BACKED UP SUCCESSFULLY TO Desktop\\Windows_Drivers_Backup' -ForegroundColor Green"
+echo.
+echo ============================================================================
+echo   [COMPLETED] Driver Backup finished!
+echo   Toolkit    : https://itsrirx-toolkit.vercel.app
+echo ============================================================================
+echo.
+pause
+`;
+}
+
+/**
  * Triggers a native file download in the browser
  */
 export function triggerFileDownload(filename: string, content: string): void {

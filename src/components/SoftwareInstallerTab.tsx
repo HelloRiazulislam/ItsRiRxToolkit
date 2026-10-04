@@ -27,9 +27,12 @@ import {
   Network,
   Database,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Star,
+  Zap,
+  Filter
 } from 'lucide-react';
-import { SOFTWARE_APPS, CATEGORIES, PRESET_BUNDLES, SoftwareApp } from '../data/toolkitCatalog';
+import { SOFTWARE_APPS, CATEGORIES, SoftwareApp } from '../data/toolkitCatalog';
 import { generateBatchInstaller, generatePowerShellInstaller, generateOneLineCommand, triggerFileDownload } from '../utils/scriptGenerator';
 
 interface SoftwareInstallerTabProps {
@@ -85,7 +88,6 @@ export const SoftwareInstallerTab: React.FC<SoftwareInstallerTabProps> = ({
     }
   };
 
-  // Mouse Drag to Scroll handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!categoryScrollRef.current) return;
     setIsDragging(true);
@@ -106,7 +108,6 @@ export const SoftwareInstallerTab: React.FC<SoftwareInstallerTabProps> = ({
     setIsDragging(false);
   };
 
-  // Mouse Wheel horizontal scroll
   const handleWheel = (e: React.WheelEvent) => {
     if (categoryScrollRef.current && Math.abs(e.deltaY) > 0) {
       categoryScrollRef.current.scrollLeft += e.deltaY * 1.2;
@@ -114,21 +115,21 @@ export const SoftwareInstallerTab: React.FC<SoftwareInstallerTabProps> = ({
     }
   };
 
-  // Filter apps based on search and category
   const filteredApps = useMemo(() => {
     return SOFTWARE_APPS.filter((app) => {
-      const matchesSearch =
-        app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        app.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        app.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        app.desc.toLowerCase().includes(searchQuery.toLowerCase());
-
       const matchesCategory =
         selectedCategory === 'All Applications' || app.category === selectedCategory;
+      const q = searchQuery.toLowerCase().trim();
+      const matchesSearch =
+        !q ||
+        app.name.toLowerCase().includes(q) ||
+        app.desc.toLowerCase().includes(q) ||
+        app.category.toLowerCase().includes(q) ||
+        app.id.toLowerCase().includes(q);
 
-      return matchesSearch && matchesCategory;
+      return matchesCategory && matchesSearch;
     });
-  }, [searchQuery, selectedCategory]);
+  }, [selectedCategory, searchQuery]);
 
   const toggleApp = (id: string) => {
     setSelectedApps((prev) =>
@@ -142,17 +143,15 @@ export const SoftwareInstallerTab: React.FC<SoftwareInstallerTabProps> = ({
     onNotify(`Selected all ${filteredApps.length} visible applications`);
   };
 
+  const selectPopularApps = () => {
+    const popularIds = SOFTWARE_APPS.filter((a) => a.popular).map((a) => a.id);
+    setSelectedApps((prev) => Array.from(new Set([...prev, ...popularIds])));
+    onNotify(`Selected ${popularIds.length} popular essential applications!`);
+  };
+
   const clearSelection = () => {
     setSelectedApps([]);
     onNotify('Cleared all selected applications');
-  };
-
-  const applyPreset = (presetName: string) => {
-    const preset = PRESET_BUNDLES.find((p) => p.name === presetName);
-    if (preset && preset.apps.length > 0) {
-      setSelectedApps(preset.apps);
-      onNotify(`Applied preset: ${preset.name} (${preset.apps.length} apps)`);
-    }
   };
 
   const handleDownloadBatch = () => {
@@ -228,15 +227,15 @@ export const SoftwareInstallerTab: React.FC<SoftwareInstallerTabProps> = ({
       case 'Developer & Coding':
         return <Code2 className="w-4 h-4 text-emerald-500" />;
       case 'Multimedia':
-        return <Film className="w-4 h-4 text-amber-500" />;
+        return <Film className="w-4 h-4 text-rose-500" />;
       case 'Utilities & Tools':
-        return <Wrench className="w-4 h-4 text-purple-500" />;
+        return <Wrench className="w-4 h-4 text-amber-600" />;
       case 'Communication':
-        return <MessageSquare className="w-4 h-4 text-indigo-500" />;
+        return <MessageSquare className="w-4 h-4 text-teal-500" />;
       case 'Gaming':
-        return <Gamepad2 className="w-4 h-4 text-rose-500" />;
+        return <Gamepad2 className="w-4 h-4 text-violet-500" />;
       case 'Security & Privacy':
-        return <ShieldCheck className="w-4 h-4 text-cyan-500" />;
+        return <ShieldCheck className="w-4 h-4 text-emerald-500" />;
       default:
         return <Boxes className="w-4 h-4 text-cyan-500" />;
     }
@@ -244,57 +243,115 @@ export const SoftwareInstallerTab: React.FC<SoftwareInstallerTabProps> = ({
 
   return (
     <div className="space-y-6 relative z-10">
-      {/* Glassmorphic Hero Banner */}
+      {/* Modern Redesigned Glassmorphic Command Hero Banner */}
       <div
-        className={`rounded-3xl p-6 md:p-8 backdrop-blur-2xl transition-all duration-300 relative overflow-hidden ${
+        className={`rounded-3xl p-6 md:p-8 backdrop-blur-2xl transition-all duration-300 relative overflow-hidden border ${
           isDark
-            ? 'bg-zinc-900/60 border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.3)]'
-            : 'bg-white/70 border border-white/90 shadow-[0_10px_40px_rgba(0,0,0,0.03)]'
+            ? 'bg-zinc-900/60 border-white/10 shadow-[0_12px_45px_rgba(0,0,0,0.35)]'
+            : 'bg-white/75 border-white/90 shadow-[0_12px_45px_rgba(0,0,0,0.03)]'
         }`}
       >
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-xs font-semibold">
-              <span className={`flex items-center gap-1.5 ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}>
-                <Sparkles className="w-3.5 h-3.5" /> Web Software Hub
+          {/* Left Block: Icon, Title & Badges */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className={`inline-flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase px-2.5 py-1 rounded-lg ${
+                isDark ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' : 'bg-cyan-50 text-cyan-700 border border-cyan-200'
+              }`}>
+                <Zap className="w-3.5 h-3.5 fill-current" /> Unattended Software Deployment
               </span>
-              <span className={isDark ? 'text-zinc-600' : 'text-slate-300'}>·</span>
-              <span className={`font-mono ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                {SOFTWARE_APPS.length} Curated Packages across {CATEGORIES.length - 1} Categories
+              <span className={`text-xs font-mono ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>
+                · {SOFTWARE_APPS.length} Packages Available
               </span>
             </div>
 
-            <h2 className={`text-2xl md:text-3xl font-extrabold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Multi-App Silent Installer
-            </h2>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/25 shrink-0">
+                <Boxes className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className={`text-2xl md:text-3xl font-extrabold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                  Multi-App Silent Installer
+                </h2>
+                <p className={`text-xs md:text-sm mt-0.5 leading-relaxed max-w-xl ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
+                  Select multiple software packages to generate an automated 1-click silent installer script (
+                  <code className="text-cyan-600 dark:text-cyan-400 font-mono font-semibold">.bat</code> /{' '}
+                  <code className="text-cyan-600 dark:text-cyan-400 font-mono font-semibold">.ps1</code>). Zero wizard dialogs, zero bundled bloatware.
+                </p>
+              </div>
+            </div>
 
-            <p className={`text-sm max-w-2xl leading-relaxed ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
-              Select multiple applications to bundle into a single 1-click silent installer file (
-              <code className={`font-mono text-xs font-semibold px-1.5 py-0.5 rounded-md ${isDark ? 'bg-zinc-800 text-cyan-300' : 'bg-slate-100 text-cyan-700'}`}>.bat</code> or{' '}
-              <code className={`font-mono text-xs font-semibold px-1.5 py-0.5 rounded-md ${isDark ? 'bg-zinc-800 text-cyan-300' : 'bg-slate-100 text-cyan-700'}`}>.ps1</code>). Zero wizard dialogs, zero bloatware, completely automated.
-            </p>
+            {/* Feature Pills */}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <span className={`text-[11px] font-mono font-medium px-2.5 py-1 rounded-xl flex items-center gap-1.5 ${
+                isDark ? 'bg-zinc-800/80 text-zinc-300 border border-white/5' : 'bg-slate-100 text-slate-700 border border-slate-200/80'
+              }`}>
+                <Check className="w-3.5 h-3.5 text-emerald-500 stroke-[3]" /> Pure Silent (<code className="font-bold">--silent</code>)
+              </span>
+              <span className={`text-[11px] font-mono font-medium px-2.5 py-1 rounded-xl flex items-center gap-1.5 ${
+                isDark ? 'bg-zinc-800/80 text-zinc-300 border border-white/5' : 'bg-slate-100 text-slate-700 border border-slate-200/80'
+              }`}>
+                <ShieldCheck className="w-3.5 h-3.5 text-cyan-500" /> Microsoft Winget Verified
+              </span>
+              <span className={`text-[11px] font-mono font-medium px-2.5 py-1 rounded-xl flex items-center gap-1.5 ${
+                isDark ? 'bg-zinc-800/80 text-zinc-300 border border-white/5' : 'bg-slate-100 text-slate-700 border border-slate-200/80'
+              }`}>
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Zero Unwanted Bundles
+              </span>
+            </div>
           </div>
 
-          {/* Quick Presets */}
-          <div className="flex flex-col gap-2 shrink-0">
-            <span className={`text-xs font-semibold flex items-center gap-1.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-              <Layers className="w-3.5 h-3.5 text-cyan-500" /> 1-Click Curated Presets:
-            </span>
-            <div className="flex flex-wrap gap-2">
-              {PRESET_BUNDLES.map((p) => (
+          {/* Right Block: Clean Selection Control Deck */}
+          <div className={`p-4 rounded-2xl border flex flex-col gap-2.5 shrink-0 self-stretch lg:self-auto justify-center min-w-[260px] ${
+            isDark ? 'bg-zinc-950/50 border-white/10' : 'bg-slate-50/80 border-slate-200/80 shadow-sm'
+          }`}>
+            <div className="flex items-center justify-between gap-3 pb-2 border-b border-white/10 dark:border-white/5">
+              <span className={`text-xs font-semibold ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                Queue Status:
+              </span>
+              <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded-lg ${
+                selectedApps.length > 0
+                  ? 'bg-cyan-500 text-slate-950 shadow-sm shadow-cyan-500/30'
+                  : isDark ? 'bg-zinc-800 text-zinc-400' : 'bg-slate-200 text-slate-600'
+              }`}>
+                {selectedApps.length} Selected
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={selectPopularApps}
+                className="w-full px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-cyan-500/25 transition-all active:scale-95 cursor-pointer"
+              >
+                <Star className="w-3.5 h-3.5 fill-current text-amber-300" /> Select Popular Essentials
+              </button>
+
+              <div className="flex items-center gap-2">
                 <button
-                  key={p.name}
-                  onClick={() => applyPreset(p.name)}
-                  className={`px-3 py-1.5 text-xs rounded-xl backdrop-blur-md transition-all font-medium flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer ${
+                  onClick={selectAllFiltered}
+                  className={`flex-1 px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer ${
                     isDark
-                      ? 'bg-zinc-800/70 hover:bg-zinc-700/80 border border-white/10 text-zinc-200 hover:text-white'
-                      : 'bg-white/80 hover:bg-white border border-slate-200/80 text-slate-700 hover:text-slate-900 hover:shadow-md'
+                      ? 'bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 border-white/10'
+                      : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200 shadow-sm'
                   }`}
                 >
-                  <span>{p.name.split(' ')[0]}</span>
-                  <span>{p.name.split(' ').slice(1).join(' ')}</span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> All Visible ({filteredApps.length})
                 </button>
-              ))}
+
+                {selectedApps.length > 0 && (
+                  <button
+                    onClick={clearSelection}
+                    className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer ${
+                      isDark
+                        ? 'bg-rose-950/40 hover:bg-rose-900/50 text-rose-300 border-rose-800/50'
+                        : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200'
+                    }`}
+                    title="Clear selected apps"
+                  >
+                    <RotateCcw className="w-3 h-3" /> Clear
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -356,8 +413,7 @@ export const SoftwareInstallerTab: React.FC<SoftwareInstallerTabProps> = ({
       )}
 
       {/* Filter and Search Bar with Glass Styling */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        {/* Search Input */}
+      <div className="relative">
         <div className="relative flex-1">
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500" />
           <input
@@ -365,7 +421,7 @@ export const SoftwareInstallerTab: React.FC<SoftwareInstallerTabProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search software by name (Chrome, WPS, ChatGPT, AnyDesk), category, or Winget ID..."
-            className={`w-full rounded-2xl pl-10 pr-4 py-3 text-sm placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 transition-all font-sans backdrop-blur-xl ${
+            className={`w-full rounded-2xl pl-10 pr-20 py-3 text-sm placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 transition-all font-sans backdrop-blur-xl ${
               isDark
                 ? 'bg-zinc-900/60 border border-white/10 text-zinc-100 focus:border-cyan-500'
                 : 'bg-white/70 border border-white/90 text-slate-900 shadow-[0_4px_20px_rgba(0,0,0,0.02)] focus:border-cyan-400'
@@ -374,35 +430,9 @@ export const SoftwareInstallerTab: React.FC<SoftwareInstallerTabProps> = ({
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-white"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-mono px-2 py-0.5 rounded-md bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white"
             >
               Clear
-            </button>
-          )}
-        </div>
-
-        {/* Global Select/Deselect buttons */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={selectAllFiltered}
-            className={`px-3.5 py-2.5 rounded-2xl text-xs font-semibold backdrop-blur-xl transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
-              isDark
-                ? 'bg-zinc-900/60 hover:bg-zinc-800 text-zinc-200 border border-white/10'
-                : 'bg-white/75 hover:bg-white text-slate-700 border border-white/90 shadow-[0_4px_20px_rgba(0,0,0,0.02)]'
-            }`}
-          >
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Select All ({filteredApps.length})
-          </button>
-          {selectedApps.length > 0 && (
-            <button
-              onClick={clearSelection}
-              className={`px-3.5 py-2.5 rounded-2xl text-xs font-semibold backdrop-blur-xl transition-all cursor-pointer active:scale-95 ${
-                isDark
-                  ? 'bg-zinc-900/60 hover:bg-zinc-800 text-zinc-400 border border-white/10'
-                  : 'bg-white/75 hover:bg-white text-slate-500 border border-white/90 shadow-[0_4px_20px_rgba(0,0,0,0.02)]'
-              }`}
-            >
-              Clear ({selectedApps.length})
             </button>
           )}
         </div>
@@ -441,11 +471,12 @@ export const SoftwareInstallerTab: React.FC<SoftwareInstallerTabProps> = ({
           }`}
         >
           {CATEGORIES.map((cat) => {
+            const isSelected = selectedCategory === cat;
             const count =
               cat === 'All Applications'
                 ? SOFTWARE_APPS.length
                 : SOFTWARE_APPS.filter((a) => a.category === cat).length;
-            const isSelected = selectedCategory === cat;
+
             return (
               <button
                 key={cat}
@@ -460,12 +491,12 @@ export const SoftwareInstallerTab: React.FC<SoftwareInstallerTabProps> = ({
               >
                 <span>{cat}</span>
                 <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-md font-mono ${
+                  className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
                     isSelected
                       ? 'bg-white/20 text-white'
                       : isDark
                       ? 'bg-white/5 text-zinc-400'
-                      : 'bg-slate-100 text-slate-500'
+                      : 'bg-slate-200/80 text-slate-600'
                   }`}
                 >
                   {count}
@@ -493,7 +524,7 @@ export const SoftwareInstallerTab: React.FC<SoftwareInstallerTabProps> = ({
         </button>
       </div>
 
-      {/* Application Cards Grid with Frosted Glasstic Style */}
+      {/* Application Cards Grid with Frosted Glass Style */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredApps.map((app) => {
           const isSelected = selectedApps.includes(app.id);
@@ -558,45 +589,44 @@ export const SoftwareInstallerTab: React.FC<SoftwareInstallerTabProps> = ({
                 </div>
 
                 {/* Description */}
-                <p className={`text-xs leading-relaxed mb-4 line-clamp-2 ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
+                <p className={`text-xs leading-relaxed mb-4 ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
                   {app.desc}
                 </p>
               </div>
 
-              {/* Footer with Winget ID and Action buttons */}
+              {/* Bottom bar with Winget ID and Action buttons */}
               <div
-                className={`pt-3 border-t flex items-center justify-between gap-2 mt-auto ${
-                  isDark ? 'border-white/10' : 'border-slate-100'
+                className={`pt-3 border-t flex items-center justify-between text-xs font-mono ${
+                  isDark ? 'border-white/5 text-zinc-500' : 'border-slate-100 text-slate-400'
                 }`}
               >
-                <code className={`text-[11px] font-mono truncate max-w-[140px] sm:max-w-[160px] ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                <span className="truncate max-w-[150px] sm:max-w-[180px] text-[11px]">
                   {app.id}
-                </code>
+                </span>
 
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={(e) => handleCopySingleApp(app, e)}
-                    className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                      isDark
-                        ? 'bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 hover:text-cyan-300'
-                        : 'bg-slate-100/90 hover:bg-slate-200 text-slate-600 hover:text-slate-900'
+                    className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
+                      copiedAppId === app.id
+                        ? 'bg-emerald-500 text-slate-950 border-emerald-400'
+                        : isDark
+                        ? 'hover:bg-zinc-800 hover:text-white border-white/10 text-zinc-400'
+                        : 'hover:bg-slate-100 hover:text-slate-800 border-slate-200 text-slate-500'
                     }`}
                     title="Copy Winget command for this app"
                   >
-                    {copiedAppId === app.id ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-500" />
-                    ) : (
-                      <Copy className="w-3.5 h-3.5" />
-                    )}
+                    {copiedAppId === app.id ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                   </button>
+
                   <button
                     onClick={(e) => handleDownloadSingleApp(app, e)}
-                    className={`p-1.5 rounded-lg transition-colors border border-transparent cursor-pointer ${
+                    className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
                       isDark
-                        ? 'bg-zinc-800/80 hover:bg-emerald-950 hover:text-emerald-400 hover:border-emerald-800 text-zinc-300'
-                        : 'bg-slate-100/90 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 text-slate-600'
+                        ? 'hover:bg-zinc-800 hover:text-cyan-400 border-white/10 text-zinc-400'
+                        : 'hover:bg-slate-100 hover:text-cyan-700 border-slate-200 text-slate-500'
                     }`}
-                    title="Download 1-click silent installer (.bat)"
+                    title="Download 1-click installer (.bat)"
                   >
                     <Download className="w-3.5 h-3.5" />
                   </button>
@@ -606,33 +636,6 @@ export const SoftwareInstallerTab: React.FC<SoftwareInstallerTabProps> = ({
           );
         })}
       </div>
-
-      {filteredApps.length === 0 && (
-        <div
-          className={`text-center py-16 border rounded-3xl p-8 backdrop-blur-xl ${
-            isDark ? 'bg-zinc-900/40 border-white/10' : 'bg-white/70 border-white/90 shadow-sm'
-          }`}
-        >
-          <Wrench className="w-10 h-10 text-slate-400 dark:text-zinc-500 mx-auto mb-3" />
-          <h3 className={`text-base font-bold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            No Applications Found
-          </h3>
-          <p className={`text-xs max-w-sm mx-auto mb-4 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-            No software package matched your search query "{searchQuery}".
-          </p>
-          <button
-            onClick={() => {
-              setSearchQuery('');
-              setSelectedCategory('All Applications');
-            }}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold ${
-              isDark ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200' : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
-            }`}
-          >
-            Reset Filters
-          </button>
-        </div>
-      )}
     </div>
   );
 };
