@@ -17,7 +17,9 @@ import {
   Undo2,
   Key,
   HardDriveDownload,
-  ArrowRight
+  ArrowRight,
+  Search,
+  X
 } from 'lucide-react';
 import { SYSTEM_TWEAKS, SystemTweak } from '../data/toolkitCatalog';
 import {
@@ -47,6 +49,7 @@ export const SystemTweaksTab: React.FC<SystemTweaksTabProps> = ({
 }) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('All');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Category Slider refs and states
   const tweakScrollRef = useRef<HTMLDivElement>(null);
@@ -113,18 +116,19 @@ export const SystemTweaksTab: React.FC<SystemTweaksTabProps> = ({
 
   const categories = [
     'All',
-    'Debloat & Windows 11',
-    'Performance & Gaming',
-    'Safety & Restore',
-    'Windows System Repair',
-    'Disk Cleanup & Storage',
-    'Network Diagnostics & DNS',
-    'Instant Quick Actions'
+    ...Array.from(new Set(SYSTEM_TWEAKS.map((t) => t.category)))
   ];
 
   const filteredTweaks = SYSTEM_TWEAKS.filter((t) => {
-    if (activeCategory === 'All') return true;
-    return t.category === activeCategory;
+    const matchesCat = activeCategory === 'All' || t.category === activeCategory;
+    const q = searchQuery.toLowerCase().trim();
+    const matchesSearch =
+      !q ||
+      t.title.toLowerCase().includes(q) ||
+      t.desc.toLowerCase().includes(q) ||
+      t.category.toLowerCase().includes(q) ||
+      t.id.toLowerCase().includes(q);
+    return matchesCat && matchesSearch;
   });
 
   const toggleTweak = (id: string) => {
@@ -405,6 +409,30 @@ export const SystemTweaksTab: React.FC<SystemTweaksTabProps> = ({
         </div>
       )}
 
+      {/* Search Input Bar for Tweaks */}
+      <div className="relative">
+        <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder={`Search across all ${SYSTEM_TWEAKS.length} performance tweaks, repairs, gaming & debloat options...`}
+          className={`w-full pl-10 pr-9 py-2.5 rounded-2xl text-xs sm:text-sm font-medium border transition-all outline-none ${
+            isDark
+              ? 'bg-zinc-900/60 border-zinc-800 text-white placeholder-zinc-500 focus:border-emerald-500'
+              : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400 focus:border-emerald-500 shadow-sm'
+          }`}
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
       {/* Category Pills Glass Slider with Left/Right Buttons, Mouse Wheel & Drag to Slide */}
       <div className="relative flex items-center gap-2">
         {/* Left Slide Button */}
@@ -439,6 +467,10 @@ export const SystemTweaksTab: React.FC<SystemTweaksTabProps> = ({
         >
           {categories.map((cat) => {
             const isSelected = activeCategory === cat;
+            const count =
+              cat === 'All'
+                ? SYSTEM_TWEAKS.length
+                : SYSTEM_TWEAKS.filter((t) => t.category === cat).length;
             return (
               <button
                 key={cat}
@@ -451,7 +483,18 @@ export const SystemTweaksTab: React.FC<SystemTweaksTabProps> = ({
                     : 'bg-white/70 text-slate-600 hover:text-slate-900 border border-white/90 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:bg-white'
                 }`}
               >
-                {cat}
+                <span>{cat}</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.2 rounded-full font-normal ${
+                    isSelected
+                      ? 'bg-white/20 text-white'
+                      : isDark
+                      ? 'bg-zinc-800 text-zinc-400'
+                      : 'bg-slate-100 text-slate-500'
+                  }`}
+                >
+                  {count}
+                </span>
               </button>
             );
           })}

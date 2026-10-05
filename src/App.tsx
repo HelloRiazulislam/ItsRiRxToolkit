@@ -12,11 +12,13 @@ import {
   Moon,
   Share2,
   RotateCcw,
-  ArrowRight
+  ArrowRight,
+  Cpu
 } from 'lucide-react';
 import { SoftwareInstallerTab } from './components/SoftwareInstallerTab';
 import { SystemTweaksTab } from './components/SystemTweaksTab';
 import { InstallScreen } from './components/InstallScreen';
+import { PowerToolsTab } from './components/PowerToolsTab';
 import {
   generateBatchInstaller,
   triggerFileDownload
@@ -24,7 +26,7 @@ import {
 import { SOFTWARE_APPS, SYSTEM_TWEAKS } from './data/toolkitCatalog';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'apps' | 'tweaks' | 'install'>('apps');
+  const [activeTab, setActiveTab] = useState<'apps' | 'tweaks' | 'tools' | 'install'>('apps');
   const [selectedApps, setSelectedApps] = useState<string[]>([]);
   const [selectedTweaks, setSelectedTweaks] = useState<string[]>([]);
   const [copiedType, setCopiedType] = useState<string | null>(null);
@@ -467,6 +469,25 @@ pause >nul`;
                   </span>
                 )}
               </button>
+
+              <button
+                onClick={() => setActiveTab('tools')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+                  activeTab === 'tools'
+                    ? 'bg-cyan-600 text-white shadow-sm'
+                    : isDark
+                    ? 'text-zinc-400 hover:text-white'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Cpu className="w-4 h-4" />
+                <span>Power Tools</span>
+                <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded-md ${
+                  activeTab === 'tools' ? 'bg-white/25 text-white' : isDark ? 'bg-cyan-950 text-cyan-400 border border-cyan-800/60' : 'bg-cyan-50 text-cyan-700 border border-cyan-200'
+                }`}>
+                  New
+                </span>
+              </button>
             </nav>
 
             {/* Light / Dark Mode Toggle Button */}
@@ -668,7 +689,15 @@ pause >nul`;
           />
         )}
 
-        {/* Tab 3: Ready to Install Screen matching user reference image */}
+        {/* Tab 3: Power Tools & Utilities */}
+        {activeTab === 'tools' && (
+          <PowerToolsTab
+            onNotify={showToast}
+            isDark={isDark}
+          />
+        )}
+
+        {/* Tab 4: Ready to Install Screen matching user reference image */}
         {activeTab === 'install' && (
           <InstallScreen
             selectedApps={selectedApps}

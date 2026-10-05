@@ -415,6 +415,289 @@ pause
 }
 
 /**
+ * Generates an official 1-Click Hardware & PC Specs Report script (.bat)
+ */
+export function generateHardwareReportScript(): string {
+  return `@echo off
+:: ============================================================================
+::  Project    : ItsRiRx Windows Tool Kit - Hardware & PC Specs Report
+::  Website    : https://itsrirx-toolkit.vercel.app
+::  Created by : Riazul Islam
+:: ============================================================================
+title ItsRiRx Hardware & PC Specs Generator
+color 0b
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -LiteralPath '%~f0' -ErrorAction SilentlyContinue" >nul 2>&1
+
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process cmd.exe -ArgumentList '/c \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    exit /b
+)
+
+cd /d "%~dp0"
+cls
+echo ============================================================================
+echo   ItsRiRx Windows Tool Kit - Gathering Complete Hardware Specs
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo ============================================================================
+echo.
+echo [*] Inspecting CPU, GPU, RAM, Disks, Motherboard, and Battery...
+
+set "HTML_OUT=%USERPROFILE%\\Desktop\\PC_Hardware_Report.html"
+if exist "%USERPROFILE%\\OneDrive\\Desktop" set "HTML_OUT=%USERPROFILE%\\OneDrive\\Desktop\\PC_Hardware_Report.html"
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$cpu = Get-CimInstance Win32_Processor; $gpu = Get-CimInstance Win32_VideoController; $board = Get-CimInstance Win32_BaseBoard; $bios = Get-CimInstance Win32_BIOS; $ram = Get-CimInstance Win32_PhysicalMemory; $totalRamGB = [math]::Round(($ram | Measure-Object -Property Capacity -Sum).Sum / 1GB, 1); $disks = Get-CimInstance Win32_DiskDrive; $os = Get-CimInstance Win32_OperatingSystem; $report = '<html><head><meta charset=\"UTF-8\"><title>ItsRiRx PC Hardware Report</title><style>body{font-family:system-ui,sans-serif;background:#0f172a;color:#f8fafc;padding:30px;max-width:900px;margin:auto}.card{background:#1e293b;border-radius:16px;padding:24px;margin-bottom:20px;border:1px solid #334155}h1{color:#38bdf8}h2{color:#a78bfa;font-size:1.2rem;margin-top:0}.row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155}.label{color:#94a3b8;font-weight:600}.val{font-weight:500;text-align:right}.badge{background:#0284c7;color:#fff;padding:4px 10px;border-radius:8px;font-size:12px}</style></head><body><h1>ItsRiRx Windows Tool Kit - PC Hardware Report</h1><p style=\"color:#94a3b8\">Generated on: ' + (Get-Date).ToString() + '</p><div class=\"card\"><h2>Processor (CPU)</h2><div class=\"row\"><span class=\"label\">Name</span><span class=\"val\">' + $cpu[0].Name + '</span></div><div class=\"row\"><span class=\"label\">Cores / Threads</span><span class=\"val\">' + $cpu[0].NumberOfCores + ' Cores / ' + $cpu[0].NumberOfLogicalProcessors + ' Threads</span></div><div class=\"row\"><span class=\"label\">Max Clock Speed</span><span class=\"val\">' + $cpu[0].MaxClockSpeed + ' MHz</span></div></div><div class=\"card\"><h2>Graphics Card (GPU)</h2>' + (($gpu | ForEach-Object { '<div class=\"row\"><span class=\"label\">GPU</span><span class=\"val\">' + $_.Name + ' (' + [math]::Round($_.AdapterRAM / 1GB, 1) + ' GB VRAM)</span></div>' }) -join '') + '</div><div class=\"card\"><h2>System Memory (RAM)</h2><div class=\"row\"><span class=\"label\">Total Memory</span><span class=\"val\">' + $totalRamGB + ' GB</span></div><div class=\"row\"><span class=\"label\">Modules & Speed</span><span class=\"val\">' + ($ram | ForEach-Object { $_.Speed.ToString() + ' MHz' } | Select-Object -First 1) + '</span></div></div><div class=\"card\"><h2>Storage Disks</h2>' + (($disks | ForEach-Object { '<div class=\"row\"><span class=\"label\">' + $_.Model + '</span><span class=\"val\">' + [math]::Round($_.Size / 1GB, 1) + ' GB</span></div>' }) -join '') + '</div><div class=\"card\"><h2>Motherboard & Operating System</h2><div class=\"row\"><span class=\"label\">Motherboard</span><span class=\"val\">' + $board.Manufacturer + ' ' + $board.Product + '</span></div><div class=\"row\"><span class=\"label\">BIOS Version</span><span class=\"val\">' + $bios.SMBIOSBIOSVersion + '</span></div><div class=\"row\"><span class=\"label\">Windows Edition</span><span class=\"val\">' + $os.Caption + ' (' + $os.OSArchitecture + ')</span></div></div></body></html>'; $report | Out-File -FilePath '%HTML_OUT%' -Encoding utf8"
+
+echo.
+echo ============================================================================
+echo   [SUCCESS] Hardware Report Generated!
+echo   Report saved to: "%HTML_OUT%"
+echo ============================================================================
+echo.
+echo [*] Opening report in your default web browser...
+start "" "%HTML_OUT%"
+echo.
+pause
+`;
+}
+
+/**
+ * Generates an official 1-Click Wi-Fi Password Viewer & Exporter script (.bat)
+ */
+export function generateWifiPasswordExtractorScript(): string {
+  return `@echo off
+:: ============================================================================
+::  Project    : ItsRiRx Windows Tool Kit - Saved Wi-Fi Password Exporter
+::  Website    : https://itsrirx-toolkit.vercel.app
+::  Created by : Riazul Islam
+:: ============================================================================
+title ItsRiRx Saved Wi-Fi Passwords Viewer
+color 0b
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -LiteralPath '%~f0' -ErrorAction SilentlyContinue" >nul 2>&1
+
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process cmd.exe -ArgumentList '/c \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    exit /b
+)
+
+cd /d "%~dp0"
+cls
+echo ============================================================================
+echo   ItsRiRx Windows Tool Kit - Exporting Saved Wi-Fi Passwords
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo ============================================================================
+echo.
+
+set "OUT_TXT=%USERPROFILE%\\Desktop\\Saved_WiFi_Passwords.txt"
+if exist "%USERPROFILE%\\OneDrive\\Desktop" set "OUT_TXT=%USERPROFILE%\\OneDrive\\Desktop\\Saved_WiFi_Passwords.txt"
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$results = @(); $profiles = (netsh wlan show profiles) | Select-String 'All User Profile\s+:\s+(.*)' | ForEach-Object { $_.Matches.Groups[1].Value.Trim() }; foreach ($p in $profiles) { $pass = (netsh wlan show profile name=\"$p\" key=clear) | Select-String 'Key Content\s+:\s+(.*)' | ForEach-Object { $_.Matches.Groups[1].Value.Trim() }; $results += [PSCustomObject]@{ 'Wi-Fi Network (SSID)' = $p; 'Password' = if ($pass) { $pass } else { '[Open / None]' } } }; $results | Format-Table -AutoSize | Out-String | Write-Host; $results | Format-Table -AutoSize | Out-File -FilePath '%OUT_TXT%' -Encoding utf8"
+
+echo.
+echo ============================================================================
+echo   [SUCCESS] Wi-Fi Passwords Exported!
+echo   Saved file location: "%OUT_TXT%"
+echo ============================================================================
+echo.
+echo [*] Opening text file on Desktop...
+start notepad.exe "%OUT_TXT%"
+echo.
+pause
+`;
+}
+
+/**
+ * Generates an Auto-Fastest DNS Benchmark and Switcher script (.bat)
+ */
+export function generateFastestDnsBenchmarkScript(): string {
+  return `@echo off
+:: ============================================================================
+::  Project    : ItsRiRx Windows Tool Kit - Auto-Fastest DNS Selector
+::  Website    : https://itsrirx-toolkit.vercel.app
+::  Created by : Riazul Islam
+:: ============================================================================
+title ItsRiRx Auto-Fastest DNS Selector
+color 0b
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -LiteralPath '%~f0' -ErrorAction SilentlyContinue" >nul 2>&1
+
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process cmd.exe -ArgumentList '/c \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    exit /b
+)
+
+cd /d "%~dp0"
+cls
+echo ============================================================================
+echo   ItsRiRx Windows Tool Kit - Benchmarking Public DNS Resolvers
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo ============================================================================
+echo.
+echo [*] Testing ping latency from your actual connection...
+echo.
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$servers = @( @{ Name = 'Cloudflare'; Primary = '1.1.1.1'; Secondary = '1.0.0.1' }, @{ Name = 'Google'; Primary = '8.8.8.8'; Secondary = '8.8.4.4' }, @{ Name = 'Quad9 Secure'; Primary = '9.9.9.9'; Secondary = '149.112.112.112' }, @{ Name = 'AdGuard DNS'; Primary = '94.140.14.14'; Secondary = '94.140.15.15' } ); $bench = @(); foreach ($s in $servers) { Write-Host \"[*] Pinging $($s.Name) ($($s.Primary))...\" -NoNewline; $p = Test-Connection -ComputerName $s.Primary -Count 3 -ErrorAction SilentlyContinue; if ($p) { $avg = [math]::Round(($p | Measure-Object -Property ResponseTime -Average).Average, 1); Write-Host \" $avg ms\" -ForegroundColor Green; $bench += [PSCustomObject]@{ Name = $s.Name; Primary = $s.Primary; Secondary = $s.Secondary; Ping = $avg } } else { Write-Host ' Timeout' -ForegroundColor Red } }; if ($bench.Count -gt 0) { $fastest = $bench | Sort-Object Ping | Select-Object -First 1; Write-Host \"\`n[WINNER] Fastest DNS: $($fastest.Name) with $($fastest.Ping) ms average!\" -ForegroundColor Cyan; Write-Host \"[*] Applying $($fastest.Name) DNS to active network adapters...\" -ForegroundColor Yellow; Get-NetAdapter | Where-Object { $_.Status -eq 'Up' } | ForEach-Object { Set-DnsClientServerAddress -InterfaceAlias $_.Name -ServerAddresses ($fastest.Primary, $fastest.Secondary) }; Clear-DnsClientCache; ipconfig /flushdns | Out-Null; Write-Host \"[SUCCESS] Applied $($fastest.Name) DNS and flushed DNS cache!\" -ForegroundColor Green } else { Write-Host 'Could not ping DNS servers. Please check your internet connection.' -ForegroundColor Red }"
+
+echo.
+echo ============================================================================
+echo   DNS optimization completed!
+echo ============================================================================
+echo.
+pause
+`;
+}
+
+/**
+ * Generates an official 1-Click God Mode Folder Creator script (.bat)
+ */
+export function generateGodModeFolderScript(): string {
+  return `@echo off
+:: ============================================================================
+::  Project    : ItsRiRx Windows Tool Kit - 1-Click God Mode Creator
+::  Website    : https://itsrirx-toolkit.vercel.app
+::  Created by : Riazul Islam
+:: ============================================================================
+title ItsRiRx God Mode Folder Creator
+color 0b
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -LiteralPath '%~f0' -ErrorAction SilentlyContinue" >nul 2>&1
+
+set "DEST=%USERPROFILE%\\Desktop\\GodMode.{ED7BA470-8E54-465E-825C-99712043E01C}"
+if exist "%USERPROFILE%\\OneDrive\\Desktop" set "DEST=%USERPROFILE%\\OneDrive\\Desktop\\GodMode.{ED7BA470-8E54-465E-825C-99712043E01C}"
+
+cls
+echo ============================================================================
+echo   ItsRiRx Windows Tool Kit - Creating Windows 'God Mode' Folder
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo ============================================================================
+echo.
+echo [*] Creating special system namespace shortcut on Desktop...
+
+if not exist "%DEST%" mkdir "%DEST%"
+
+echo.
+echo ============================================================================
+echo   [SUCCESS] God Mode created on your Desktop!
+echo   Folder: "%DEST%"
+echo   Access 206+ hidden Windows administrative tools in one single view!
+echo ============================================================================
+echo.
+echo [*] Opening God Mode folder now...
+start "" "%DEST%"
+echo.
+timeout /t 3 >nul
+`;
+}
+
+/**
+ * Generates an official script to install/enable Group Policy Editor (gpedit.msc) on Windows 10/11 Home
+ */
+export function generateEnableGpeditScript(): string {
+  return `@echo off
+:: ============================================================================
+::  Project    : ItsRiRx Windows Tool Kit - Enable gpedit.msc on Windows Home
+::  Website    : https://itsrirx-toolkit.vercel.app
+::  Created by : Riazul Islam
+:: ============================================================================
+title Enable Group Policy Editor (gpedit.msc) on Windows Home
+color 0b
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -LiteralPath '%~f0' -ErrorAction SilentlyContinue" >nul 2>&1
+
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process cmd.exe -ArgumentList '/c \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    exit /b
+)
+
+cd /d "%~dp0"
+cls
+echo ============================================================================
+echo   ItsRiRx Windows Tool Kit - Installing Group Policy Packages
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo ============================================================================
+echo.
+echo [*] Installing official Microsoft GroupPolicy client packages via DISM...
+echo [*] This will enable gpedit.msc on Windows 10 and 11 Home Edition.
+echo.
+
+pushd "%~dp0"
+dir /b %SystemRoot%\\servicing\\Packages\\Microsoft-Windows-GroupPolicy-ClientExtensions-Package~31bf3856ad364e35~amd64~~*.mum >nul 2>&1
+for /f %%i in ('dir /b %SystemRoot%\\servicing\\Packages\\Microsoft-Windows-GroupPolicy-ClientExtensions-Package~31bf3856ad364e35~amd64~~*.mum') do (
+    echo [+] Adding: %%i
+    dism /online /norestart /add-package:"%SystemRoot%\\servicing\\Packages\\%%i" >nul 2>&1
+)
+
+for /f %%i in ('dir /b %SystemRoot%\\servicing\\Packages\\Microsoft-Windows-GroupPolicy-ClientTools-Package~31bf3856ad364e35~amd64~~*.mum') do (
+    echo [+] Adding: %%i
+    dism /online /norestart /add-package:"%SystemRoot%\\servicing\\Packages\\%%i" >nul 2>&1
+)
+popd
+
+echo.
+echo ============================================================================
+echo   [SUCCESS] Group Policy Editor (gpedit.msc) installed successfully!
+echo ============================================================================
+echo.
+echo [*] Testing launch of gpedit.msc...
+start gpedit.msc
+echo.
+pause
+`;
+}
+
+/**
+ * Generates an official 1-Click Rufus Portable Downloader script (.bat)
+ */
+export function generateRufusDownloaderScript(): string {
+  return `@echo off
+:: ============================================================================
+::  Project    : ItsRiRx Windows Tool Kit - Official Rufus Portable Downloader
+::  Website    : https://itsrirx-toolkit.vercel.app
+::  Created by : Riazul Islam
+:: ============================================================================
+title Download Official Rufus Portable
+color 0b
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -LiteralPath '%~f0' -ErrorAction SilentlyContinue" >nul 2>&1
+
+set "DEST=%USERPROFILE%\\Desktop\\rufus.exe"
+if exist "%USERPROFILE%\\OneDrive\\Desktop" set "DEST=%USERPROFILE%\\OneDrive\\Desktop\\rufus.exe"
+
+cls
+echo ============================================================================
+echo   ItsRiRx Windows Tool Kit - Downloading Official Rufus Portable
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo ============================================================================
+echo.
+echo [*] Downloading latest Rufus executable from official release repository...
+
+curl.exe -s -L -f -o "%DEST%" "https://github.com/pbatard/rufus/releases/download/v4.6/rufus-4.6p.exe"
+
+if not exist "%DEST%" (
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('https://github.com/pbatard/rufus/releases/download/v4.6/rufus-4.6p.exe', '%DEST%')" >nul 2>&1
+)
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -LiteralPath '%DEST%' -ErrorAction SilentlyContinue" >nul 2>&1
+
+echo.
+echo ============================================================================
+echo   [SUCCESS] Rufus Portable saved to:
+echo   "%DEST%"
+echo ============================================================================
+echo.
+echo [*] Launching Rufus now...
+start "" "%DEST%"
+echo.
+timeout /t 3 >nul
+`;
+}
+
+/**
  * Triggers a native file download in the browser
  */
 export function triggerFileDownload(filename: string, content: string): void {

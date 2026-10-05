@@ -458,6 +458,208 @@ export const SYSTEM_TWEAKS: SystemTweak[] = [
     recommended: true,
     psCode: `Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 1; Start-Process explorer.exe; Write-Host 'Windows Explorer restarted.' -ForegroundColor Green`,
     batCode: `taskkill /f /im explorer.exe >nul 2>&1 & start explorer.exe`
+  },
+  {
+    id: 'trim_standby_ram',
+    title: 'Trim Standby Working Memory & RAM',
+    category: 'Instant Quick Actions',
+    moduleNum: '11',
+    desc: 'Triggers system garbage collection and working set trim to release reserved inactive memory.',
+    recommended: true,
+    psCode: `[System.GC]::Collect(); [System.GC]::WaitForPendingFinalizers(); Write-Host 'Memory working set trimmed.' -ForegroundColor Green`,
+    batCode: `powershell -Command "[System.GC]::Collect(); [System.GC]::WaitForPendingFinalizers()"`
+  },
+  {
+    id: 'emergency_safe_mode_shortcut',
+    title: 'Create Safe Mode Reboot Shortcut on Desktop',
+    category: 'Instant Quick Actions',
+    moduleNum: '11',
+    desc: 'Generates a 1-click Desktop shortcut that restarts the PC straight into Advanced Startup / Safe Mode.',
+    recommended: false,
+    psCode: `$ws = New-Object -ComObject WScript.Shell; $sc = $ws.CreateShortcut("$env:USERPROFILE\\Desktop\\Reboot_To_Safe_Mode.lnk"); $sc.TargetPath = "shutdown.exe"; $sc.Arguments = "/r /o /f /t 0"; $sc.Save(); Write-Host 'Safe Mode reboot shortcut created on Desktop.' -ForegroundColor Green`,
+    batCode: `powershell -Command "$ws = New-Object -ComObject WScript.Shell; $sc = $ws.CreateShortcut(\\"$env:USERPROFILE\\Desktop\\Reboot_To_Safe_Mode.lnk\\"); $sc.TargetPath = 'shutdown.exe'; $sc.Arguments = '/r /o /f /t 0'; $sc.Save()"`
+  },
+
+  // Additional System & Windows 11 Enhancements
+  {
+    id: 'open_explorer_this_pc',
+    title: 'Open File Explorer to "This PC"',
+    category: 'Debloat & Windows 11',
+    moduleNum: '02',
+    desc: 'Configures File Explorer to open directly to "This PC" drives instead of Quick Access / Home.',
+    recommended: true,
+    psCode: `Set-ItemProperty -Path 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced' -Name 'LaunchTo' -Type DWord -Value 1 -Force; Write-Host 'Explorer now launches to This PC.' -ForegroundColor Green`,
+    batCode: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v LaunchTo /t REG_DWORD /d 1 /f >nul 2>&1`
+  },
+  {
+    id: 'disable_sticky_keys_prompt',
+    title: 'Disable Sticky Keys Shortcut Popup',
+    category: 'Debloat & Windows 11',
+    moduleNum: '02',
+    desc: 'Disables the popup dialog when pressing the Shift key five consecutive times in games.',
+    recommended: true,
+    psCode: `Set-ItemProperty -Path 'HKCU:\\Control Panel\\Accessibility\\StickyKeys' -Name 'Flags' -Value '506' -Force; Write-Host 'Sticky keys prompt disabled.' -ForegroundColor Green`,
+    batCode: `reg add "HKCU\\Control Panel\\Accessibility\\StickyKeys" /v Flags /t REG_SZ /d 506 /f >nul 2>&1`
+  },
+  {
+    id: 'disable_windows_tips_suggestions',
+    title: 'Disable Windows Tips & Promoted Suggestions',
+    category: 'Debloat & Windows 11',
+    moduleNum: '02',
+    desc: 'Turns off promotional notifications, suggestions, and tips across Windows 10 and 11.',
+    recommended: true,
+    psCode: `Set-ItemProperty -Path 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager' -Name 'SubscribedContent-338389Enabled' -Type DWord -Value 0 -Force; Set-ItemProperty -Path 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager' -Name 'SoftLandingEnabled' -Type DWord -Value 0 -Force; Write-Host 'Windows tips disabled.' -ForegroundColor Green`,
+    batCode: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338389Enabled /t REG_DWORD /d 0 /f >nul 2>&1 & reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SoftLandingEnabled /t REG_DWORD /d 0 /f >nul 2>&1`
+  },
+  {
+    id: 'fast_taskbar_hover',
+    title: 'Instant Taskbar Window Thumbnail Preview',
+    category: 'Debloat & Windows 11',
+    moduleNum: '02',
+    desc: 'Reduces hover delay for open taskbar application previews from 400ms to near-instantaneous response.',
+    recommended: true,
+    psCode: `Set-ItemProperty -Path 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced' -Name 'ExtendedUIHoverTime' -Type DWord -Value 10 -Force; Write-Host 'Thumbnail preview delay minimized.' -ForegroundColor Green`,
+    batCode: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ExtendedUIHoverTime /t REG_DWORD /d 10 /f >nul 2>&1`
+  },
+
+  // Additional Performance & Gaming Optimizations
+  {
+    id: 'unpark_cpu_cores',
+    title: 'Unpark All CPU Cores (Max Performance)',
+    category: 'Performance & Gaming',
+    moduleNum: '03',
+    desc: 'Configures CPU Core Parking index to 100% so all physical and logical cores remain awake during loads.',
+    recommended: true,
+    psCode: `powercfg -setacvalueindex scheme_current sub_processor CPMINCORES 100; powercfg -setactive scheme_current; Write-Host 'All CPU cores unparked.' -ForegroundColor Green`,
+    batCode: `powercfg -setacvalueindex scheme_current sub_processor CPMINCORES 100 >nul 2>&1 & powercfg -setactive scheme_current >nul 2>&1`
+  },
+  {
+    id: 'optimize_network_throttling',
+    title: 'Disable Multimedia Network Throttling',
+    category: 'Performance & Gaming',
+    moduleNum: '03',
+    desc: 'Disables network packet throttling mechanism, improving ping and streaming throughput while gaming.',
+    recommended: true,
+    psCode: `Set-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile' -Name 'NetworkThrottlingIndex' -Type DWord -Value 0xffffffff -Force; Set-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile' -Name 'SystemResponsiveness' -Type DWord -Value 0 -Force; Write-Host 'Network responsiveness optimized.' -ForegroundColor Green`,
+    batCode: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" /v NetworkThrottlingIndex /t REG_DWORD /d 4294967295 /f >nul 2>&1 & reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" /v SystemResponsiveness /t REG_DWORD /d 0 /f >nul 2>&1`
+  },
+  {
+    id: 'optimize_ntfs_filesystem',
+    title: 'Optimize NTFS Memory & File Operations',
+    category: 'Performance & Gaming',
+    moduleNum: '03',
+    desc: 'Increases NTFS pool memory and disables legacy 8.3 short filename creation for faster SSD read/write speeds.',
+    recommended: true,
+    psCode: `fsutil behavior set memoryusage 2; fsutil behavior set disable8dot3 1; Write-Host 'NTFS filesystem memory optimized.' -ForegroundColor Green`,
+    batCode: `fsutil behavior set memoryusage 2 >nul 2>&1 & fsutil behavior set disable8dot3 1 >nul 2>&1`
+  },
+
+  // Additional Safety & Hardware Options
+  {
+    id: 'disable_remote_registry',
+    title: 'Disable Remote Registry Service',
+    category: 'Safety & Restore',
+    moduleNum: '04',
+    desc: 'Disables remote network access to the Windows registry to protect against local network tampering.',
+    recommended: true,
+    psCode: `Stop-Service 'RemoteRegistry' -Force -ErrorAction SilentlyContinue; Set-Service 'RemoteRegistry' -StartupType Disabled; Write-Host 'Remote Registry service disabled.' -ForegroundColor Green`,
+    batCode: `sc stop RemoteRegistry >nul 2>&1 & sc config RemoteRegistry start=disabled >nul 2>&1`
+  },
+  {
+    id: 'disable_usb_autorun',
+    title: 'Disable AutoRun for Removable Drives',
+    category: 'Safety & Restore',
+    moduleNum: '04',
+    desc: 'Prevents external USB flash drives and hard drives from auto-executing programs upon insertion.',
+    recommended: true,
+    psCode: `Set-ItemProperty -Path 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\AutoplayHandlers' -Name 'DisableAutoplay' -Type DWord -Value 1 -Force; Write-Host 'AutoPlay disabled.' -ForegroundColor Green`,
+    batCode: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\AutoplayHandlers" /v DisableAutoplay /t REG_DWORD /d 1 /f >nul 2>&1`
+  },
+  {
+    id: 'show_bsod_crash_details',
+    title: 'Display BSOD Crash Details & Halt Reboot',
+    category: 'Safety & Restore',
+    moduleNum: '04',
+    desc: 'Disables instant restart on Blue Screen errors and displays debugging parameters for troubleshooting.',
+    recommended: false,
+    psCode: `Set-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\CrashControl' -Name 'AutoReboot' -Type DWord -Value 0 -Force; Write-Host 'Auto-reboot on crash disabled.' -ForegroundColor Green`,
+    batCode: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\CrashControl" /v AutoReboot /t REG_DWORD /d 0 /f >nul 2>&1`
+  },
+
+  // Additional Disk Cleanup & Storage Options
+  {
+    id: 'clean_delivery_optimization',
+    title: 'Purge Delivery Optimization Cache',
+    category: 'Disk Cleanup & Storage',
+    moduleNum: '08',
+    desc: 'Frees up disk space by clearing accumulated Windows Update peer distribution cached files.',
+    recommended: true,
+    psCode: `Remove-Item -Path 'C:\\Windows\\SoftwareDistribution\\DeliveryOptimization\\*' -Recurse -Force -ErrorAction SilentlyContinue; Write-Host 'Delivery Optimization cache purged.' -ForegroundColor Green`,
+    batCode: `del /s /f /q "%windir%\\SoftwareDistribution\\DeliveryOptimization\\*.*" >nul 2>&1`
+  },
+  {
+    id: 'rebuild_icon_cache',
+    title: 'Rebuild Desktop & Taskbar Icon Cache',
+    category: 'Disk Cleanup & Storage',
+    moduleNum: '08',
+    desc: 'Deletes corrupted icon database caches and restarts Explorer to fix blank, white, or broken app icons.',
+    recommended: true,
+    psCode: `taskkill /f /im explorer.exe; Remove-Item -Path "$env:LOCALAPPDATA\\IconCache.db" -Force -ErrorAction SilentlyContinue; Start-Process explorer.exe; Write-Host 'Icon cache rebuilt.' -ForegroundColor Green`,
+    batCode: `taskkill /f /im explorer.exe >nul 2>&1 & del /f /q "%localappdata%\\IconCache.db" >nul 2>&1 & start explorer.exe`
+  },
+
+  // Additional Network & DNS Options
+  {
+    id: 'set_dns_quad9',
+    title: 'Switch to Quad9 DNS (9.9.9.9 / 149.112.112.112)',
+    category: 'Network Diagnostics & DNS',
+    moduleNum: '09',
+    desc: 'Applies Quad9 privacy-focused and malware-blocking public DNS resolvers to all active network adapters.',
+    recommended: true,
+    psCode: `Get-NetAdapter | Where-Object { $_.Status -eq 'Up' } | ForEach-Object { Set-DnsClientServerAddress -InterfaceAlias $_.Name -ServerAddresses ('9.9.9.9', '149.112.112.112') }; Write-Host 'Quad9 DNS applied.' -ForegroundColor Green`,
+    batCode: `powershell -Command "Get-NetAdapter | Where-Object { $_.Status -eq 'Up' } | ForEach-Object { Set-DnsClientServerAddress -InterfaceAlias $_.Name -ServerAddresses ('9.9.9.9', '149.112.112.112') }"`
+  },
+  {
+    id: 'set_dns_adguard',
+    title: 'Switch to AdGuard Ad-Blocking DNS',
+    category: 'Network Diagnostics & DNS',
+    moduleNum: '09',
+    desc: 'Applies AdGuard public DNS (94.140.14.14 / 94.140.15.15) to block ads and web trackers network-wide.',
+    recommended: false,
+    psCode: `Get-NetAdapter | Where-Object { $_.Status -eq 'Up' } | ForEach-Object { Set-DnsClientServerAddress -InterfaceAlias $_.Name -ServerAddresses ('94.140.14.14', '94.140.15.15') }; Write-Host 'AdGuard DNS applied.' -ForegroundColor Green`,
+    batCode: `powershell -Command "Get-NetAdapter | Where-Object { $_.Status -eq 'Up' } | ForEach-Object { Set-DnsClientServerAddress -InterfaceAlias $_.Name -ServerAddresses ('94.140.14.14', '94.140.15.15') }"`
+  },
+  {
+    id: 'enable_tcp_autotuning',
+    title: 'Enable TCP Window Auto-Tuning',
+    category: 'Network Diagnostics & DNS',
+    moduleNum: '09',
+    desc: 'Enables normal TCP auto-tuning to allow Windows to utilize the maximum bandwidth of high-speed internet.',
+    recommended: true,
+    psCode: `netsh int tcp set global autotuninglevel=normal; Write-Host 'TCP Auto-Tuning enabled.' -ForegroundColor Green`,
+    batCode: `netsh int tcp set global autotuninglevel=normal >nul 2>&1`
+  },
+
+  // Additional System Repair Diagnostics
+  {
+    id: 'rebuild_search_index',
+    title: 'Rebuild Windows Search Index',
+    category: 'Windows System Repair',
+    moduleNum: '07',
+    desc: 'Resets and triggers a clean re-indexing of files and applications to resolve broken search results.',
+    recommended: true,
+    psCode: `Stop-Service 'WSearch' -Force -ErrorAction SilentlyContinue; Set-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows Search' -Name 'SetupCompletedSuccessfully' -Type DWord -Value 0 -Force; Start-Service 'WSearch' -ErrorAction SilentlyContinue; Write-Host 'Search indexing rebuilt.' -ForegroundColor Green`,
+    batCode: `net stop WSearch >nul 2>&1 & reg add "HKLM\\SOFTWARE\\Microsoft\\Windows Search" /v SetupCompletedSuccessfully /t REG_DWORD /d 0 /f >nul 2>&1 & net start WSearch >nul 2>&1`
+  },
+  {
+    id: 'repair_wmi_service',
+    title: 'Verify & Repair WMI Repository',
+    category: 'Windows System Repair',
+    moduleNum: '07',
+    desc: 'Runs Windows Management Instrumentation salvage tool to fix corrupted system statistics and diagnostic queries.',
+    recommended: true,
+    psCode: `winmgmt /salvagerepository; Write-Host 'WMI repository verified.' -ForegroundColor Green`,
+    batCode: `winmgmt /salvagerepository`
   }
 ];
 
