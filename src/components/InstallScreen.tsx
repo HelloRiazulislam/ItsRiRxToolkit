@@ -88,17 +88,55 @@ export const InstallScreen: React.FC<InstallScreenProps> = ({
 
   const tweaksToInclude = includeTweaks ? selectedTweaks : [];
 
+  // Dynamic descriptive bundle title and filename matching the selected apps exactly
+  const getBundleInfo = () => {
+    if (selectedAppObjects.length === 1 && selectedTweakObjects.length === 0) {
+      const app = selectedAppObjects[0];
+      const slug = app.name.replace(/[^a-zA-Z0-9]+/g, '-');
+      return {
+        title: `Install ${app.name}`,
+        batFilename: `Install-${slug}.bat`,
+        ps1Filename: `Install-${slug}.ps1`,
+        jsonFilename: `winget-${slug}.json`
+      };
+    }
+    if (selectedAppObjects.length > 0 && selectedTweakObjects.length === 0) {
+      return {
+        title: `ItsRiRx Custom Setup (${selectedAppObjects.length} Applications)`,
+        batFilename: `Install-${selectedAppObjects.length}-Selected-Apps.bat`,
+        ps1Filename: `Install-${selectedAppObjects.length}-Selected-Apps.ps1`,
+        jsonFilename: `winget-${selectedAppObjects.length}-apps.json`
+      };
+    }
+    if (selectedAppObjects.length === 0 && selectedTweakObjects.length > 0) {
+      return {
+        title: `ItsRiRx System Optimization (${selectedTweakObjects.length} Tweaks)`,
+        batFilename: `Apply-${selectedTweakObjects.length}-System-Tweaks.bat`,
+        ps1Filename: `Apply-${selectedTweakObjects.length}-System-Tweaks.ps1`,
+        jsonFilename: `tweaks-config.json`
+      };
+    }
+    return {
+      title: `ItsRiRx Full Deployment (${selectedAppObjects.length} Apps + ${selectedTweakObjects.length} Tweaks)`,
+      batFilename: `Install-${selectedAppObjects.length}-Apps-${selectedTweakObjects.length}-Tweaks.bat`,
+      ps1Filename: `Install-${selectedAppObjects.length}-Apps-${selectedTweakObjects.length}-Tweaks.ps1`,
+      jsonFilename: `winget-full-import.json`
+    };
+  };
+
+  const bundleInfo = getBundleInfo();
+
   // Generate scripts dynamically based on options
   const batchScript = generateBatchInstaller(
     selectedApps,
     tweaksToInclude,
-    'ItsRiRx Custom Windows Deployment'
+    bundleInfo.title
   );
 
   const psScript = generatePowerShellInstaller(
     selectedApps,
     tweaksToInclude,
-    'ItsRiRx Custom Windows Deployment'
+    bundleInfo.title
   );
 
   const oneLineCommand = generateOneLineCommand(selectedApps, tweaksToInclude);
@@ -128,23 +166,26 @@ export const InstallScreen: React.FC<InstallScreenProps> = ({
       onNotify('Please select at least 1 application or tweak first!');
       return;
     }
-    triggerFileDownload('install-apps.bat', batchScript);
-    onNotify(`Downloaded 1-click silent installer for ${totalCount} items!`);
+    const freshScript = generateBatchInstaller(selectedApps, tweaksToInclude, bundleInfo.title);
+    triggerFileDownload(bundleInfo.batFilename, freshScript);
+    onNotify(`Downloaded ${bundleInfo.batFilename}! Ready to run.`);
   };
 
   const handleDownloadBatch = () => {
-    triggerFileDownload('install-apps.bat', batchScript);
-    onNotify('Downloaded Windows Batch (.bat) file!');
+    const freshScript = generateBatchInstaller(selectedApps, tweaksToInclude, bundleInfo.title);
+    triggerFileDownload(bundleInfo.batFilename, freshScript);
+    onNotify(`Downloaded ${bundleInfo.batFilename}!`);
   };
 
   const handleDownloadPS1 = () => {
-    triggerFileDownload('install-apps.ps1', psScript);
-    onNotify('Downloaded PowerShell (.ps1) script!');
+    const freshScript = generatePowerShellInstaller(selectedApps, tweaksToInclude, bundleInfo.title);
+    triggerFileDownload(bundleInfo.ps1Filename, freshScript);
+    onNotify(`Downloaded ${bundleInfo.ps1Filename}!`);
   };
 
   const handleDownloadWingetJson = () => {
-    triggerFileDownload('winget-import.json', wingetJsonExport);
-    onNotify('Downloaded winget-import.json file!');
+    triggerFileDownload(bundleInfo.jsonFilename, wingetJsonExport);
+    onNotify(`Downloaded ${bundleInfo.jsonFilename}!`);
   };
 
   const handleCopy = (text: string, label: string) => {
@@ -336,9 +377,14 @@ export const InstallScreen: React.FC<InstallScreenProps> = ({
         {/* Content Box per selected Format */}
         {format === 'installer' && (
           <div className="space-y-4">
-            <div className={`flex items-center gap-2 text-sm ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
+            <div className={`flex flex-wrap items-center gap-2 text-sm ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
               <Info className="w-4 h-4 text-purple-500 shrink-0" />
-              <span>Download the instant installer and run!</span>
+              <span>Download the instant 1-click installer and run:</span>
+              <span className={`text-xs font-mono font-semibold px-2.5 py-0.5 rounded-lg border ${
+                isDark ? 'bg-zinc-800/90 text-purple-300 border-zinc-700' : 'bg-purple-50 text-purple-700 border-purple-200'
+              }`}>
+                {bundleInfo.batFilename}
+              </span>
             </div>
 
             <div>
@@ -346,7 +392,7 @@ export const InstallScreen: React.FC<InstallScreenProps> = ({
                 onClick={handleDownloadInstaller}
                 className="px-6 py-3 rounded-full bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm shadow-md transition-all active:scale-95 cursor-pointer flex items-center gap-2"
               >
-                <Download className="w-4 h-4" /> Download installer
+                <Download className="w-4 h-4" /> Download installer ({bundleInfo.batFilename})
               </button>
             </div>
           </div>
@@ -354,9 +400,14 @@ export const InstallScreen: React.FC<InstallScreenProps> = ({
 
         {format === 'batch' && (
           <div className="space-y-4">
-            <div className={`flex items-center gap-2 text-sm ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
+            <div className={`flex flex-wrap items-center gap-2 text-sm ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
               <Info className="w-4 h-4 text-purple-500 shrink-0" />
-              <span>Standard Windows Batch script (.bat) with automated elevation and error handling.</span>
+              <span>Standard Windows Batch script (.bat) with automated elevation and error handling:</span>
+              <span className={`text-xs font-mono font-semibold px-2.5 py-0.5 rounded-lg border ${
+                isDark ? 'bg-zinc-800/90 text-purple-300 border-zinc-700' : 'bg-purple-50 text-purple-700 border-purple-200'
+              }`}>
+                {bundleInfo.batFilename}
+              </span>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
@@ -364,7 +415,7 @@ export const InstallScreen: React.FC<InstallScreenProps> = ({
                 onClick={handleDownloadBatch}
                 className="px-6 py-3 rounded-full bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm shadow-md transition-all active:scale-95 cursor-pointer flex items-center gap-2"
               >
-                <Download className="w-4 h-4" /> Download .bat file
+                <Download className="w-4 h-4" /> Download {bundleInfo.batFilename}
               </button>
               <button
                 onClick={() => handleCopy(batchScript, 'Batch script')}
@@ -392,9 +443,14 @@ export const InstallScreen: React.FC<InstallScreenProps> = ({
 
         {format === 'powershell' && (
           <div className="space-y-4">
-            <div className={`flex items-center gap-2 text-sm ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
+            <div className={`flex flex-wrap items-center gap-2 text-sm ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
               <Info className="w-4 h-4 text-purple-500 shrink-0" />
-              <span>Native PowerShell script (.ps1) or copy 1-line command to run in Windows Terminal.</span>
+              <span>Native PowerShell script (.ps1) or copy 1-line command to run in Windows Terminal:</span>
+              <span className={`text-xs font-mono font-semibold px-2.5 py-0.5 rounded-lg border ${
+                isDark ? 'bg-zinc-800/90 text-purple-300 border-zinc-700' : 'bg-purple-50 text-purple-700 border-purple-200'
+              }`}>
+                {bundleInfo.ps1Filename}
+              </span>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
@@ -402,10 +458,10 @@ export const InstallScreen: React.FC<InstallScreenProps> = ({
                 onClick={handleDownloadPS1}
                 className="px-6 py-3 rounded-full bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm shadow-md transition-all active:scale-95 cursor-pointer flex items-center gap-2"
               >
-                <Download className="w-4 h-4" /> Download .ps1 script
+                <Download className="w-4 h-4" /> Download {bundleInfo.ps1Filename}
               </button>
               <button
-                onClick={() => handleCopy(oneLineCommand, '1-line command')}
+                onClick={() => handleCopy(psScript, 'PowerShell script')}
                 className={`px-5 py-3 rounded-full font-semibold text-sm border transition-all active:scale-95 cursor-pointer flex items-center gap-2 ${
                   isDark
                     ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border-zinc-700'
@@ -413,7 +469,7 @@ export const InstallScreen: React.FC<InstallScreenProps> = ({
                 }`}
               >
                 {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-                Copy 1-Line Command
+                Copy Script
               </button>
             </div>
 

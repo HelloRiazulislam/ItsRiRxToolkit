@@ -78,20 +78,33 @@ app.get(['/launcher.bat', '/i.bat', '/download/launcher.bat'], (req, res) => {
 title ItsRiRx Windows Tool Kit
 color 0b
 
-:: Check for Administrator elevation
+:: 1. Safely unblock file from browser Mark-of-the-Web
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -LiteralPath '%~f0' -ErrorAction SilentlyContinue" >nul 2>&1
+
+:: 2. Check for Administrator privileges
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo [INFO] Administrator rights required. Requesting elevation...
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process cmd.exe -ArgumentList '/c \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    if %errorlevel% neq 0 (
+        echo.
+        echo [!] Automatic elevation could not proceed.
+        echo [!] Please right-click this file and choose: 'Run as administrator'
+        echo.
+        pause
+    )
     exit /b
 )
+
+:: Set working directory to script location
+cd /d "%~dp0"
 
 cls
 echo ============================================================================
 echo   ItsRiRx Windows Tool Kit - Launching remote suite...
 echo ============================================================================
 echo.
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$url = 'https://raw.githubusercontent.com/itsrirx/WindowsToolKit/main/toolkit.ps1'; try { irm $url | iex } catch { irm 'https://itsrirx-toolkit.vercel.app/i' | iex }"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "irm 'https://itsrirx-toolkit.vercel.app/i' | iex"
 
 echo.
 echo Press any key to exit...
@@ -114,13 +127,26 @@ app.get(['/setup-rirx.bat', '/download/setup-rirx.bat'], (req, res) => {
 title Setup 'rirx' Command Everywhere
 color 0b
 
-:: 1. Auto-elevate to Administrator with UAC prompt
+:: 1. Safely unblock file from browser Mark-of-the-Web
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -LiteralPath '%~f0' -ErrorAction SilentlyContinue" >nul 2>&1
+
+:: 2. Auto-elevate to Administrator with UAC prompt safely
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo [*] Requesting Administrator privileges to register system command...
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process cmd.exe -ArgumentList '/c \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    if %errorlevel% neq 0 (
+        echo.
+        echo [!] Automatic elevation could not proceed.
+        echo [!] Please right-click this file and choose: 'Run as administrator'
+        echo.
+        pause
+    )
     exit /b
 )
+
+:: Set working directory to script location
+cd /d "%~dp0"
 
 cls
 echo ============================================================================
@@ -132,7 +158,7 @@ echo [*] Step 1: Installing global 'rirx.cmd' and 'rirx.ps1' binaries to System3
 :: Write rirx.cmd using pure native batch
 (
 echo @echo off
-echo powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$url = 'https://raw.githubusercontent.com/itsrirx/WindowsToolKit/main/toolkit.ps1'; try { irm $url | iex } catch { irm 'https://itsrirx-toolkit.vercel.app/i' | iex }"
+echo powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "irm 'https://itsrirx-toolkit.vercel.app/i' | iex"
 ) > "%SystemRoot%\\System32\\rirx.cmd"
 
 copy /y "%SystemRoot%\\System32\\rirx.cmd" "%SystemRoot%\\rirx.cmd" >nul 2>&1
@@ -141,8 +167,7 @@ copy /y "%SystemRoot%\\System32\\rirx.cmd" "%SystemRoot%\\rirx.bat" >nul 2>&1
 
 :: Write rirx.ps1
 (
-echo $url = 'https://raw.githubusercontent.com/itsrirx/WindowsToolKit/main/toolkit.ps1'
-echo try { irm $url ^| iex } catch { irm 'https://itsrirx-toolkit.vercel.app/i' ^| iex }
+echo irm 'https://itsrirx-toolkit.vercel.app/i' ^| iex
 ) > "%SystemRoot%\\System32\\rirx.ps1"
 
 copy /y "%SystemRoot%\\System32\\rirx.ps1" "%SystemRoot%\\rirx.ps1" >nul 2>&1

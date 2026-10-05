@@ -41,14 +41,27 @@ export function generateBatchInstaller(
 title ${bundleTitle} - ItsRiRx Windows Tool Kit
 color 0b
 
-:: 1. Self-Elevate to Administrator if running unprivileged
+:: 1. Safely unblock file from browser Mark-of-the-Web to prevent SmartScreen lock
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -LiteralPath '%~f0' -ErrorAction SilentlyContinue" >nul 2>&1
+
+:: 2. Check for Administrator privileges
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo [*] Administrator privileges required for silent installation.
     echo [*] Requesting UAC elevation...
-    powershell.exe -NoProfile -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process cmd.exe -ArgumentList '/c \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    if %errorlevel% neq 0 (
+        echo.
+        echo [!] Automatic elevation could not proceed.
+        echo [!] Please right-click this file and choose: 'Run as administrator'
+        echo.
+        pause
+    )
     exit /b
 )
+
+:: Set working directory to script location
+cd /d "%~dp0"
 
 cls
 echo ============================================================================
@@ -60,14 +73,22 @@ echo   Queue      : ${apps.length} Application(s) ^| ${tweaks.length} System Opt
 echo ============================================================================
 echo.
 
-:: Detect or resolve Winget executable
-set WINGET_CMD=winget
-where winget >nul 2>&1
-if %errorlevel% neq 0 (
-    if exist "%LOCALAPPDATA%\\Microsoft\\WindowsApps\\winget.exe" (
-        set WINGET_CMD="%LOCALAPPDATA%\\Microsoft\\WindowsApps\\winget.exe"
+:: Detect or resolve official Microsoft Winget binary across System and User profiles
+set "WINGET_CMD="
+where winget.exe >nul 2>&1 && set "WINGET_CMD=winget.exe"
+if not defined WINGET_CMD (
+    for /d %%D in ("%ProgramFiles%\\WindowsApps\\Microsoft.DesktopAppInstaller_*_x64__8wekyb3d8bbwe") do (
+        if exist "%%~fD\\winget.exe" set "WINGET_CMD=\"%%~fD\\winget.exe\""
     )
 )
+if not defined WINGET_CMD (
+    for /d %%U in ("C:\\Users\\*") do (
+        if exist "%%~fU\\AppData\\Local\\Microsoft\\WindowsApps\\winget.exe" (
+            set "WINGET_CMD=\"%%~fU\\AppData\\Local\\Microsoft\\WindowsApps\\winget.exe\""
+        )
+    )
+)
+if not defined WINGET_CMD set "WINGET_CMD=winget"
 `;
 
   // Append system tweaks if selected
