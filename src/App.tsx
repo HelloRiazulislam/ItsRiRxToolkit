@@ -13,12 +13,14 @@ import {
   Share2,
   RotateCcw,
   ArrowRight,
-  Cpu
+  Cpu,
+  Keyboard
 } from 'lucide-react';
 import { SoftwareInstallerTab } from './components/SoftwareInstallerTab';
 import { SystemTweaksTab } from './components/SystemTweaksTab';
 import { InstallScreen } from './components/InstallScreen';
 import { PowerToolsTab } from './components/PowerToolsTab';
+import { HardwareTesterLab } from './components/HardwareTesterLab';
 import {
   generateBatchInstaller,
   triggerFileDownload
@@ -26,7 +28,7 @@ import {
 import { SOFTWARE_APPS, SYSTEM_TWEAKS } from './data/toolkitCatalog';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'apps' | 'tweaks' | 'tools' | 'install'>('apps');
+  const [activeTab, setActiveTab] = useState<'apps' | 'tweaks' | 'tools' | 'tester' | 'install'>('apps');
   const [selectedApps, setSelectedApps] = useState<string[]>([]);
   const [selectedTweaks, setSelectedTweaks] = useState<string[]>([]);
   const [copiedType, setCopiedType] = useState<string | null>(null);
@@ -482,10 +484,24 @@ pause >nul`;
               >
                 <Cpu className="w-4 h-4" />
                 <span>Power Tools</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('tester')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+                  activeTab === 'tester'
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-sm'
+                    : isDark
+                    ? 'text-zinc-400 hover:text-white'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Keyboard className="w-4 h-4" />
+                <span>Tester Lab</span>
                 <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded-md ${
-                  activeTab === 'tools' ? 'bg-white/25 text-white' : isDark ? 'bg-cyan-950 text-cyan-400 border border-cyan-800/60' : 'bg-cyan-50 text-cyan-700 border border-cyan-200'
+                  activeTab === 'tester' ? 'bg-white/25 text-white' : isDark ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/60' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                 }`}>
-                  New
+                  Live
                 </span>
               </button>
             </nav>
@@ -509,8 +525,8 @@ pause >nul`;
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 space-y-6 relative z-10">
-        {/* Instant Remote PowerShell Endpoint Hero Strip - Gorgeous Premium Glass Deck */}
-        {activeTab !== 'install' && (
+        {/* Instant Remote PowerShell Endpoint Hero Strip - Hidden in Install & Tester modes for distraction-free space */}
+        {activeTab !== 'install' && activeTab !== 'tester' && (
           <section
             className={`rounded-3xl p-5 md:p-6 backdrop-blur-2xl transition-all duration-300 relative overflow-hidden border ${
               isDark
@@ -697,7 +713,15 @@ pause >nul`;
           />
         )}
 
-        {/* Tab 4: Ready to Install Screen matching user reference image */}
+        {/* Tab 4: Hardware & Peripherals Diagnostic Tester Lab */}
+        {activeTab === 'tester' && (
+          <HardwareTesterLab
+            onNotify={showToast}
+            isDark={isDark}
+          />
+        )}
+
+        {/* Tab 5: Ready to Install Screen matching user reference image */}
         {activeTab === 'install' && (
           <InstallScreen
             selectedApps={selectedApps}
@@ -711,8 +735,8 @@ pause >nul`;
           />
         )}
 
-        {/* Combined Setup Floating Bar if items are selected and not already in install screen */}
-        {totalSelectedCount > 0 && activeTab !== 'install' && (
+        {/* Combined Setup Floating Bar if items are selected and not already in install or tester screen */}
+        {totalSelectedCount > 0 && activeTab !== 'install' && activeTab !== 'tester' && (
           <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900/90 dark:bg-zinc-900/90 border border-purple-500/80 text-white px-5 py-3 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.35)] flex flex-wrap items-center gap-3 backdrop-blur-2xl animate-in fade-in slide-in-from-bottom-5 duration-200">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-purple-400 animate-ping" />
