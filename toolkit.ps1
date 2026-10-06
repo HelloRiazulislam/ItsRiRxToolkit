@@ -527,11 +527,54 @@ function Get-WingetPath {
     return "winget"
 }
 
+function Install-WingetBootstrap {
+    Write-Host ""
+    Write-Host "  ┌────────────────────────────────────────────────────────────────────────┐" -ForegroundColor Yellow
+    Write-Host "  │  [!] Winget Package Manager is missing on this fresh Windows PC.       │" -ForegroundColor Yellow
+    Write-Host "  │  [*] Auto-installing Microsoft App Installer & VCLibs dependencies...  │" -ForegroundColor Cyan
+    Write-Host "  └────────────────────────────────────────────────────────────────────────┘" -ForegroundColor Yellow
+    Write-Host ""
+
+    try {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
+        $tempDir = "$env:TEMP\winget_bootstrap"
+        New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+
+        Write-InfoMessage "Downloading Microsoft.VCLibs (x64 UWP Desktop)..."
+        Invoke-WebRequest -Uri "https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx" -OutFile "$tempDir\vclibs.appx" -UseBasicParsing
+        Add-AppxPackage -Path "$tempDir\vclibs.appx" -ErrorAction SilentlyContinue
+
+        Write-InfoMessage "Downloading Microsoft.UI.Xaml (2.8 x64)..."
+        Invoke-WebRequest -Uri "https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx" -OutFile "$tempDir\xaml.appx" -UseBasicParsing
+        Add-AppxPackage -Path "$tempDir\xaml.appx" -ErrorAction SilentlyContinue
+
+        Write-InfoMessage "Downloading Microsoft.DesktopAppInstaller (Winget MSIXBundle)..."
+        Invoke-WebRequest -Uri "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle" -OutFile "$tempDir\winget.msixbundle" -UseBasicParsing
+        Add-AppxPackage -Path "$tempDir\winget.msixbundle" -ErrorAction SilentlyContinue
+
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+        Write-SuccessMessage "Microsoft Winget Package Manager installed and ready!"
+        return $true
+    } catch {
+        Write-ErrorMessage "Winget bootstrap encountered an issue: $($_.Exception.Message)"
+        return $false
+    }
+}
+
 function Test-Winget {
     $wingetExe = Get-WingetPath
     $cmd = Get-Command $wingetExe -ErrorAction SilentlyContinue
     if (-not $cmd -and -not (Test-Path $wingetExe)) {
-        Write-ErrorMessage "Winget package manager is not detected on this system."
+        Write-WarningMessage "Winget package manager not found. Attempting automatic bootstrap..."
+        $installed = Install-WingetBootstrap
+        if ($installed) {
+            $wingetExe = Get-WingetPath
+            $cmd = Get-Command $wingetExe -ErrorAction SilentlyContinue
+            if ($cmd -or (Test-Path $wingetExe)) {
+                return $true
+            }
+        }
+        Write-ErrorMessage "Winget package manager is still not detected."
         Write-InfoMessage "Please install App Installer from Microsoft Store or GitHub:"
         Write-InfoMessage "https://github.com/microsoft/winget-cli/releases"
         return $false

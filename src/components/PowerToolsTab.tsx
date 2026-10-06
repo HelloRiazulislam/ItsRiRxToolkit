@@ -20,7 +20,11 @@ import {
   Laptop,
   CheckCircle2,
   Lock,
-  ArrowRight
+  ArrowRight,
+  Wrench,
+  PackageCheck,
+  RefreshCw,
+  AlertTriangle
 } from 'lucide-react';
 import {
   generateHardwareReportScript,
@@ -29,6 +33,7 @@ import {
   generateGodModeFolderScript,
   generateEnableGpeditScript,
   generateRufusDownloaderScript,
+  generateFreshWindowsFixScript,
   triggerFileDownload
 } from '../utils/scriptGenerator';
 
@@ -38,7 +43,7 @@ interface PowerToolsTabProps {
 }
 
 export const PowerToolsTab: React.FC<PowerToolsTabProps> = ({ onNotify, isDark = false }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'hardware' | 'wifi_dns' | 'god_mode' | 'iso_rufus'>('hardware');
+  const [activeSubTab, setActiveSubTab] = useState<'fresh_windows' | 'hardware' | 'wifi_dns' | 'god_mode' | 'iso_rufus'>('fresh_windows');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const handleCopy = (text: string, key: string, label: string) => {
@@ -55,6 +60,14 @@ export const PowerToolsTab: React.FC<PowerToolsTabProps> = ({ onNotify, isDark =
   };
 
   // Commands for quick terminal copy
+  const freshWingetBootstrapCmd = `[Net.ServicePointManager]::SecurityProtocol = 3072; $dir = Join-Path $env:TEMP 'wg_boot'; if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }; Write-Host '[*] Downloading Microsoft.VCLibs...' -ForegroundColor Cyan; (New-Object Net.WebClient).DownloadFile('https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx', (Join-Path $dir 'vclibs.appx')); Add-AppxPackage -Path (Join-Path $dir 'vclibs.appx') -ErrorAction SilentlyContinue; Write-Host '[*] Downloading Microsoft.UI.Xaml...' -ForegroundColor Cyan; (New-Object Net.WebClient).DownloadFile('https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx', (Join-Path $dir 'xaml.appx')); Add-AppxPackage -Path (Join-Path $dir 'xaml.appx') -ErrorAction SilentlyContinue; Write-Host '[*] Downloading Winget MSIXBundle...' -ForegroundColor Cyan; (New-Object Net.WebClient).DownloadFile('https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle', (Join-Path $dir 'winget.msixbundle')); Add-AppxPackage -Path (Join-Path $dir 'winget.msixbundle') -ErrorAction SilentlyContinue; Write-Host '[SUCCESS] Winget package manager ready!' -ForegroundColor Green`;
+
+  const runtimesInstallCmd = `winget install --id Microsoft.VCRedist.2015+.x64 Microsoft.VCRedist.2015+.x86 Microsoft.DirectX Microsoft.DotNet.DesktopRuntime.8 -e --silent --accept-package-agreements --accept-source-agreements`;
+
+  const fixExecutionPolicyCmd = `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force; Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13; Write-Host "[OK] ExecutionPolicy and TLS 1.2/1.3 protocols unlocked!" -ForegroundColor Green`;
+
+  const storeResetCmd = `wsreset -i; Get-AppXPackage *WindowsStore* -AllUsers | Foreach {Add-AppxPackage -DisableDevelopmentMode -Register "$($_.InstallLocation)\\AppXManifest.xml" -ErrorAction SilentlyContinue}; ipconfig /flushdns`;
+
   const wifiPsCommand = `(netsh wlan show profiles) | Select-String 'All User Profile\\s+:\\s+(.*)' | ForEach-Object { $p = $_.Matches.Groups[1].Value.Trim(); $pass = (netsh wlan show profile name="$p" key=clear) | Select-String 'Key Content\\s+:\\s+(.*)' | ForEach-Object { $_.Matches.Groups[1].Value.Trim() }; [PSCustomObject]@{ SSID = $p; Password = if ($pass) { $pass } else { '[Open]' } } } | Format-Table -AutoSize`;
 
   const godModeCmd = `mkdir "$env:USERPROFILE\\Desktop\\GodMode.{ED7BA470-8E54-465E-825C-99712043E01C}"`;
@@ -83,7 +96,7 @@ export const PowerToolsTab: React.FC<PowerToolsTabProps> = ({ onNotify, isDark =
               Windows Power Tools & Diagnostics
             </h1>
             <p className={`text-sm sm:text-base leading-relaxed ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
-              1-Click hardware specifications auditing, saved Wi-Fi password recovery, automated lowest-ping DNS benchmarking, secret Windows God Mode, and official bootable ISO creation.
+              Fresh Windows setup repair, Winget bootstrapper, 1-click PC specs auditor, saved Wi-Fi password recovery, fast DNS benchmark, God Mode, and official bootable ISO tools.
             </p>
           </div>
 
@@ -107,10 +120,24 @@ export const PowerToolsTab: React.FC<PowerToolsTabProps> = ({ onNotify, isDark =
       </div>
 
       {/* Sub-Navigation Selector Tabs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 p-1.5 rounded-2xl bg-slate-200/50 dark:bg-zinc-900/50 border border-slate-300/40 dark:border-white/10 backdrop-blur-xl">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 p-1.5 rounded-2xl bg-slate-200/50 dark:bg-zinc-900/50 border border-slate-300/40 dark:border-white/10 backdrop-blur-xl">
+        <button
+          onClick={() => setActiveSubTab('fresh_windows')}
+          className={`px-3 py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            activeSubTab === 'fresh_windows'
+              ? 'bg-rose-600 text-white shadow-md shadow-rose-600/25'
+              : isDark
+              ? 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+          }`}
+        >
+          <Wrench className="w-4 h-4 shrink-0" />
+          <span>Fresh Windows Fixer</span>
+        </button>
+
         <button
           onClick={() => setActiveSubTab('hardware')}
-          className={`px-4 py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+          className={`px-3 py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
             activeSubTab === 'hardware'
               ? 'bg-cyan-600 text-white shadow-md shadow-cyan-600/25'
               : isDark
@@ -124,7 +151,7 @@ export const PowerToolsTab: React.FC<PowerToolsTabProps> = ({ onNotify, isDark =
 
         <button
           onClick={() => setActiveSubTab('wifi_dns')}
-          className={`px-4 py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+          className={`px-3 py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
             activeSubTab === 'wifi_dns'
               ? 'bg-purple-600 text-white shadow-md shadow-purple-600/25'
               : isDark
@@ -138,7 +165,7 @@ export const PowerToolsTab: React.FC<PowerToolsTabProps> = ({ onNotify, isDark =
 
         <button
           onClick={() => setActiveSubTab('god_mode')}
-          className={`px-4 py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+          className={`px-3 py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
             activeSubTab === 'god_mode'
               ? 'bg-amber-600 text-white shadow-md shadow-amber-600/25'
               : isDark
@@ -147,12 +174,12 @@ export const PowerToolsTab: React.FC<PowerToolsTabProps> = ({ onNotify, isDark =
           }`}
         >
           <Sparkles className="w-4 h-4 shrink-0" />
-          <span>God Mode & Secret Tools</span>
+          <span>God Mode</span>
         </button>
 
         <button
           onClick={() => setActiveSubTab('iso_rufus')}
-          className={`px-4 py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+          className={`px-3 py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer col-span-2 sm:col-span-1 ${
             activeSubTab === 'iso_rufus'
               ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
               : isDark
@@ -164,6 +191,143 @@ export const PowerToolsTab: React.FC<PowerToolsTabProps> = ({ onNotify, isDark =
           <span>Windows ISO & Rufus</span>
         </button>
       </div>
+
+      {/* ========================================================================= */}
+      {/* 0. FRESH WINDOWS SETUP & WINGET REPAIR KIT */}
+      {/* ========================================================================= */}
+      {activeSubTab === 'fresh_windows' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <div
+            className={`rounded-3xl p-6 md:p-8 border ${
+              isDark ? 'bg-zinc-900/60 border-zinc-800' : 'bg-white border-slate-200 shadow-sm'
+            }`}
+          >
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200 dark:border-zinc-800">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Wrench className="w-5 h-5 text-rose-500" />
+                  <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    Fresh Windows Setup & Winget Auto-Fixer
+                  </h2>
+                </div>
+                <p className={`text-sm ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
+                  1-Click automated post-installation repair for freshly installed PCs. Resolves <code className="font-mono px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-500 font-bold">'winget' is not recognized</code>, missing Visual C++ DLLs, ExecutionPolicy restrictions, and network download errors.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 shrink-0">
+                <button
+                  onClick={() => handleDownload('Fix-Fresh-Windows.bat', generateFreshWindowsFixScript, 'Fresh Windows Fixer (.bat)')}
+                  className="px-5 py-3 rounded-2xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-rose-600/25 transition-all active:scale-95 cursor-pointer"
+                >
+                  <Download className="w-4 h-4" /> Download Fix-Fresh-Windows.bat
+                </button>
+              </div>
+            </div>
+
+            {/* Quick 1-Click Fix Cards Grid */}
+            <div className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+              
+              {/* Fix 1: Winget Bootstrapper */}
+              <div className={`p-5 rounded-2xl border space-y-3 ${isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <PackageCheck className="w-4 h-4 text-emerald-500" />
+                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">1. Bootstrap Winget & App Installer</h3>
+                  </div>
+                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 font-bold">No Store Login</span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-zinc-400">
+                  Installs Microsoft App Installer (Winget), Microsoft.VCLibs, and Microsoft.UI.Xaml directly from official GitHub releases without Microsoft Store.
+                </p>
+                <div className="p-3 rounded-xl bg-black/90 text-emerald-400 font-mono text-[11px] truncate select-all">
+                  {freshWingetBootstrapCmd}
+                </div>
+                <button
+                  onClick={() => handleCopy(freshWingetBootstrapCmd, 'winget_boot', 'Winget Bootstrapper command')}
+                  className="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                >
+                  {copiedKey === 'winget_boot' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedKey === 'winget_boot' ? 'Copied to Clipboard!' : 'Copy Winget Bootstrap Command'}</span>
+                </button>
+              </div>
+
+              {/* Fix 2: Visual C++ All-In-One Runtimes */}
+              <div className={`p-5 rounded-2xl border space-y-3 ${isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-cyan-500" />
+                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">2. All Visual C++ Runtimes & DirectX</h3>
+                  </div>
+                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-500 font-bold">Fix DLL Errors</span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-zinc-400">
+                  Installs Visual C++ 2015-2022 (x86 & x64), DirectX End-User Runtimes, and .NET 8 to resolve missing runtime DLL errors.
+                </p>
+                <div className="p-3 rounded-xl bg-black/90 text-cyan-400 font-mono text-[11px] truncate select-all">
+                  {runtimesInstallCmd}
+                </div>
+                <button
+                  onClick={() => handleCopy(runtimesInstallCmd, 'vc_runtimes', 'VC++ Runtimes installer command')}
+                  className="w-full py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                >
+                  {copiedKey === 'vc_runtimes' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedKey === 'vc_runtimes' ? 'Copied to Clipboard!' : 'Copy VC++ & DirectX Installer'}</span>
+                </button>
+              </div>
+
+              {/* Fix 3: ExecutionPolicy & TLS 1.2 Unblock */}
+              <div className={`p-5 rounded-2xl border space-y-3 ${isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Lock className="w-4 h-4 text-purple-500" />
+                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">3. Fix ExecutionPolicy & TLS 1.2/1.3</h3>
+                  </div>
+                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 font-bold">Fix Script Block</span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-zinc-400">
+                  Unblocks PowerShell script execution restrictions and enables TLS 1.2 / TLS 1.3 secure download protocols.
+                </p>
+                <div className="p-3 rounded-xl bg-black/90 text-purple-300 font-mono text-[11px] truncate select-all">
+                  {fixExecutionPolicyCmd}
+                </div>
+                <button
+                  onClick={() => handleCopy(fixExecutionPolicyCmd, 'exec_policy', 'ExecutionPolicy fix command')}
+                  className="w-full py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                >
+                  {copiedKey === 'exec_policy' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedKey === 'exec_policy' ? 'Copied to Clipboard!' : 'Copy ExecutionPolicy Unlock'}</span>
+                </button>
+              </div>
+
+              {/* Fix 4: Microsoft Store & DNS Stack Reset */}
+              <div className={`p-5 rounded-2xl border space-y-3 ${isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <RefreshCw className="w-4 h-4 text-amber-500" />
+                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">4. Reset Windows Store & DNS Stack</h3>
+                  </div>
+                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 font-bold">Fix Store Stuck</span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-zinc-400">
+                  Cleans corrupted Windows Store cache via wsreset, re-registers store manifests, and flushes local DNS cache.
+                </p>
+                <div className="p-3 rounded-xl bg-black/90 text-amber-300 font-mono text-[11px] truncate select-all">
+                  {storeResetCmd}
+                </div>
+                <button
+                  onClick={() => handleCopy(storeResetCmd, 'store_reset', 'Store reset command')}
+                  className="w-full py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                >
+                  {copiedKey === 'store_reset' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedKey === 'store_reset' ? 'Copied to Clipboard!' : 'Copy Store Reset Command'}</span>
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* 1. PC Specs & Hardware Report Generator */}

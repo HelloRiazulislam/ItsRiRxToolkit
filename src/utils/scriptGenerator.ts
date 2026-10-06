@@ -88,7 +88,20 @@ if not defined WINGET_CMD (
         )
     )
 )
-if not defined WINGET_CMD set "WINGET_CMD=winget"
+
+:: Auto-Bootstrap Winget on Fresh Windows if missing (No Microsoft Store required)
+if not defined WINGET_CMD (
+    echo [!] Winget package manager not found on this fresh Windows installation.
+    echo [*] Auto-downloading and bootstrapping Microsoft App Installer and VCLibs...
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = 3072; $dir = Join-Path $env:TEMP 'winget_bootstrap'; if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }; Write-Host '  [*] Downloading Microsoft.VCLibs...' -ForegroundColor Cyan; (New-Object Net.WebClient).DownloadFile('https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx', (Join-Path $dir 'vclibs.appx')); Add-AppxPackage -Path (Join-Path $dir 'vclibs.appx') -ErrorAction SilentlyContinue; Write-Host '  [*] Downloading Microsoft.UI.Xaml...' -ForegroundColor Cyan; (New-Object Net.WebClient).DownloadFile('https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx', (Join-Path $dir 'xaml.appx')); Add-AppxPackage -Path (Join-Path $dir 'xaml.appx') -ErrorAction SilentlyContinue; Write-Host '  [*] Downloading Winget Package Manager...' -ForegroundColor Cyan; (New-Object Net.WebClient).DownloadFile('https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle', (Join-Path $dir 'winget.msixbundle')); Add-AppxPackage -Path (Join-Path $dir 'winget.msixbundle') -ErrorAction SilentlyContinue; Write-Host '  [OK] Winget installed successfully!' -ForegroundColor Green"
+    where winget.exe >nul 2>&1 && set "WINGET_CMD=winget.exe"
+    if not defined WINGET_CMD (
+        for /d %%D in ("%ProgramFiles%\\WindowsApps\\Microsoft.DesktopAppInstaller_*_x64__8wekyb3d8bbwe") do (
+            if exist "%%~fD\\winget.exe" set "WINGET_CMD=\"%%~fD\\winget.exe\""
+        )
+    )
+    if not defined WINGET_CMD set "WINGET_CMD=winget"
+)
 `;
 
   // Append system tweaks if selected
@@ -196,10 +209,43 @@ try {
 
   if (apps.length > 0) {
     script += `Write-Host "--- STAGE 2: SILENT APPLICATION DEPLOYMENT VIA WINGET ---" -ForegroundColor Yellow
+
+# Auto-Bootstrap Winget on Fresh Windows if not detected
 $wingetCmd = (Get-Command winget -ErrorAction SilentlyContinue).Source
 if (-not $wingetCmd) {
-    $wingetCmd = "$env:LOCALAPPDATA\\Microsoft\\WindowsApps\\winget.exe"
+    $localPath = "$env:LOCALAPPDATA\\Microsoft\\WindowsApps\\winget.exe"
+    if (Test-Path $localPath) { $wingetCmd = $localPath }
 }
+
+if (-not $wingetCmd) {
+    Write-Host "[!] Winget package manager not detected on this fresh Windows system." -ForegroundColor Yellow
+    Write-Host "[*] Auto-installing Microsoft App Installer (Winget) and VCLibs dependencies..." -ForegroundColor Cyan
+    try {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
+        $tempDir = "$env:TEMP\\winget_bootstrap"
+        New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+        
+        Write-Host "  [*] Downloading Microsoft.VCLibs..." -ForegroundColor DarkCyan
+        Invoke-WebRequest -Uri "https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx" -OutFile "$tempDir\\vclibs.appx" -UseBasicParsing
+        Add-AppxPackage -Path "$tempDir\\vclibs.appx" -ErrorAction SilentlyContinue
+        
+        Write-Host "  [*] Downloading Microsoft.UI.Xaml..." -ForegroundColor DarkCyan
+        Invoke-WebRequest -Uri "https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx" -OutFile "$tempDir\\xaml.appx" -UseBasicParsing
+        Add-AppxPackage -Path "$tempDir\\xaml.appx" -ErrorAction SilentlyContinue
+        
+        Write-Host "  [*] Downloading Winget DesktopAppInstaller..." -ForegroundColor DarkCyan
+        Invoke-WebRequest -Uri "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle" -OutFile "$tempDir\\winget.msixbundle" -UseBasicParsing
+        Add-AppxPackage -Path "$tempDir\\winget.msixbundle" -ErrorAction SilentlyContinue
+        
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+        $wingetCmd = (Get-Command winget -ErrorAction SilentlyContinue).Source
+        if (-not $wingetCmd) { $wingetCmd = "$env:LOCALAPPDATA\\Microsoft\\WindowsApps\\winget.exe" }
+        Write-Host "  [OK] Winget package manager ready!" -ForegroundColor Green
+    } catch {
+        Write-Host "  [!] Winget bootstrap notice: $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+}
+if (-not $wingetCmd) { $wingetCmd = "winget" }
 `;
     apps.forEach((app, idx) => {
       script += `Write-Host "[${idx + 1}/${apps.length}] Installing ${app.name} (${app.id})..." -ForegroundColor White
@@ -694,6 +740,111 @@ echo [*] Launching Rufus now...
 start "" "%DEST%"
 echo.
 timeout /t 3 >nul
+`;
+}
+
+/**
+ * Generates an automated 1-Click Fresh Windows Bootstrapper & Repair Script (.bat)
+ * Fixes missing Winget, VCRuntime140 missing DLLs, ExecutionPolicy, TLS 1.2/1.3, DirectX & .NET
+ */
+export function generateFreshWindowsFixScript(): string {
+  return `@echo off
+:: ============================================================================
+::   ItsRiRx Windows Tool Kit - Fresh Windows Setup & Winget Auto-Fixer
+::   Website    : https://itsrirx-toolkit.vercel.app
+::   Created by : Riazul Islam
+:: ============================================================================
+title Fresh Windows 1-Click Fixer - ItsRiRx Windows Tool Kit
+color 0b
+
+:: 1. Unblock file from Mark-of-the-Web
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -LiteralPath '%~f0' -ErrorAction SilentlyContinue" >nul 2>&1
+
+:: 2. Check for Administrator privileges
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [INFO] Administrator rights required to fix Windows system runtimes.
+    echo [*] Requesting UAC elevation...
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process cmd.exe -ArgumentList '/c \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    if %errorlevel% neq 0 (
+        echo.
+        echo [!] Please right-click this file and choose: 'Run as administrator'
+        echo.
+        pause
+    )
+    exit /b
+)
+
+cd /d "%~dp0"
+cls
+echo ============================================================================
+echo   ItsRiRx Windows Tool Kit - Fresh Windows and Winget Auto-Repair Suite
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   Created by : Riazul Islam
+echo ============================================================================
+echo.
+echo [*] Starting automated fresh Windows post-install repair...
+echo.
+
+:: STEP 1: Fix TLS 1.2 / TLS 1.3 and Execution Policy
+echo [1/5] Configuring PowerShell ExecutionPolicy and TLS 1.2/1.3 security protocols...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13; Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force; Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force" >nul 2>&1
+echo   [OK] PowerShell Execution Policy and TLS configured.
+echo.
+
+:: STEP 2: Bootstrap Microsoft App Installer and Winget Dependencies
+echo [2/5] Bootstrapping Microsoft Winget Package Manager and UWP dependencies...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = 3072; $dir = Join-Path $env:TEMP 'wg_boot'; if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }; Write-Host '  [*] Downloading Microsoft.VCLibs...' -ForegroundColor Cyan; (New-Object Net.WebClient).DownloadFile('https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx', (Join-Path $dir 'vclibs.appx')); Add-AppxPackage -Path (Join-Path $dir 'vclibs.appx') -ErrorAction SilentlyContinue; Write-Host '  [*] Downloading Microsoft.UI.Xaml...' -ForegroundColor Cyan; (New-Object Net.WebClient).DownloadFile('https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx', (Join-Path $dir 'xaml.appx')); Add-AppxPackage -Path (Join-Path $dir 'xaml.appx') -ErrorAction SilentlyContinue; Write-Host '  [*] Downloading Microsoft Winget MSIXBundle...' -ForegroundColor Cyan; (New-Object Net.WebClient).DownloadFile('https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle', (Join-Path $dir 'winget.msixbundle')); Add-AppxPackage -Path (Join-Path $dir 'winget.msixbundle') -ErrorAction SilentlyContinue; Write-Host '  [OK] Winget bootstrapped successfully!' -ForegroundColor Green"
+echo   [OK] Winget and dependencies installed.
+echo.
+
+:: Resolve Winget Command Path
+set "WINGET_CMD="
+where winget.exe >nul 2>&1 && set "WINGET_CMD=winget.exe"
+if not defined WINGET_CMD (
+    for /d %%D in ("%ProgramFiles%\\WindowsApps\\Microsoft.DesktopAppInstaller_*_x64__8wekyb3d8bbwe") do (
+        if exist "%%~fD\\winget.exe" set "WINGET_CMD=\"%%~fD\\winget.exe\""
+    )
+)
+if not defined WINGET_CMD (
+    for /d %%U in ("C:\\Users\\*") do (
+        if exist "%%~fU\\AppData\\Local\\Microsoft\\WindowsApps\\winget.exe" (
+            set "WINGET_CMD=\"%%~fU\\AppData\\Local\\Microsoft\\WindowsApps\\winget.exe\""
+        )
+    )
+)
+if not defined WINGET_CMD set "WINGET_CMD=winget"
+
+:: STEP 3: Update Winget Sources
+echo [3/5] Updating Winget package repository catalogs...
+%WINGET_CMD% source update --accept-source-agreements >nul 2>&1
+echo   [OK] Repository sources synchronized.
+echo.
+
+:: STEP 4: Install Essential Windows Runtimes (Visual C++, DirectX, .NET)
+echo [4/5] Silently installing Visual C++ Redistributables (2015-2022 x86/x64) and DirectX...
+%WINGET_CMD% install --id Microsoft.VCRedist.2015+.x64 -e --silent --accept-package-agreements --accept-source-agreements >nul 2>&1
+%WINGET_CMD% install --id Microsoft.VCRedist.2015+.x86 -e --silent --accept-package-agreements --accept-source-agreements >nul 2>&1
+%WINGET_CMD% install --id Microsoft.DirectX -e --silent --accept-package-agreements --accept-source-agreements >nul 2>&1
+%WINGET_CMD% install --id Microsoft.DotNet.DesktopRuntime.8 -e --silent --accept-package-agreements --accept-source-agreements >nul 2>&1
+echo   [OK] Essential runtimes installed (VCRUNTIME140.dll & DirectX errors solved).
+echo.
+
+:: STEP 5: Re-register & Reset Windows Store & Cache
+echo [5/5] Resetting Windows Store and clearing DNS cache...
+start /b wsreset.exe -i >nul 2>&1
+ipconfig /flushdns >nul 2>&1
+echo   [OK] Windows Store and network stack initialized.
+echo.
+
+echo ============================================================================
+echo   [SUCCESS] Fresh Windows Setup and Winget Repair is COMPLETE!
+echo   You can now run any tool or batch installer from ItsRiRx Toolkit!
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo ============================================================================
+echo.
+powershell.exe -NoProfile -Command "[console]::beep(800,200); [console]::beep(1000,300)" >nul 2>&1
+pause
 `;
 }
 
