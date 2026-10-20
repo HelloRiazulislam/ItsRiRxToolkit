@@ -849,6 +849,69 @@ pause
 }
 
 /**
+ * Generates an automated .bat script to clear pending print jobs and restart Print Spooler service
+ */
+export function generatePrintSpoolerFixScript(): string {
+  return `@echo off
+:: ============================================================================
+::   ItsRiRx Windows Tool Kit - Print Spooler & Stuck Job Repair Utility
+::   Website    : https://itsrirx-toolkit.vercel.app
+::   Created by : Riazul Islam
+:: ============================================================================
+title Print Spooler Repair - ItsRiRx Windows Tool Kit
+color 0b
+
+:: 1. Unblock file from Mark-of-the-Web
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -LiteralPath '%~f0' -ErrorAction SilentlyContinue" >nul 2>&1
+
+:: 2. Check for Administrator privileges
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [INFO] Administrator privileges required to manage Windows Print Spooler service.
+    echo [*] Requesting UAC elevation...
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process cmd.exe -ArgumentList '/c \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    if %errorlevel% neq 0 (
+        echo.
+        echo [!] Please right-click this file and choose: 'Run as administrator'
+        echo.
+        pause
+    )
+    exit /b
+)
+
+cd /d "%~dp0"
+cls
+echo ============================================================================
+echo   ItsRiRx Windows Tool Kit - Print Spooler & Stuck Job Repair Utility
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   Created by : Riazul Islam
+echo ============================================================================
+echo.
+echo [*] Step 1: Stopping Print Spooler service...
+net stop spooler
+echo.
+
+echo [*] Step 2: Clearing all stuck and pending print jobs...
+del /Q /F /S "%systemroot%\\System32\\Spool\\Printers\\*.*"
+echo   [OK] Pending print queue cleaned.
+echo.
+
+echo [*] Step 3: Starting and setting Print Spooler to Automatic...
+sc config spooler start= auto
+net start spooler
+echo.
+
+echo ============================================================================
+echo   [SUCCESS] Print Spooler service restarted and all stuck jobs cleared!
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo ============================================================================
+echo.
+powershell.exe -NoProfile -Command "[console]::beep(800,200); [console]::beep(1000,300)" >nul 2>&1
+pause
+`;
+}
+
+/**
  * Triggers a native file download in the browser
  */
 export function triggerFileDownload(filename: string, content: string): void {

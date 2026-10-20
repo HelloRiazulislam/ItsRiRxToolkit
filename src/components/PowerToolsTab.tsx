@@ -24,7 +24,8 @@ import {
   Wrench,
   PackageCheck,
   RefreshCw,
-  AlertTriangle
+  AlertTriangle,
+  Printer
 } from 'lucide-react';
 import {
   generateHardwareReportScript,
@@ -34,6 +35,7 @@ import {
   generateEnableGpeditScript,
   generateRufusDownloaderScript,
   generateFreshWindowsFixScript,
+  generatePrintSpoolerFixScript,
   triggerFileDownload
 } from '../utils/scriptGenerator';
 
@@ -43,7 +45,7 @@ interface PowerToolsTabProps {
 }
 
 export const PowerToolsTab: React.FC<PowerToolsTabProps> = ({ onNotify, isDark = false }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'fresh_windows' | 'hardware' | 'wifi_dns' | 'god_mode' | 'iso_rufus'>('fresh_windows');
+  const [activeSubTab, setActiveSubTab] = useState<'fresh_windows' | 'hardware' | 'wifi_dns' | 'god_mode' | 'iso_rufus' | 'printer_fix'>('fresh_windows');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const handleCopy = (text: string, key: string, label: string) => {
@@ -67,6 +69,8 @@ export const PowerToolsTab: React.FC<PowerToolsTabProps> = ({ onNotify, isDark =
   const fixExecutionPolicyCmd = `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force; Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13; Write-Host "[OK] ExecutionPolicy and TLS 1.2/1.3 protocols unlocked!" -ForegroundColor Green`;
 
   const storeResetCmd = `wsreset -i; Get-AppXPackage *WindowsStore* -AllUsers | Foreach {Add-AppxPackage -DisableDevelopmentMode -Register "$($_.InstallLocation)\\AppXManifest.xml" -ErrorAction SilentlyContinue}; ipconfig /flushdns`;
+
+  const printerFixCmd = `Stop-Service Spooler; Remove-Item -Path "$env:systemroot\\System32\\Spool\\Printers\\*" -Force -Recurse -ErrorAction SilentlyContinue; Set-Service Spooler -StartupType Automatic; Start-Service Spooler; Write-Host "[SUCCESS] Print Spooler restarted & pending print jobs deleted!" -ForegroundColor Green`;
 
   const wifiPsCommand = `(netsh wlan show profiles) | Select-String 'All User Profile\\s+:\\s+(.*)' | ForEach-Object { $p = $_.Matches.Groups[1].Value.Trim(); $pass = (netsh wlan show profile name="$p" key=clear) | Select-String 'Key Content\\s+:\\s+(.*)' | ForEach-Object { $_.Matches.Groups[1].Value.Trim() }; [PSCustomObject]@{ SSID = $p; Password = if ($pass) { $pass } else { '[Open]' } } } | Format-Table -AutoSize`;
 
@@ -120,7 +124,7 @@ export const PowerToolsTab: React.FC<PowerToolsTabProps> = ({ onNotify, isDark =
       </div>
 
       {/* Sub-Navigation Selector Tabs */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 p-1.5 rounded-2xl bg-slate-200/50 dark:bg-zinc-900/50 border border-slate-300/40 dark:border-white/10 backdrop-blur-xl">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 p-1.5 rounded-2xl bg-slate-200/50 dark:bg-zinc-900/50 border border-slate-300/40 dark:border-white/10 backdrop-blur-xl">
         <button
           onClick={() => setActiveSubTab('fresh_windows')}
           className={`px-3 py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
@@ -164,6 +168,20 @@ export const PowerToolsTab: React.FC<PowerToolsTabProps> = ({ onNotify, isDark =
         </button>
 
         <button
+          onClick={() => setActiveSubTab('printer_fix')}
+          className={`px-3 py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            activeSubTab === 'printer_fix'
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/25'
+              : isDark
+              ? 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+          }`}
+        >
+          <Printer className="w-4 h-4 shrink-0" />
+          <span>Printer Spooler Fix</span>
+        </button>
+
+        <button
           onClick={() => setActiveSubTab('god_mode')}
           className={`px-3 py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
             activeSubTab === 'god_mode'
@@ -191,6 +209,68 @@ export const PowerToolsTab: React.FC<PowerToolsTabProps> = ({ onNotify, isDark =
           <span>Windows ISO & Rufus</span>
         </button>
       </div>
+
+      {/* ========================================================================= */}
+      {/* PRINTER SPOOLER & STUCK JOBS REPAIR UTILITY */}
+      {/* ========================================================================= */}
+      {activeSubTab === 'printer_fix' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <div
+            className={`rounded-3xl p-6 md:p-8 border ${
+              isDark ? 'bg-zinc-900/60 border-zinc-800' : 'bg-white border-slate-200 shadow-sm'
+            }`}
+          >
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200 dark:border-zinc-800">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Printer className="w-5 h-5 text-indigo-500" />
+                  <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    Print Spooler & Stuck Jobs Repair Tool
+                  </h2>
+                </div>
+                <p className={`text-sm ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
+                  1-Click utility to delete all pending/stuck print queue jobs, stop and restart the Windows Print Spooler service, and resolve common printer errors.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 shrink-0">
+                <button
+                  onClick={() => handleDownload('Fix-Printer-Spooler.bat', generatePrintSpoolerFixScript, 'Print Spooler Fixer (.bat)')}
+                  className="px-5 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-indigo-600/25 transition-all active:scale-95 cursor-pointer"
+                >
+                  <Download className="w-4 h-4" /> Download Fix-Printer-Spooler.bat
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Copy Command Section */}
+            <div className="pt-6 space-y-4">
+              <div className={`p-5 rounded-2xl border space-y-3 ${isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Terminal className="w-4 h-4 text-indigo-500" />
+                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">Quick PowerShell Command (Run as Administrator)</h3>
+                  </div>
+                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 font-bold">Instant Fix</span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-zinc-400">
+                  Copy and paste this command into PowerShell (Admin) to instantly clear pending print jobs and restart the spooler:
+                </p>
+                <div className="p-3 rounded-xl bg-black/90 text-indigo-300 font-mono text-[11px] truncate select-all">
+                  {printerFixCmd}
+                </div>
+                <button
+                  onClick={() => handleCopy(printerFixCmd, 'printer_fix_cmd', 'Printer Fix command')}
+                  className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                >
+                  {copiedKey === 'printer_fix_cmd' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedKey === 'printer_fix_cmd' ? 'Copied to Clipboard!' : 'Copy Printer Repair Command'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* 0. FRESH WINDOWS SETUP & WINGET REPAIR KIT */}
