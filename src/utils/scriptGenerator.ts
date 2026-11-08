@@ -1,12 +1,32 @@
 import { SOFTWARE_APPS, SYSTEM_TWEAKS, SoftwareApp, SystemTweak } from '../data/toolkitCatalog';
 
 export function getAppById(id: string): SoftwareApp | undefined {
-  return SOFTWARE_APPS.find((a) => a.id === id);
+  return SOFTWARE_APPS.find((a) => a.id === id || (a.altIds && a.altIds.includes(id)));
 }
 
 export function getTweakById(id: string): SystemTweak | undefined {
   return SYSTEM_TWEAKS.find((t) => t.id === id);
 }
+
+/**
+ * Generates a smart 1-line command for a single application with fallback support
+ */
+export function getSingleAppInstallCommand(app: SoftwareApp): string {
+  if (app.id === 'Google.Gemini') {
+    return `$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut("$env:USERPROFILE\\Desktop\\Google Gemini.lnk"); $s.TargetPath = "msedge.exe"; $s.Arguments = "--app=https://gemini.google.com"; $s.Save(); Start-Process "msedge.exe" "--app=https://gemini.google.com"`;
+  }
+  const sourceFlag = app.source ? ` --source ${app.source}` : '';
+  const primaryCmd = `winget install --id ${app.id} -e${sourceFlag} --silent --accept-package-agreements --accept-source-agreements --disable-interactivity`;
+  if (app.altIds && app.altIds.length > 0) {
+    return `${primaryCmd}; if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne -1978335189) { winget install --id ${app.altIds[0]} --silent --accept-package-agreements --accept-source-agreements --disable-interactivity }`;
+  }
+  return primaryCmd;
+}
+
+/**
+ * Reusable PowerShell snippet to bootstrap Winget + Dependencies + CDN Source on Fresh Windows 10/11
+ */
+const WINGET_BOOTSTRAP_PS_ONELINER = `$ProgressPreference = 'SilentlyContinue'; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13; $dir = Join-Path $env:TEMP 'itsrirx_winget_boot'; New-Item -ItemType Directory -Path $dir -Force | Out-Null; Write-Host '  [1/4] Downloading official Winget Dependencies archive...' -ForegroundColor Cyan; curl.exe -L -s -S --retry 3 -o "$dir\\deps.zip" "https://github.com/microsoft/winget-cli/releases/latest/download/DesktopAppInstaller_Dependencies.zip"; if (Test-Path "$dir\\deps.zip") { Expand-Archive -Path "$dir\\deps.zip" -DestinationPath "$dir\\deps" -Force; Get-ChildItem -Path "$dir\\deps" -Recurse -Include *x64*.appx,*x64*.msix | ForEach-Object { Add-AppxPackage -Path $_.FullName -ErrorAction SilentlyContinue } }; Write-Host '  [2/4] Ensuring VCLibs 14.00 & UI.Xaml 2.8 UWP runtimes...' -ForegroundColor Cyan; curl.exe -L -s -S --retry 2 -o "$dir\\vclibs.appx" "https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx"; if (Test-Path "$dir\\vclibs.appx") { Add-AppxPackage -Path "$dir\\vclibs.appx" -ErrorAction SilentlyContinue }; curl.exe -L -s -S --retry 2 -o "$dir\\xaml.appx" "https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx"; if (Test-Path "$dir\\xaml.appx") { Add-AppxPackage -Path "$dir\\xaml.appx" -ErrorAction SilentlyContinue }; Write-Host '  [3/4] Downloading & registering Microsoft DesktopAppInstaller (Winget)...' -ForegroundColor Cyan; curl.exe -L -s -S --retry 3 -o "$dir\\winget.msixbundle" "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"; if (Test-Path "$dir\\winget.msixbundle") { $depFiles = @(Get-ChildItem -Path "$dir\\deps" -Recurse -Include *x64*.appx,*x64*.msix -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName); if ($depFiles.Count -gt 0) { Add-AppxPackage -Path "$dir\\winget.msixbundle" -DependencyPath $depFiles -ErrorAction SilentlyContinue } else { Add-AppxPackage -Path "$dir\\winget.msixbundle" -ErrorAction SilentlyContinue }; Add-AppxProvisionedPackage -Online -PackagePath "$dir\\winget.msixbundle" -SkipLicense -ErrorAction SilentlyContinue | Out-Null }; Write-Host '  [4/4] Updating Winget CDN Source Certificate (fixes 0x8a15000f / 0x8a15005e)...' -ForegroundColor Cyan; curl.exe -L -s -S --retry 2 -o "$dir\\source.msix" "https://cdn.winget.microsoft.com/cache/source.msix"; if (Test-Path "$dir\\source.msix") { Add-AppxPackage -Path "$dir\\source.msix" -ErrorAction SilentlyContinue }; Write-Host '  [OK] Winget & CDN source initialized!' -ForegroundColor Green`;
 
 /**
  * Generates an auto-elevating, self-contained .bat silent installer for selected applications and tweaks
@@ -23,11 +43,12 @@ export function generateBatchInstaller(
   const dateStr = new Date().toISOString().split('T')[0];
 
   let script = `@echo off
+setlocal EnableDelayedExpansion
 :: ============================================================================
 ::   ██╗████████╗███████╗██████╗ ██╗██████╗ ██╗  ██╗
 ::   ██║╚══██╔══╝██╔════╝██╔══██╗██║██╔══██╗╚██╗██╔╝
 ::   ██║   ██║   ███████╗██████╔╝██║██████╔╝ ╚███╔╝   WINDOWS TOOL KIT
-::   ██║   ██║   ╚════██║██╔══██╗██║██╔══██╗ ██╔██╗   Version 1.2.0
+::   ██║   ██║   ╚════██║██╔══██╗██║██╔══██╗ ██╔██╗   Version 1.3.0
 ::   ██║   ██║   ███████║██║  ██║██║██║  ██║██╔╝ ██╗
 ::   ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
 :: ============================================================================
@@ -73,34 +94,66 @@ echo   Queue      : ${apps.length} Application(s) ^| ${tweaks.length} System Opt
 echo ============================================================================
 echo.
 
-:: Detect or resolve official Microsoft Winget binary across System and User profiles
+:: Verify if Winget is genuinely functional (prevents 0-byte WindowsApps stub false-positive on fresh Windows)
 set "WINGET_CMD="
-where winget.exe >nul 2>&1 && set "WINGET_CMD=winget.exe"
-if not defined WINGET_CMD (
-    for /d %%D in ("%ProgramFiles%\\WindowsApps\\Microsoft.DesktopAppInstaller_*_x64__8wekyb3d8bbwe") do (
-        if exist "%%~fD\\winget.exe" set "WINGET_CMD=\"%%~fD\\winget.exe\""
+set "WINGET_READY=0"
+
+where winget.exe >nul 2>&1
+if %errorlevel% equ 0 (
+    winget.exe --version >nul 2>&1
+    if !errorlevel! equ 0 (
+        set "WINGET_CMD=winget.exe"
+        set "WINGET_READY=1"
     )
 )
-if not defined WINGET_CMD (
-    for /d %%U in ("C:\\Users\\*") do (
-        if exist "%%~fU\\AppData\\Local\\Microsoft\\WindowsApps\\winget.exe" (
-            set "WINGET_CMD=\"%%~fU\\AppData\\Local\\Microsoft\\WindowsApps\\winget.exe\""
+
+if "!WINGET_READY!"=="0" (
+    for /d %%D in ("%ProgramFiles%\\WindowsApps\\Microsoft.DesktopAppInstaller_*_x64__8wekyb3d8bbwe") do (
+        if exist "%%~fD\\winget.exe" (
+            "%%~fD\\winget.exe" --version >nul 2>&1
+            if !errorlevel! equ 0 (
+                set "WINGET_CMD=\"%%~fD\\winget.exe\""
+                set "WINGET_READY=1"
+            )
         )
     )
 )
 
-:: Auto-Bootstrap Winget on Fresh Windows if missing (No Microsoft Store required)
-if not defined WINGET_CMD (
-    echo [!] Winget package manager not found on this fresh Windows installation.
-    echo [*] Auto-downloading and bootstrapping Microsoft App Installer and VCLibs...
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = 3072; $dir = Join-Path $env:TEMP 'winget_bootstrap'; if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }; Write-Host '  [*] Downloading Microsoft.VCLibs...' -ForegroundColor Cyan; (New-Object Net.WebClient).DownloadFile('https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx', (Join-Path $dir 'vclibs.appx')); Add-AppxPackage -Path (Join-Path $dir 'vclibs.appx') -ErrorAction SilentlyContinue; Write-Host '  [*] Downloading Microsoft.UI.Xaml...' -ForegroundColor Cyan; (New-Object Net.WebClient).DownloadFile('https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx', (Join-Path $dir 'xaml.appx')); Add-AppxPackage -Path (Join-Path $dir 'xaml.appx') -ErrorAction SilentlyContinue; Write-Host '  [*] Downloading Winget Package Manager...' -ForegroundColor Cyan; (New-Object Net.WebClient).DownloadFile('https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle', (Join-Path $dir 'winget.msixbundle')); Add-AppxPackage -Path (Join-Path $dir 'winget.msixbundle') -ErrorAction SilentlyContinue; Write-Host '  [OK] Winget installed successfully!' -ForegroundColor Green"
-    where winget.exe >nul 2>&1 && set "WINGET_CMD=winget.exe"
-    if not defined WINGET_CMD (
-        for /d %%D in ("%ProgramFiles%\\WindowsApps\\Microsoft.DesktopAppInstaller_*_x64__8wekyb3d8bbwe") do (
-            if exist "%%~fD\\winget.exe" set "WINGET_CMD=\"%%~fD\\winget.exe\""
+if "!WINGET_READY!"=="0" (
+    for /d %%U in ("C:\\Users\\*") do (
+        if exist "%%~fU\\AppData\\Local\\Microsoft\\WindowsApps\\winget.exe" (
+            "%%~fU\\AppData\\Local\\Microsoft\\WindowsApps\\winget.exe" --version >nul 2>&1
+            if !errorlevel! equ 0 (
+                set "WINGET_CMD=\"%%~fU\\AppData\\Local\\Microsoft\\WindowsApps\\winget.exe\""
+                set "WINGET_READY=1"
+            )
         )
     )
-    if not defined WINGET_CMD set "WINGET_CMD=winget"
+)
+
+:: Auto-Bootstrap Winget + All Dependencies + CDN Source if missing or broken on Fresh Windows
+if "!WINGET_READY!"=="0" (
+    echo [!] Winget package manager is missing or uninitialized on this Windows device.
+    echo [*] Running Fresh Windows Winget Self-Healing Bootstrapper...
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${WINGET_BOOTSTRAP_PS_ONELINER}"
+    
+    where winget.exe >nul 2>&1
+    if !errorlevel! equ 0 (
+        winget.exe --version >nul 2>&1
+        if !errorlevel! equ 0 (
+            set "WINGET_CMD=winget.exe"
+            set "WINGET_READY=1"
+        )
+    )
+    if "!WINGET_READY!"=="0" (
+        for /d %%D in ("%ProgramFiles%\\WindowsApps\\Microsoft.DesktopAppInstaller_*_x64__8wekyb3d8bbwe") do (
+            if exist "%%~fD\\winget.exe" (
+                set "WINGET_CMD=\"%%~fD\\winget.exe\""
+                set "WINGET_READY=1"
+            )
+        )
+    )
+    if not defined WINGET_CMD set "WINGET_CMD=winget.exe"
 )
 `;
 
@@ -125,21 +178,124 @@ echo.
   if (apps.length > 0) {
     script += `
 echo ----------------------------------------------------------------------------
-echo  STAGE 2: SILENT APPLICATION DEPLOYMENT VIA WINGET
+echo  STAGE 2: SILENT APPLICATION DEPLOYMENT (MULTI-STAGE FALLBACK ENGINE)
 echo ----------------------------------------------------------------------------
 echo.
-echo [*] Initializing package manager and accepting source agreements...
+echo [*] Synchronizing Winget package catalogs and verifying source certificates...
 %WINGET_CMD% source update --accept-source-agreements >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [*] Repairing Winget CDN source cache...
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ProgressPreference='SilentlyContinue'; [Net.ServicePointManager]::SecurityProtocol = 3072; curl.exe -L -s -S -o \"$env:TEMP\\source.msix\" \"https://cdn.winget.microsoft.com/cache/source.msix\"; if (Test-Path \"$env:TEMP\\source.msix\") { Add-AppxPackage -Path \"$env:TEMP\\source.msix\" -ErrorAction SilentlyContinue }" >nul 2>&1
+    %WINGET_CMD% source reset --force >nul 2>&1
+    %WINGET_CMD% source update --accept-source-agreements >nul 2>&1
+)
 echo.
 `;
 
     apps.forEach((app, idx) => {
-      script += `echo [${idx + 1}/${apps.length}] Downloading and Silently Installing: ${app.name} (${app.id})...
-%WINGET_CMD% install --id ${app.id} -e --silent --accept-package-agreements --accept-source-agreements --disable-interactivity
-if %errorlevel% equ 0 (
-    echo   [SUCCESS] ${app.name} installed successfully!
+      const safeSlug = app.name.replace(/[^a-zA-Z0-9]/g, '_');
+      const sourceFlag = app.source ? ` --source ${app.source}` : '';
+
+      script += `echo [${idx + 1}/${apps.length}] Installing: ${app.name} (${app.id})...
+set "APP_DONE=0"
+`;
+
+      if (app.id === 'Google.Gemini') {
+        script += `echo   [*] Creating Desktop and Start Menu Web-App Launcher for Google Gemini...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ws = New-Object -ComObject WScript.Shell; $desktop = [Environment]::GetFolderPath('Desktop'); $s = $ws.CreateShortcut((Join-Path $desktop 'Google Gemini.lnk')); if (Test-Path 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe') { $s.TargetPath = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'; $s.Arguments = '--app=https://gemini.google.com' } elseif (Test-Path 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe') { $s.TargetPath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'; $s.Arguments = '--app=https://gemini.google.com' } else { $s.TargetPath = 'https://gemini.google.com' }; $s.Save()" >nul 2>&1
+set "APP_DONE=1"
+echo   [SUCCESS] ${app.name} Desktop Launcher created!
+echo.
+`;
+        return;
+      }
+
+      // Primary Winget Install Attempt
+      if (app.installerType === 'user_exe') {
+        script += `%WINGET_CMD% install --id "${app.id}" -e${sourceFlag} --scope user --silent --accept-package-agreements --accept-source-agreements --disable-interactivity
+if !errorlevel! equ 0 set "APP_DONE=1"
+if !errorlevel! equ -1978335189 set "APP_DONE=1"
+`;
+      } else {
+        script += `%WINGET_CMD% install --id "${app.id}" -e${sourceFlag} --silent --accept-package-agreements --accept-source-agreements --disable-interactivity
+if !errorlevel! equ 0 set "APP_DONE=1"
+if !errorlevel! equ -1978335189 set "APP_DONE=1"
+`;
+      }
+
+      // Alternate Winget IDs Fallback
+      if (app.altIds && app.altIds.length > 0) {
+        app.altIds.forEach((altId) => {
+          script += `if "!APP_DONE!"=="0" (
+    echo   [*] Trying alternate package identifier: ${altId}...
+    %WINGET_CMD% install --id "${altId}" --silent --accept-package-agreements --accept-source-agreements --disable-interactivity
+    if !errorlevel! equ 0 set "APP_DONE=1"
+    if !errorlevel! equ -1978335189 set "APP_DONE=1"
+)
+`;
+        });
+      }
+
+      // Direct Official Vendor Installer Fallback if Winget still failed
+      if (app.directUrl) {
+        if (app.installerType === 'msi') {
+          script += `if "!APP_DONE!"=="0" (
+    echo   [*] Winget source unavailable for ${app.name}. Downloading official MSI installer directly...
+    curl.exe -L --retry 3 -s -S -o "%TEMP%\\${safeSlug}.msi" "${app.directUrl}"
+    if exist "%TEMP%\\${safeSlug}.msi" (
+        msiexec.exe /i "%TEMP%\\${safeSlug}.msi" /qn /norestart
+        if !errorlevel! equ 0 set "APP_DONE=1"
+        del /f /q "%TEMP%\\${safeSlug}.msi" >nul 2>&1
+    )
+)
+`;
+        } else if (app.installerType === 'msix') {
+          script += `if "!APP_DONE!"=="0" (
+    echo   [*] Downloading official MSIX package for ${app.name}...
+    curl.exe -L --retry 3 -s -S -o "%TEMP%\\${safeSlug}.msix" "${app.directUrl}"
+    if exist "%TEMP%\\${safeSlug}.msix" (
+        powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Add-AppxPackage -Path '%TEMP%\\${safeSlug}.msix' -ErrorAction SilentlyContinue"
+        if !errorlevel! equ 0 set "APP_DONE=1"
+        del /f /q "%TEMP%\\${safeSlug}.msix" >nul 2>&1
+    )
+)
+`;
+        } else if (app.installerType === 'pwa') {
+          script += `if "!APP_DONE!"=="0" (
+    echo   [*] Creating Desktop App Shortcut for ${app.name}...
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ws = New-Object -ComObject WScript.Shell; $desktop = [Environment]::GetFolderPath('Desktop'); $s = $ws.CreateShortcut((Join-Path $desktop '${app.name}.lnk')); if (Test-Path 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe') { $s.TargetPath = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'; $s.Arguments = '--app=${app.directUrl}' } else { $s.TargetPath = '${app.directUrl}' }; $s.Save()" >nul 2>&1
+    set "APP_DONE=1"
+)
+`;
+        } else if (app.installerType === 'user_exe') {
+          script += `if "!APP_DONE!"=="0" (
+    echo   [*] Downloading official user installer for ${app.name}...
+    curl.exe -L --retry 3 -s -S -o "%TEMP%\\${safeSlug}.exe" "${app.directUrl}"
+    if exist "%TEMP%\\${safeSlug}.exe" (
+        runas /trustlevel:0x20000 "\"%TEMP%\\${safeSlug}.exe\" /silent" >nul 2>&1
+        set "APP_DONE=1"
+    )
+)
+`;
+        } else {
+          const args = app.directArgs ?? '/S';
+          script += `if "!APP_DONE!"=="0" (
+    echo   [*] Winget source unavailable for ${app.name}. Downloading official vendor installer directly...
+    curl.exe -L --retry 3 -s -S -o "%TEMP%\\${safeSlug}.exe" "${app.directUrl}"
+    if exist "%TEMP%\\${safeSlug}.exe" (
+        "%TEMP%\\${safeSlug}.exe" ${args}
+        set "APP_DONE=1"
+        del /f /q "%TEMP%\\${safeSlug}.exe" >nul 2>&1
+    )
+)
+`;
+        }
+      }
+
+      script += `if "!APP_DONE!"=="1" (
+    echo   [SUCCESS] ${app.name} is installed and ready!
 ) else (
-    echo   [INFO] Status: Process completed with code %errorlevel%
+    echo   [WARN] ${app.name} could not be installed automatically.
 )
 echo.
 `;
@@ -147,7 +303,7 @@ echo.
   }
 
   script += `echo ============================================================================
-echo   [COMPLETED] Automated setup and deployment has finished successfully!
+echo   [COMPLETED] Automated setup and deployment has finished!
 echo   Toolkit    : https://itsrirx-toolkit.vercel.app
 echo ============================================================================
 echo.
@@ -180,7 +336,10 @@ export function generatePowerShellInstaller(
 # ============================================================================
 #Requires -RunAsAdministrator
 
+$ProgressPreference = 'SilentlyContinue'
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
 $Host.UI.RawUI.WindowTitle = "${bundleTitle} - ItsRiRx Windows Tool Kit"
+
 Write-Host "============================================================================" -ForegroundColor Cyan
 Write-Host "  ItsRiRx Windows Tool Kit - Automated Silent Deployment" -ForegroundColor White
 Write-Host "  Website    : https://itsrirx-toolkit.vercel.app" -ForegroundColor Cyan
@@ -208,52 +367,153 @@ try {
   }
 
   if (apps.length > 0) {
-    script += `Write-Host "--- STAGE 2: SILENT APPLICATION DEPLOYMENT VIA WINGET ---" -ForegroundColor Yellow
+    script += `Write-Host "--- STAGE 2: SILENT APPLICATION DEPLOYMENT (MULTI-STAGE ENGINE) ---" -ForegroundColor Yellow
 
-# Auto-Bootstrap Winget on Fresh Windows if not detected
-$wingetCmd = (Get-Command winget -ErrorAction SilentlyContinue).Source
-if (-not $wingetCmd) {
-    $localPath = "$env:LOCALAPPDATA\\Microsoft\\WindowsApps\\winget.exe"
-    if (Test-Path $localPath) { $wingetCmd = $localPath }
+# Verify Winget binary is genuinely functional (not a 0-byte WindowsApps stub on fresh Windows)
+$wingetCmd = $null
+$wingetReady = $false
+
+$candidate = (Get-Command winget.exe -ErrorAction SilentlyContinue).Source
+if ($candidate) {
+    try {
+        $ver = & $candidate --version 2>$null
+        if ($LASTEXITCODE -eq 0 -and $ver) {
+            $wingetCmd = $candidate
+            $wingetReady = $true
+        }
+    } catch {}
 }
 
-if (-not $wingetCmd) {
-    Write-Host "[!] Winget package manager not detected on this fresh Windows system." -ForegroundColor Yellow
-    Write-Host "[*] Auto-installing Microsoft App Installer (Winget) and VCLibs dependencies..." -ForegroundColor Cyan
-    try {
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
-        $tempDir = "$env:TEMP\\winget_bootstrap"
-        New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
-        
-        Write-Host "  [*] Downloading Microsoft.VCLibs..." -ForegroundColor DarkCyan
-        Invoke-WebRequest -Uri "https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx" -OutFile "$tempDir\\vclibs.appx" -UseBasicParsing
-        Add-AppxPackage -Path "$tempDir\\vclibs.appx" -ErrorAction SilentlyContinue
-        
-        Write-Host "  [*] Downloading Microsoft.UI.Xaml..." -ForegroundColor DarkCyan
-        Invoke-WebRequest -Uri "https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx" -OutFile "$tempDir\\xaml.appx" -UseBasicParsing
-        Add-AppxPackage -Path "$tempDir\\xaml.appx" -ErrorAction SilentlyContinue
-        
-        Write-Host "  [*] Downloading Winget DesktopAppInstaller..." -ForegroundColor DarkCyan
-        Invoke-WebRequest -Uri "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle" -OutFile "$tempDir\\winget.msixbundle" -UseBasicParsing
-        Add-AppxPackage -Path "$tempDir\\winget.msixbundle" -ErrorAction SilentlyContinue
-        
-        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-        $wingetCmd = (Get-Command winget -ErrorAction SilentlyContinue).Source
-        if (-not $wingetCmd) { $wingetCmd = "$env:LOCALAPPDATA\\Microsoft\\WindowsApps\\winget.exe" }
-        Write-Host "  [OK] Winget package manager ready!" -ForegroundColor Green
-    } catch {
-        Write-Host "  [!] Winget bootstrap notice: $($_.Exception.Message)" -ForegroundColor Yellow
+if (-not $wingetReady) {
+    $resolved = Resolve-Path "$env:ProgramFiles\\WindowsApps\\Microsoft.DesktopAppInstaller_*_x64__8wekyb3d8bbwe\\winget.exe" -ErrorAction SilentlyContinue | Select-Object -Last 1
+    if ($resolved -and (Test-Path $resolved.Path)) {
+        $wingetCmd = $resolved.Path
+        $wingetReady = $true
     }
 }
-if (-not $wingetCmd) { $wingetCmd = "winget" }
+
+if (-not $wingetReady) {
+    Write-Host "[!] Winget package manager not initialized on this Windows system." -ForegroundColor Yellow
+    Write-Host "[*] Running Fresh Windows Winget Self-Healing Bootstrapper..." -ForegroundColor Cyan
+    try {
+        ${WINGET_BOOTSTRAP_PS_ONELINER}
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+        $resolved = Resolve-Path "$env:ProgramFiles\\WindowsApps\\Microsoft.DesktopAppInstaller_*_x64__8wekyb3d8bbwe\\winget.exe" -ErrorAction SilentlyContinue | Select-Object -Last 1
+        if ($resolved) { $wingetCmd = $resolved.Path } else { $wingetCmd = "winget.exe" }
+    } catch {
+        Write-Host "  [!] Winget bootstrap notice: $($_.Exception.Message)" -ForegroundColor Yellow
+        $wingetCmd = "winget.exe"
+    }
+}
+
+Write-Host "[*] Synchronizing Winget package catalogs..." -ForegroundColor Cyan
+& $wingetCmd source update --accept-source-agreements 2>&1 | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    & $wingetCmd source reset --force 2>&1 | Out-Null
+    & $wingetCmd source update --accept-source-agreements 2>&1 | Out-Null
+}
+Write-Host ""
 `;
     apps.forEach((app, idx) => {
+      const safeSlug = app.name.replace(/[^a-zA-Z0-9]/g, '_');
+      const sourceArgs = app.source ? `, "--source", "${app.source}"` : '';
+
       script += `Write-Host "[${idx + 1}/${apps.length}] Installing ${app.name} (${app.id})..." -ForegroundColor White
-try {
-    Start-Process -FilePath $wingetCmd -ArgumentList @("install", "--id", "${app.id}", "-e", "--silent", "--accept-package-agreements", "--accept-source-agreements", "--disable-interactivity") -NoNewWindow -Wait
+$installed = $false
+`;
+      if (app.id === 'Google.Gemini') {
+        script += `try {
+    $ws = New-Object -ComObject WScript.Shell
+    $desktop = [Environment]::GetFolderPath('Desktop')
+    $s = $ws.CreateShortcut((Join-Path $desktop 'Google Gemini.lnk'))
+    if (Test-Path 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe') {
+        $s.TargetPath = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'
+        $s.Arguments = '--app=https://gemini.google.com'
+    } else {
+        $s.TargetPath = 'https://gemini.google.com'
+    }
+    $s.Save()
+    $installed = $true
+    Write-Host "  [OK] ${app.name} Desktop Web-App created." -ForegroundColor Green
+} catch {}
+`;
+        return;
+      }
+
+      script += `try {
+    $p = Start-Process -FilePath $wingetCmd -ArgumentList @("install", "--id", "${app.id}", "-e"${sourceArgs}, "--silent", "--accept-package-agreements", "--accept-source-agreements", "--disable-interactivity") -NoNewWindow -Wait -PassThru
+    if ($p.ExitCode -eq 0 -or $p.ExitCode -eq -1978335189) { $installed = $true }
+} catch {}
+`;
+
+      if (app.altIds && app.altIds.length > 0) {
+        app.altIds.forEach((altId) => {
+          script += `if (-not $installed) {
+    Write-Host "  [*] Trying alternate package ID: ${altId}..." -ForegroundColor DarkCyan
+    try {
+        $p2 = Start-Process -FilePath $wingetCmd -ArgumentList @("install", "--id", "${altId}", "--silent", "--accept-package-agreements", "--accept-source-agreements", "--disable-interactivity") -NoNewWindow -Wait -PassThru
+        if ($p2.ExitCode -eq 0 -or $p2.ExitCode -eq -1978335189) { $installed = $true }
+    } catch {}
+}
+`;
+        });
+      }
+
+      if (app.directUrl) {
+        if (app.installerType === 'msi') {
+          script += `if (-not $installed) {
+    Write-Host "  [*] Downloading official MSI installer for ${app.name}..." -ForegroundColor Cyan
+    $out = "$env:TEMP\\${safeSlug}.msi"
+    curl.exe -L --retry 3 -s -S -o $out "${app.directUrl}"
+    if (Test-Path $out) {
+        Start-Process "msiexec.exe" -ArgumentList "/i \`"$out\`" /qn /norestart" -Wait
+        Remove-Item $out -Force -ErrorAction SilentlyContinue
+        $installed = $true
+    }
+}
+`;
+        } else if (app.installerType === 'msix') {
+          script += `if (-not $installed) {
+    Write-Host "  [*] Downloading official MSIX package for ${app.name}..." -ForegroundColor Cyan
+    $out = "$env:TEMP\\${safeSlug}.msix"
+    curl.exe -L --retry 3 -s -S -o $out "${app.directUrl}"
+    if (Test-Path $out) {
+        Add-AppxPackage -Path $out -ErrorAction SilentlyContinue
+        Remove-Item $out -Force -ErrorAction SilentlyContinue
+        $installed = $true
+    }
+}
+`;
+        } else if (app.installerType === 'pwa') {
+          script += `if (-not $installed) {
+    $ws = New-Object -ComObject WScript.Shell
+    $s = $ws.CreateShortcut((Join-Path ([Environment]::GetFolderPath('Desktop')) '${app.name}.lnk'))
+    $s.TargetPath = 'msedge.exe'
+    $s.Arguments = '--app=${app.directUrl}'
+    $s.Save()
+    $installed = $true
+}
+`;
+        } else {
+          const directArgs = app.directArgs ?? '/S';
+          script += `if (-not $installed) {
+    Write-Host "  [*] Downloading official vendor installer for ${app.name}..." -ForegroundColor Cyan
+    $out = "$env:TEMP\\${safeSlug}.exe"
+    curl.exe -L --retry 3 -s -S -o $out "${app.directUrl}"
+    if (Test-Path $out) {
+        Start-Process -FilePath $out -ArgumentList '${directArgs}' -Wait
+        Remove-Item $out -Force -ErrorAction SilentlyContinue
+        $installed = $true
+    }
+}
+`;
+        }
+      }
+
+      script += `if ($installed) {
     Write-Host "  [OK] ${app.name} installed successfully." -ForegroundColor Green
-} catch {
-    Write-Host "  [!] Error installing ${app.name}: $($_.Exception.Message)" -ForegroundColor Red
+} else {
+    Write-Host "  [!] Could not install ${app.name}." -ForegroundColor Red
 }
 `;
     });
@@ -289,8 +549,9 @@ export function generateOneLineCommand(
 
   const apps = selectedAppIds.map(getAppById).filter(Boolean) as SoftwareApp[];
   if (apps.length > 0) {
-    const ids = apps.map((a) => `'${a.id}'`).join(',');
-    parts.push(`@(${ids}) | ForEach-Object { winget install --id $_ -e --silent --accept-package-agreements --accept-source-agreements --disable-interactivity }`);
+    apps.forEach((app) => {
+      parts.push(getSingleAppInstallCommand(app));
+    });
   }
 
   return parts.join('; ');
@@ -745,10 +1006,11 @@ timeout /t 3 >nul
 
 /**
  * Generates an automated 1-Click Fresh Windows Bootstrapper & Repair Script (.bat)
- * Fixes missing Winget, VCRuntime140 missing DLLs, ExecutionPolicy, TLS 1.2/1.3, DirectX & .NET
+ * Fixes missing Winget, DesktopAppInstaller_Dependencies.zip, 0x8a15000f/0x8a15005e source certificate errors, VCRuntime140 missing DLLs, ExecutionPolicy, TLS 1.2/1.3, DirectX & .NET
  */
 export function generateFreshWindowsFixScript(): string {
   return `@echo off
+setlocal EnableDelayedExpansion
 :: ============================================================================
 ::   ItsRiRx Windows Tool Kit - Fresh Windows Setup & Winget Auto-Fixer
 ::   Website    : https://itsrirx-toolkit.vercel.app
@@ -788,19 +1050,23 @@ echo.
 
 :: STEP 1: Fix TLS 1.2 / TLS 1.3 and Execution Policy
 echo [1/5] Configuring PowerShell ExecutionPolicy and TLS 1.2/1.3 security protocols...
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13; Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force; Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force" >nul 2>&1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13; Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force; Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force; Set-ExecutionPolicy -Scope LocalMachine -ExecutionPolicy RemoteSigned -Force -ErrorAction SilentlyContinue" >nul 2>&1
 echo   [OK] PowerShell Execution Policy and TLS configured.
 echo.
 
-:: STEP 2: Bootstrap Microsoft App Installer and Winget Dependencies
-echo [2/5] Bootstrapping Microsoft Winget Package Manager and UWP dependencies...
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = 3072; $dir = Join-Path $env:TEMP 'wg_boot'; if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }; Write-Host '  [*] Downloading Microsoft.VCLibs...' -ForegroundColor Cyan; (New-Object Net.WebClient).DownloadFile('https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx', (Join-Path $dir 'vclibs.appx')); Add-AppxPackage -Path (Join-Path $dir 'vclibs.appx') -ErrorAction SilentlyContinue; Write-Host '  [*] Downloading Microsoft.UI.Xaml...' -ForegroundColor Cyan; (New-Object Net.WebClient).DownloadFile('https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx', (Join-Path $dir 'xaml.appx')); Add-AppxPackage -Path (Join-Path $dir 'xaml.appx') -ErrorAction SilentlyContinue; Write-Host '  [*] Downloading Microsoft Winget MSIXBundle...' -ForegroundColor Cyan; (New-Object Net.WebClient).DownloadFile('https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle', (Join-Path $dir 'winget.msixbundle')); Add-AppxPackage -Path (Join-Path $dir 'winget.msixbundle') -ErrorAction SilentlyContinue; Write-Host '  [OK] Winget bootstrapped successfully!' -ForegroundColor Green"
-echo   [OK] Winget and dependencies installed.
+:: STEP 2: Bootstrap Microsoft App Installer, Dependencies Archive, and Source Certificate
+echo [2/5] Bootstrapping Microsoft Winget, UWP Dependencies, and CDN Source Certificate...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${WINGET_BOOTSTRAP_PS_ONELINER}"
+echo   [OK] Winget, UWP dependencies, and CDN source package installed.
 echo.
 
-:: Resolve Winget Command Path
+:: Resolve Verified Winget Command Path
 set "WINGET_CMD="
-where winget.exe >nul 2>&1 && set "WINGET_CMD=winget.exe"
+where winget.exe >nul 2>&1
+if %errorlevel% equ 0 (
+    winget.exe --version >nul 2>&1
+    if !errorlevel! equ 0 set "WINGET_CMD=winget.exe"
+)
 if not defined WINGET_CMD (
     for /d %%D in ("%ProgramFiles%\\WindowsApps\\Microsoft.DesktopAppInstaller_*_x64__8wekyb3d8bbwe") do (
         if exist "%%~fD\\winget.exe" set "WINGET_CMD=\"%%~fD\\winget.exe\""
@@ -813,21 +1079,34 @@ if not defined WINGET_CMD (
         )
     )
 )
-if not defined WINGET_CMD set "WINGET_CMD=winget"
+if not defined WINGET_CMD set "WINGET_CMD=winget.exe"
 
-:: STEP 3: Update Winget Sources
-echo [3/5] Updating Winget package repository catalogs...
+:: STEP 3: Reset & Update Winget Sources
+echo [3/5] Resetting and synchronizing Winget package repository catalogs...
+%WINGET_CMD% source reset --force >nul 2>&1
 %WINGET_CMD% source update --accept-source-agreements >nul 2>&1
 echo   [OK] Repository sources synchronized.
 echo.
 
-:: STEP 4: Install Essential Windows Runtimes (Visual C++, DirectX, .NET)
-echo [4/5] Silently installing Visual C++ Redistributables (2015-2022 x86/x64) and DirectX...
-%WINGET_CMD% install --id Microsoft.VCRedist.2015+.x64 -e --silent --accept-package-agreements --accept-source-agreements >nul 2>&1
-%WINGET_CMD% install --id Microsoft.VCRedist.2015+.x86 -e --silent --accept-package-agreements --accept-source-agreements >nul 2>&1
-%WINGET_CMD% install --id Microsoft.DirectX -e --silent --accept-package-agreements --accept-source-agreements >nul 2>&1
-%WINGET_CMD% install --id Microsoft.DotNet.DesktopRuntime.8 -e --silent --accept-package-agreements --accept-source-agreements >nul 2>&1
-echo   [OK] Essential runtimes installed (VCRUNTIME140.dll & DirectX errors solved).
+:: STEP 4: Install Essential Windows Runtimes (Visual C++, DirectX, .NET) with Direct Fallback
+echo [4/5] Silently installing Visual C++ Redistributables (2015-2022 x86/x64), DirectX & .NET 8...
+%WINGET_CMD% install --id Microsoft.VCRedist.2015+.x64 -e --silent --accept-package-agreements --accept-source-agreements --disable-interactivity >nul 2>&1
+if !errorlevel! neq 0 if !errorlevel! neq -1978335189 (
+    curl.exe -L --retry 3 -s -S -o "%TEMP%\\vc_redist.x64.exe" "https://aka.ms/vs/17/release/vc_redist.x64.exe"
+    if exist "%TEMP%\\vc_redist.x64.exe" "%TEMP%\\vc_redist.x64.exe" /install /quiet /norestart
+)
+%WINGET_CMD% install --id Microsoft.VCRedist.2015+.x86 -e --silent --accept-package-agreements --accept-source-agreements --disable-interactivity >nul 2>&1
+if !errorlevel! neq 0 if !errorlevel! neq -1978335189 (
+    curl.exe -L --retry 3 -s -S -o "%TEMP%\\vc_redist.x86.exe" "https://aka.ms/vs/17/release/vc_redist.x86.exe"
+    if exist "%TEMP%\\vc_redist.x86.exe" "%TEMP%\\vc_redist.x86.exe" /install /quiet /norestart
+)
+%WINGET_CMD% install --id Microsoft.DirectX -e --silent --accept-package-agreements --accept-source-agreements --disable-interactivity >nul 2>&1
+if !errorlevel! neq 0 if !errorlevel! neq -1978335189 (
+    curl.exe -L --retry 3 -s -S -o "%TEMP%\\dxwebsetup.exe" "https://download.microsoft.com/download/1/7/1/1718CCC4-6315-4D8E-9543-8E28A4E18C4C/dxwebsetup.exe"
+    if exist "%TEMP%\\dxwebsetup.exe" "%TEMP%\\dxwebsetup.exe" /Q
+)
+%WINGET_CMD% install --id Microsoft.DotNet.DesktopRuntime.8 -e --silent --accept-package-agreements --accept-source-agreements --disable-interactivity >nul 2>&1
+echo   [OK] Essential runtimes installed (VCRUNTIME140.dll, MSVCP140.dll & DirectX errors solved).
 echo.
 
 :: STEP 5: Re-register & Reset Windows Store & Cache

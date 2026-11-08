@@ -24,16 +24,21 @@ const SIMPLE_ICONS_MAP: Record<string, { slug: string; color: string }> = {
   'Figma.Figma': { slug: 'figma', color: 'F24E1E' },
   'Canva.Canva': { slug: 'canva', color: '00C4CC' },
   'GIMP.GIMP': { slug: 'gimp', color: '5C5543' },
+  'GIMP.GIMP.3': { slug: 'gimp', color: '5C5543' },
   'Inkscape.Inkscape': { slug: 'inkscape', color: '000000' },
   'BlenderFoundation.Blender': { slug: 'blender', color: 'F5792A' },
   'OpenAI.ChatGPT': { slug: 'openai', color: '10A37F' },
   'Google.Gemini': { slug: 'googlegemini', color: '8E75FF' },
   'Anthropic.Claude': { slug: 'anthropic', color: 'D97757' },
   'Microsoft.Copilot': { slug: 'microsoftcopilot', color: '0078D4' },
+  '9NHT9RB2F4HD': { slug: 'microsoftcopilot', color: '0078D4' },
   'Perplexity.Perplexity': { slug: 'perplexity', color: '20B2AA' },
+  'Perplexity.Comet': { slug: 'perplexity', color: '20B2AA' },
   'Duplicati.Duplicati': { slug: 'duplicati', color: '2077B4' },
   'Macrium.ReflectFree': { slug: 'microsoftexchange', color: '0078D4' },
+  'Hasleo.HasleoBackupSuite': { slug: 'microsoftexchange', color: '0078D4' },
   'EaseUS.TodoBackupFree': { slug: 'serverless', color: 'FD5750' },
+  'EaseUS.TodoBackup': { slug: 'serverless', color: 'FD5750' },
   'CPUID.CPU-Z': { slug: 'cpu', color: '6B21A8' },
   'TechPowerUp.GPU-Z': { slug: 'nvidia', color: '76B900' },
   'CrystalDewWorld.CrystalDiskInfo': { slug: 'harddrive', color: '0284C7' },
@@ -43,11 +48,14 @@ const SIMPLE_ICONS_MAP: Record<string, { slug: string; color: string }> = {
   'Insecure.Nmap': { slug: 'nmap', color: '2563EB' },
   'WinSCP.WinSCP': { slug: 'files', color: '2563EB' },
   'AdvancedIPScanner.AdvancedIPScanner': { slug: 'radar', color: '0D9488' },
+  'Famatech.AdvancedIPScanner': { slug: 'radar', color: '0D9488' },
   'Tonec.InternetDownloadManager': { slug: 'download', color: '16A34A' },
   'FreeDownloadManager.FreeDownloadManager': { slug: 'fdroid', color: '1976D2' },
+  'SoftDeluxe.FreeDownloadManager': { slug: 'fdroid', color: '1976D2' },
   'qBittorrent.qBittorrent': { slug: 'qbittorrent', color: '2F679F' },
   'dbeaver.dbeaver': { slug: 'dbeaver', color: '382923' },
   'FileZilla.FileZilla': { slug: 'filezilla', color: 'BF0000' },
+  'TimKosse.FileZilla.Client': { slug: 'filezilla', color: 'BF0000' },
   'PostgreSQL.pgAdmin': { slug: 'postgresql', color: '4169E1' },
   'Google.Chrome': { slug: 'googlechrome', color: '4285F4' },
   'Mozilla.Firefox': { slug: 'firefox', color: 'FF7139' },
@@ -58,6 +66,7 @@ const SIMPLE_ICONS_MAP: Record<string, { slug: string; color: string }> = {
   'Microsoft.VisualStudioCode.Insiders': { slug: 'visualstudiocode', color: '22A565' },
   'Git.Git': { slug: 'git', color: 'F05032' },
   'Python.Python.3.14': { slug: 'python', color: '3776AB' },
+  'Python.Python.3.13': { slug: 'python', color: '3776AB' },
   'OpenJS.NodeJS.LTS': { slug: 'nodedotjs', color: '5FA04E' },
   'VideoLAN.VLC': { slug: 'vlcmediaplayer', color: 'FF8800' },
   'Spotify.Spotify': { slug: 'spotify', color: '1ED760' },
@@ -73,7 +82,9 @@ const SIMPLE_ICONS_MAP: Record<string, { slug: string; color: string }> = {
   'ShareX.ShareX': { slug: 'sharex', color: '1888CC' },
   'File-New-Project.EarTrumpet': { slug: 'windows', color: '1E88E5' },
   'OmicronLab.Avro': { slug: 'keyboard', color: '059669' },
+  'OmicronLab.AvroKeyboard': { slug: 'keyboard', color: '059669' },
   'WhatsApp.WhatsApp': { slug: 'whatsapp', color: '25D366' },
+  '9NKSQGP7F2NH': { slug: 'whatsapp', color: '25D366' },
   'Telegram.TelegramDesktop': { slug: 'telegram', color: '26A5E4' },
   'Discord.Discord': { slug: 'discord', color: '5865F2' },
   'Zoom.Zoom': { slug: 'zoom', color: '0B5CFF' },
@@ -84,7 +95,9 @@ const SIMPLE_ICONS_MAP: Record<string, { slug: string; color: string }> = {
   'ElectronicArts.EADesktop': { slug: 'ea', color: 'FF4747' },
   'Ubisoft.Connect': { slug: 'ubisoft', color: '000000' },
   'RiotGames.RiotClient': { slug: 'riotgames', color: 'D32936' },
+  'RiotGames.Valorant.AP': { slug: 'riotgames', color: 'D32936' },
   'Microsoft.GamingApp': { slug: 'xbox', color: '107C10' },
+  '9MV0B5HZVK9Z': { slug: 'xbox', color: '107C10' },
   'Bitwarden.Bitwarden': { slug: 'bitwarden', color: '175DDC' },
   'Malwarebytes.Malwarebytes': { slug: 'malwarebytes', color: '0069B4' },
   'Proton.ProtonVPN': { slug: 'protonvpn', color: '6D4AFF' }
@@ -346,6 +359,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, name, className = 'w-14 h-
 
     // WhatsApp
     case 'WhatsApp.WhatsApp':
+    case '9NKSQGP7F2NH':
       return (
         <svg viewBox="0 0 100 100" className={className}>
           <circle cx="50" cy="50" r="46" fill="#25D366" />
@@ -371,6 +385,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, name, className = 'w-14 h-
 
     // Python
     case 'Python.Python.3.14':
+    case 'Python.Python.3.13':
       return (
         <svg viewBox="0 0 100 100" className={className}>
           <path
@@ -476,6 +491,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, name, className = 'w-14 h-
 
     // GIMP
     case 'GIMP.GIMP':
+    case 'GIMP.GIMP.3':
       return (
         <svg viewBox="0 0 100 100" className={className}>
           <rect width="100" height="100" rx="22" fill="#5C5543" />
@@ -537,6 +553,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, name, className = 'w-14 h-
 
     // Microsoft Copilot
     case 'Microsoft.Copilot':
+    case '9NHT9RB2F4HD':
       return (
         <svg viewBox="0 0 100 100" className={className}>
           <defs>
@@ -556,6 +573,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, name, className = 'w-14 h-
 
     // Perplexity AI
     case 'Perplexity.Perplexity':
+    case 'Perplexity.Comet':
       return (
         <svg viewBox="0 0 100 100" className={className}>
           <rect width="100" height="100" rx="22" fill="#20B2AA" />
@@ -724,6 +742,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, name, className = 'w-14 h-
 
     // Advanced IP Scanner
     case 'AdvancedIPScanner.AdvancedIPScanner':
+    case 'Famatech.AdvancedIPScanner':
       return (
         <svg viewBox="0 0 100 100" className={className}>
           <circle cx="50" cy="50" r="46" fill="#0D9488" />
@@ -746,6 +765,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, name, className = 'w-14 h-
 
     // Free Download Manager (FDM)
     case 'FreeDownloadManager.FreeDownloadManager':
+    case 'SoftDeluxe.FreeDownloadManager':
       return (
         <svg viewBox="0 0 100 100" className={className}>
           <circle cx="50" cy="50" r="46" fill="#2563EB" />
@@ -779,6 +799,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, name, className = 'w-14 h-
 
     // FileZilla
     case 'FileZilla.FileZilla':
+    case 'TimKosse.FileZilla.Client':
       return (
         <svg viewBox="0 0 100 100" className={className}>
           <rect width="100" height="100" rx="22" fill="#BF0000" />
@@ -860,6 +881,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, name, className = 'w-14 h-
 
     // Avro Keyboard
     case 'OmicronLab.Avro':
+    case 'OmicronLab.AvroKeyboard':
       return (
         <svg viewBox="0 0 100 100" className={className}>
           <circle cx="50" cy="50" r="46" fill="#059669" />
@@ -906,6 +928,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, name, className = 'w-14 h-
 
     // Riot Client
     case 'RiotGames.RiotClient':
+    case 'RiotGames.Valorant.AP':
       return (
         <svg viewBox="0 0 100 100" className={className}>
           <rect width="100" height="100" rx="22" fill="#D32936" />
@@ -915,6 +938,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, name, className = 'w-14 h-
 
     // Xbox App
     case 'Microsoft.GamingApp':
+    case '9MV0B5HZVK9Z':
       return (
         <svg viewBox="0 0 100 100" className={className}>
           <circle cx="50" cy="50" r="46" fill="#107C10" />
@@ -964,6 +988,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, name, className = 'w-14 h-
 
     // Macrium Reflect
     case 'Macrium.ReflectFree':
+    case 'Hasleo.HasleoBackupSuite':
       return (
         <svg viewBox="0 0 100 100" className={className}>
           <rect width="100" height="100" rx="22" fill="#0078D4" />
@@ -974,6 +999,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, name, className = 'w-14 h-
 
     // EaseUS Todo Backup
     case 'EaseUS.TodoBackupFree':
+    case 'EaseUS.TodoBackup':
       return (
         <svg viewBox="0 0 100 100" className={className}>
           <circle cx="50" cy="50" r="46" fill="#F97316" />

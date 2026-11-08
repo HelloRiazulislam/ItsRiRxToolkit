@@ -21,6 +21,7 @@ import {
   generateBatchInstaller,
   generatePowerShellInstaller,
   generateOneLineCommand,
+  getSingleAppInstallCommand,
   triggerFileDownload
 } from '../utils/scriptGenerator';
 
@@ -116,7 +117,8 @@ export const SoftwareInstallerTab: React.FC<SoftwareInstallerTabProps> = ({
         app.name.toLowerCase().includes(q) ||
         app.desc.toLowerCase().includes(q) ||
         app.category.toLowerCase().includes(q) ||
-        app.id.toLowerCase().includes(q);
+        app.id.toLowerCase().includes(q) ||
+        (app.altIds && app.altIds.some((alt) => alt.toLowerCase().includes(q)));
 
       return matchesCategory && matchesSearch;
     });
@@ -177,10 +179,10 @@ export const SoftwareInstallerTab: React.FC<SoftwareInstallerTabProps> = ({
 
   const handleCopySingleApp = (app: SoftwareApp, e: React.MouseEvent) => {
     e.stopPropagation();
-    const cmd = `winget install --id ${app.id} -e --silent --accept-package-agreements --accept-source-agreements --disable-interactivity`;
+    const cmd = getSingleAppInstallCommand(app);
     navigator.clipboard.writeText(cmd);
     setCopiedAppId(app.id);
-    onNotify(`Copied Winget command for ${app.name}!`);
+    onNotify(`Copied install command for ${app.name}!`);
     setTimeout(() => setCopiedAppId(null), 2000);
   };
 

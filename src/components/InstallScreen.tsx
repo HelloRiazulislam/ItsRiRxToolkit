@@ -59,7 +59,7 @@ export const InstallScreen: React.FC<InstallScreenProps> = ({
   const [copied, setCopied] = useState<boolean>(false);
 
   const selectedAppObjects = selectedApps
-    .map((id) => SOFTWARE_APPS.find((a) => a.id === id))
+    .map((id) => SOFTWARE_APPS.find((a) => a.id === id || (a.altIds && a.altIds.includes(id))))
     .filter(Boolean) as SoftwareApp[];
 
   const selectedTweakObjects = selectedTweaks
@@ -70,7 +70,7 @@ export const InstallScreen: React.FC<InstallScreenProps> = ({
 
   const removeApp = (id: string) => {
     setSelectedApps((prev) => prev.filter((item) => item !== id));
-    const app = SOFTWARE_APPS.find((a) => a.id === id);
+    const app = SOFTWARE_APPS.find((a) => a.id === id || (a.altIds && a.altIds.includes(id)));
     if (app) onNotify(`Removed ${app.name}`);
   };
 
@@ -141,20 +141,40 @@ export const InstallScreen: React.FC<InstallScreenProps> = ({
 
   const oneLineCommand = generateOneLineCommand(selectedApps, tweaksToInclude);
 
+  const wingetAppsList = selectedAppObjects.filter((a) => a.source !== 'msstore' && a.id !== 'Google.Gemini');
+  const msstoreAppsList = selectedAppObjects.filter((a) => a.source === 'msstore');
+
   const wingetJsonExport = JSON.stringify(
     {
       $schema: 'https://aka.ms/winget-packages.schema.2.0.json',
       CreationDate: new Date().toISOString(),
       Sources: [
-        {
-          Packages: selectedApps.map((id) => ({ PackageIdentifier: id })),
-          SourceDetails: {
-            Argument: 'https://cdn.winget.microsoft.com/cache',
-            Identifier: 'Microsoft.Winget.Source_8wekyb3d8bbwe',
-            Name: 'winget',
-            Type: 'Microsoft.PreIndexed.Package'
-          }
-        }
+        ...(wingetAppsList.length > 0
+          ? [
+              {
+                Packages: wingetAppsList.map((a) => ({ PackageIdentifier: a.id })),
+                SourceDetails: {
+                  Argument: 'https://cdn.winget.microsoft.com/cache',
+                  Identifier: 'Microsoft.Winget.Source_8wekyb3d8bbwe',
+                  Name: 'winget',
+                  Type: 'Microsoft.PreIndexed.Package'
+                }
+              }
+            ]
+          : []),
+        ...(msstoreAppsList.length > 0
+          ? [
+              {
+                Packages: msstoreAppsList.map((a) => ({ PackageIdentifier: a.id })),
+                SourceDetails: {
+                  Argument: 'https://storeedgefd.dsx.mp.microsoft.com/v9.0',
+                  Identifier: 'StoreEdgeFD',
+                  Name: 'msstore',
+                  Type: 'Microsoft.Rest'
+                }
+              }
+            ]
+          : [])
       ]
     },
     null,

@@ -5,6 +5,11 @@ export interface SoftwareApp {
   desc: string;
   icon: string;
   popular?: boolean;
+  altIds?: string[];
+  source?: 'winget' | 'msstore';
+  directUrl?: string;
+  directArgs?: string;
+  installerType?: 'exe' | 'msi' | 'msix' | 'pwa' | 'user_exe';
 }
 
 export interface SystemTweak {
@@ -41,118 +46,788 @@ export const CATEGORIES = [
 
 export const SOFTWARE_APPS: SoftwareApp[] = [
   // 1. Office & Productivity
-  { id: 'Microsoft.Office', name: 'Microsoft 365', category: 'Office & Productivity', desc: 'Word, Excel, PowerPoint, Outlook & cloud collaboration tools', icon: 'FileText', popular: true },
-  { id: 'Kingsoft.WPSOffice', name: 'WPS Office', category: 'Office & Productivity', desc: 'All-in-one lightweight office suite with PDF and templates', icon: 'FileText', popular: true },
-  { id: 'TheDocumentFoundation.LibreOffice', name: 'LibreOffice', category: 'Office & Productivity', desc: 'Free, powerful and open source complete office productivity suite', icon: 'FileText', popular: true },
-  { id: 'Notepad++.Notepad++', name: 'Notepad++', category: 'Office & Productivity', desc: 'Ultra-fast tabbed text and source code editor with syntax highlighting', icon: 'Code2', popular: true },
-  { id: 'Adobe.Acrobat.Reader.64-bit', name: 'Adobe Acrobat Reader', category: 'Office & Productivity', desc: 'Standard reliable PDF viewer, printing and form annotating software', icon: 'FileText', popular: true },
+  {
+    id: 'Microsoft.Office',
+    name: 'Microsoft 365',
+    category: 'Office & Productivity',
+    desc: 'Word, Excel, PowerPoint, Outlook & cloud collaboration tools',
+    icon: 'FileText',
+    popular: true,
+    altIds: ['9WZDNCRD29V9']
+  },
+  {
+    id: 'Kingsoft.WPSOffice',
+    name: 'WPS Office',
+    category: 'Office & Productivity',
+    desc: 'All-in-one lightweight office suite with PDF and templates',
+    icon: 'FileText',
+    popular: true,
+    altIds: ['XP9M5KQVZM2MZ2']
+  },
+  {
+    id: 'TheDocumentFoundation.LibreOffice',
+    name: 'LibreOffice',
+    category: 'Office & Productivity',
+    desc: 'Free, powerful and open source complete office productivity suite',
+    icon: 'FileText',
+    popular: true
+  },
+  {
+    id: 'Notepad++.Notepad++',
+    name: 'Notepad++',
+    category: 'Office & Productivity',
+    desc: 'Ultra-fast tabbed text and source code editor with syntax highlighting',
+    icon: 'Code2',
+    popular: true,
+    directUrl: 'https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.7.7/npp.8.7.7.Installer.x64.exe',
+    directArgs: '/S'
+  },
+  {
+    id: 'Adobe.Acrobat.Reader.64-bit',
+    name: 'Adobe Acrobat Reader',
+    category: 'Office & Productivity',
+    desc: 'Standard reliable PDF viewer, printing and form annotating software',
+    icon: 'FileText',
+    popular: true,
+    altIds: ['Adobe.Acrobat.Reader.32-bit', 'XPDP273C0XHQH2']
+  },
 
   // 2. Cloud & Storage
-  { id: 'Google.GoogleDrive', name: 'Google Drive', category: 'Cloud & Storage', desc: 'Seamless cloud file backup and virtual drive synchronization', icon: 'Cloud', popular: true },
-  { id: 'Microsoft.OneDrive', name: 'OneDrive', category: 'Cloud & Storage', desc: 'Microsoft cloud file hosting, backup and device sync service', icon: 'Cloud', popular: true },
-  { id: 'Dropbox.Dropbox', name: 'Dropbox', category: 'Cloud & Storage', desc: 'Secure cloud storage, file sharing and collaboration workspace', icon: 'Cloud' },
-  { id: 'Mega.MEGAsync', name: 'MEGA', category: 'Cloud & Storage', desc: 'Encrypted cloud storage with 20GB free storage and auto-sync', icon: 'Cloud', popular: true },
+  {
+    id: 'Google.GoogleDrive',
+    name: 'Google Drive',
+    category: 'Cloud & Storage',
+    desc: 'Seamless cloud file backup and virtual drive synchronization',
+    icon: 'Cloud',
+    popular: true,
+    directUrl: 'https://dl.google.com/drive-file-stream/GoogleDriveSetup.exe',
+    directArgs: '--silent --desktop_shortcut'
+  },
+  {
+    id: 'Microsoft.OneDrive',
+    name: 'Microsoft OneDrive',
+    category: 'Cloud & Storage',
+    desc: 'Microsoft cloud file hosting, backup and device sync service',
+    icon: 'Cloud',
+    popular: true,
+    directUrl: 'https://go.microsoft.com/fwlink/?linkid=844652',
+    directArgs: '/silent'
+  },
+  {
+    id: 'Dropbox.Dropbox',
+    name: 'Dropbox',
+    category: 'Cloud & Storage',
+    desc: 'Secure cloud storage, file sharing and collaboration workspace',
+    icon: 'Cloud',
+    directUrl: 'https://www.dropbox.com/download?plat=win&type=full',
+    directArgs: '/S'
+  },
+  {
+    id: 'Mega.MEGAsync',
+    name: 'MEGA',
+    category: 'Cloud & Storage',
+    desc: 'Encrypted cloud storage with 20GB free storage and auto-sync',
+    icon: 'Cloud',
+    popular: true,
+    directUrl: 'https://mega.nz/MEGAsyncSetup64.exe',
+    directArgs: '/S'
+  },
 
   // 3. Remote Access
-  { id: 'AnyDeskSoftwareGmbH.AnyDesk', name: 'AnyDesk', category: 'Remote Access', desc: 'Ultra-low latency secure remote desktop connection software', icon: 'Monitor', popular: true },
-  { id: 'TeamViewer.TeamViewer', name: 'TeamViewer', category: 'Remote Access', desc: 'Global remote desktop access, screen sharing and IT support', icon: 'Monitor', popular: true },
-  { id: 'RustDesk.RustDesk', name: 'RustDesk', category: 'Remote Access', desc: 'Open source self-hosted remote desktop software written in Rust', icon: 'Monitor', popular: true },
-  { id: 'PuTTY.PuTTY', name: 'PuTTY', category: 'Remote Access', desc: 'Free SSH, Telnet, and raw socket terminal emulator client', icon: 'Monitor', popular: true },
+  {
+    id: 'AnyDeskSoftwareGmbH.AnyDesk',
+    name: 'AnyDesk',
+    category: 'Remote Access',
+    desc: 'Ultra-low latency secure remote desktop connection software',
+    icon: 'Monitor',
+    popular: true,
+    directUrl: 'https://download.anydesk.com/AnyDesk.exe',
+    directArgs: '--install "C:\\Program Files (x86)\\AnyDesk" --start-with-win --create-desktop-icon --silent'
+  },
+  {
+    id: 'TeamViewer.TeamViewer',
+    name: 'TeamViewer',
+    category: 'Remote Access',
+    desc: 'Global remote desktop access, screen sharing and IT support',
+    icon: 'Monitor',
+    popular: true,
+    directUrl: 'https://download.teamviewer.com/download/TeamViewer_Setup_x64.exe',
+    directArgs: '/S'
+  },
+  {
+    id: 'RustDesk.RustDesk',
+    name: 'RustDesk',
+    category: 'Remote Access',
+    desc: 'Open source self-hosted remote desktop software written in Rust',
+    icon: 'Monitor',
+    popular: true,
+    directUrl: 'https://github.com/rustdesk/rustdesk/releases/download/1.3.8/rustdesk-1.3.8-x86_64.exe',
+    directArgs: '--silent-install'
+  },
+  {
+    id: 'PuTTY.PuTTY',
+    name: 'PuTTY',
+    category: 'Remote Access',
+    desc: 'Free SSH, Telnet, and raw socket terminal emulator client',
+    icon: 'Monitor',
+    popular: true,
+    directUrl: 'https://the.earth.li/~sgtatham/putty/latest/w64/putty-64bit-0.83-installer.msi',
+    installerType: 'msi'
+  },
 
   // 4. Graphics & Design
-  { id: 'Figma.Figma', name: 'Figma Desktop', category: 'Graphics & Design', desc: 'Collaborative cloud interface design and vector graphics editor', icon: 'Palette', popular: true },
-  { id: 'Canva.Canva', name: 'Canva', category: 'Graphics & Design', desc: 'Visual design platform for presentations, social posts and banners', icon: 'Palette', popular: true },
-  { id: 'GIMP.GIMP', name: 'GIMP', category: 'Graphics & Design', desc: 'Free open source cross-platform image manipulation program', icon: 'Palette', popular: true },
-  { id: 'Inkscape.Inkscape', name: 'Inkscape', category: 'Graphics & Design', desc: 'Professional vector graphics editor for illustrations and icons', icon: 'Palette' },
-  { id: 'BlenderFoundation.Blender', name: 'Blender 3D', category: 'Graphics & Design', desc: 'Full open source 3D modeling, rigging, rendering and animation pipeline', icon: 'Palette', popular: true },
+  {
+    id: 'Figma.Figma',
+    name: 'Figma Desktop',
+    category: 'Graphics & Design',
+    desc: 'Collaborative cloud interface design and vector graphics editor',
+    icon: 'Palette',
+    popular: true,
+    directUrl: 'https://desktop.figma.com/win/FigmaSetup.exe',
+    directArgs: '/s /S /q'
+  },
+  {
+    id: 'Canva.Canva',
+    name: 'Canva',
+    category: 'Graphics & Design',
+    desc: 'Visual design platform for presentations, social posts and banners',
+    icon: 'Palette',
+    popular: true,
+    directUrl: 'https://desktop-release.canva-deploy.com/Canva%20Setup.exe',
+    directArgs: '/S'
+  },
+  {
+    id: 'GIMP.GIMP.3',
+    name: 'GIMP',
+    category: 'Graphics & Design',
+    desc: 'Free open source cross-platform image manipulation program',
+    icon: 'Palette',
+    popular: true,
+    altIds: ['GIMP.GIMP.2', 'GIMP.GIMP']
+  },
+  {
+    id: 'Inkscape.Inkscape',
+    name: 'Inkscape',
+    category: 'Graphics & Design',
+    desc: 'Professional vector graphics editor for illustrations and icons',
+    icon: 'Palette'
+  },
+  {
+    id: 'BlenderFoundation.Blender',
+    name: 'Blender 3D',
+    category: 'Graphics & Design',
+    desc: 'Full open source 3D modeling, rigging, rendering and animation pipeline',
+    icon: 'Palette',
+    popular: true
+  },
 
   // 5. AI Tools
-  { id: 'OpenAI.ChatGPT', name: 'ChatGPT Desktop', category: 'AI Tools', desc: 'Official OpenAI ChatGPT native desktop app with voice and vision', icon: 'Bot', popular: true },
-  { id: 'Google.Gemini', name: 'Google Gemini', category: 'AI Tools', desc: 'Google next-generation multimodal assistant for workspace and research', icon: 'Bot', popular: true },
-  { id: 'Anthropic.Claude', name: 'Claude Desktop', category: 'AI Tools', desc: 'Anthropic safety-focused AI assistant with deep reasoning and coding', icon: 'Bot', popular: true },
-  { id: 'Microsoft.Copilot', name: 'Microsoft Copilot', category: 'AI Tools', desc: 'AI companion for web search, drafting documents and system automation', icon: 'Bot' },
-  { id: 'Perplexity.Perplexity', name: 'Perplexity AI', category: 'AI Tools', desc: 'AI search engine providing cited conversational factual answers', icon: 'Bot', popular: true },
+  {
+    id: 'OpenAI.ChatGPT',
+    name: 'ChatGPT Desktop',
+    category: 'AI Tools',
+    desc: 'Official OpenAI ChatGPT native desktop app with voice and vision',
+    icon: 'Bot',
+    popular: true,
+    altIds: ['9NT1R1C2HH7J'],
+    directUrl: 'https://persistent.oaistatic.com/sidekick/public/ChatGPT_Desktop_public_latest.msix',
+    installerType: 'msix'
+  },
+  {
+    id: 'Google.Gemini',
+    name: 'Google Gemini',
+    category: 'AI Tools',
+    desc: 'Google next-generation multimodal assistant desktop web-app launcher',
+    icon: 'Bot',
+    popular: true,
+    directUrl: 'https://gemini.google.com',
+    installerType: 'pwa'
+  },
+  {
+    id: 'Anthropic.Claude',
+    name: 'Claude Desktop',
+    category: 'AI Tools',
+    desc: 'Anthropic safety-focused AI assistant with deep reasoning and coding',
+    icon: 'Bot',
+    popular: true,
+    directUrl: 'https://storage.googleapis.com/osprey-downloads-c02f6a0d-347c-492b-a752-3e0651722e97/nest-win-x64/Claude-Setup-x64.exe',
+    directArgs: '-s'
+  },
+  {
+    id: '9NHT9RB2F4HD',
+    name: 'Microsoft Copilot',
+    category: 'AI Tools',
+    desc: 'AI companion for web search, drafting documents and system automation',
+    icon: 'Bot',
+    source: 'msstore',
+    altIds: ['Microsoft.Copilot'],
+    directUrl: 'https://copilot.microsoft.com',
+    installerType: 'pwa'
+  },
+  {
+    id: 'Perplexity.Comet',
+    name: 'Perplexity AI',
+    category: 'AI Tools',
+    desc: 'AI search engine & assistant providing cited conversational factual answers',
+    icon: 'Bot',
+    popular: true,
+    altIds: ['9N5XY97K3B55', 'Perplexity.Perplexity'],
+    directUrl: 'https://www.perplexity.ai',
+    installerType: 'pwa'
+  },
 
   // 6. Backup & Recovery
-  { id: 'Duplicati.Duplicati', name: 'Duplicati', category: 'Backup & Recovery', desc: 'Secure, encrypted cloud backup client for standard cloud providers', icon: 'HardDriveDownload' },
-  { id: 'Macrium.ReflectFree', name: 'Macrium Reflect Free', category: 'Backup & Recovery', desc: 'Complete disk cloning, image backup and bare-metal restore solution', icon: 'HardDriveDownload', popular: true },
-  { id: 'EaseUS.TodoBackupFree', name: 'EaseUS Todo Backup', category: 'Backup & Recovery', desc: '1-click partition and disk image backup and clone utility', icon: 'HardDriveDownload' },
+  {
+    id: 'Duplicati.Duplicati',
+    name: 'Duplicati',
+    category: 'Backup & Recovery',
+    desc: 'Secure, encrypted cloud backup client for standard cloud providers',
+    icon: 'HardDriveDownload'
+  },
+  {
+    id: 'Hasleo.HasleoBackupSuite',
+    name: 'Macrium Reflect / Hasleo Backup',
+    category: 'Backup & Recovery',
+    desc: 'Complete disk cloning, image backup and bare-metal restore solution',
+    icon: 'HardDriveDownload',
+    popular: true,
+    altIds: ['Macrium.Reflect', 'Macrium.ReflectFree'],
+    directUrl: 'https://updates.macrium.com/reflect/v8/v8.0.7783/reflect_setup_free_x64.exe',
+    directArgs: '/qn /norestart'
+  },
+  {
+    id: 'EaseUS.TodoBackup',
+    name: 'EaseUS Todo Backup',
+    category: 'Backup & Recovery',
+    desc: '1-click partition and disk image backup and clone utility',
+    icon: 'HardDriveDownload',
+    altIds: ['EaseUS.TodoBackupFree']
+  },
 
   // 7. System & Hardware
-  { id: 'CPUID.CPU-Z', name: 'CPU-Z', category: 'System & Hardware', desc: 'Real-time CPU architecture, clock speed, cache and motherboard monitor', icon: 'Cpu', popular: true },
-  { id: 'TechPowerUp.GPU-Z', name: 'GPU-Z', category: 'System & Hardware', desc: 'Graphics card specs, VRAM clock, GPU temperature and voltage metrics', icon: 'Cpu', popular: true },
-  { id: 'CrystalDewWorld.CrystalDiskInfo', name: 'CrystalDiskInfo', category: 'System & Hardware', desc: 'HDD/SSD health monitoring tool with SMART attributes and temperature', icon: 'Cpu', popular: true },
-  { id: 'CrystalDewWorld.CrystalDiskMark', name: 'CrystalDiskMark', category: 'System & Hardware', desc: 'Standard sequential and random SSD/HDD read and write speed benchmark', icon: 'Cpu' },
-  { id: 'Wagnardsoft.DisplayDriverUninstaller', name: 'Display Driver Uninstaller (DDU)', category: 'System & Hardware', desc: 'Completely removes AMD/NVIDIA/Intel graphics and audio drivers cleanly', icon: 'Cpu', popular: true },
+  {
+    id: 'CPUID.CPU-Z',
+    name: 'CPU-Z',
+    category: 'System & Hardware',
+    desc: 'Real-time CPU architecture, clock speed, cache and motherboard monitor',
+    icon: 'Cpu',
+    popular: true,
+    directUrl: 'https://download.cpuid.com/cpu-z/cpu-z_2.14-en.exe',
+    directArgs: '/VERYSILENT /NORESTART'
+  },
+  {
+    id: 'TechPowerUp.GPU-Z',
+    name: 'GPU-Z',
+    category: 'System & Hardware',
+    desc: 'Graphics card specs, VRAM clock, GPU temperature and voltage metrics',
+    icon: 'Cpu',
+    popular: true
+  },
+  {
+    id: 'CrystalDewWorld.CrystalDiskInfo',
+    name: 'CrystalDiskInfo',
+    category: 'System & Hardware',
+    desc: 'HDD/SSD health monitoring tool with SMART attributes and temperature',
+    icon: 'Cpu',
+    popular: true
+  },
+  {
+    id: 'CrystalDewWorld.CrystalDiskMark',
+    name: 'CrystalDiskMark',
+    category: 'System & Hardware',
+    desc: 'Standard sequential and random SSD/HDD read and write speed benchmark',
+    icon: 'Cpu'
+  },
+  {
+    id: 'Wagnardsoft.DisplayDriverUninstaller',
+    name: 'Display Driver Uninstaller (DDU)',
+    category: 'System & Hardware',
+    desc: 'Completely removes AMD/NVIDIA/Intel graphics and audio drivers cleanly',
+    icon: 'Cpu',
+    popular: true
+  },
 
   // 8. Network Tools
-  { id: 'WiresharkFoundation.Wireshark', name: 'Wireshark', category: 'Network Tools', desc: 'World foremost open source network packet analyzer and protocol inspect', icon: 'Network', popular: true },
-  { id: 'Insecure.Nmap', name: 'Nmap', category: 'Network Tools', desc: 'Network discovery and security vulnerability port scanner', icon: 'Network' },
-  { id: 'WinSCP.WinSCP', name: 'WinSCP', category: 'Network Tools', desc: 'Free SFTP, SCP, S3 and FTP client for safe file transfer', icon: 'Network', popular: true },
-  { id: 'AdvancedIPScanner.AdvancedIPScanner', name: 'Advanced IP Scanner', category: 'Network Tools', desc: 'Fast, robust LAN scanner locating all local connected IP devices', icon: 'Network', popular: true },
+  {
+    id: 'WiresharkFoundation.Wireshark',
+    name: 'Wireshark',
+    category: 'Network Tools',
+    desc: 'World foremost open source network packet analyzer and protocol inspect',
+    icon: 'Network',
+    popular: true,
+    directUrl: 'https://2.na.dl.wireshark.org/win64/Wireshark-latest-x64.exe',
+    directArgs: '/S /desktopicon=yes'
+  },
+  {
+    id: 'Insecure.Nmap',
+    name: 'Nmap',
+    category: 'Network Tools',
+    desc: 'Network discovery and security vulnerability port scanner',
+    icon: 'Network',
+    directUrl: 'https://nmap.org/dist/nmap-7.95-setup.exe',
+    directArgs: '/S'
+  },
+  {
+    id: 'WinSCP.WinSCP',
+    name: 'WinSCP',
+    category: 'Network Tools',
+    desc: 'Free SFTP, SCP, S3 and FTP client for safe file transfer',
+    icon: 'Network',
+    popular: true
+  },
+  {
+    id: 'Famatech.AdvancedIPScanner',
+    name: 'Advanced IP Scanner',
+    category: 'Network Tools',
+    desc: 'Fast, robust LAN scanner locating all local connected IP devices',
+    icon: 'Network',
+    popular: true,
+    altIds: ['AdvancedIPScanner.AdvancedIPScanner'],
+    directUrl: 'https://download.advanced-ip-scanner.com/download/files/Advanced_IP_Scanner_2.5.4594.1.exe',
+    directArgs: '/VERYSILENT /NORESTART'
+  },
 
   // 9. Download Tools
-  { id: 'Tonec.InternetDownloadManager', name: 'Internet Download Manager (IDM)', category: 'Download Tools', desc: 'High-speed download accelerator with browser integration and resume support', icon: 'HardDriveDownload', popular: true },
-  { id: 'FreeDownloadManager.FreeDownloadManager', name: 'Free Download Manager (FDM)', category: 'Download Tools', desc: 'Modern free download accelerator and BitTorrent client', icon: 'HardDriveDownload', popular: true },
-  { id: 'qBittorrent.qBittorrent', name: 'qBittorrent', category: 'Download Tools', desc: 'Free, open source, clean ad-free BitTorrent client with search engine', icon: 'HardDriveDownload', popular: true },
+  {
+    id: 'Tonec.InternetDownloadManager',
+    name: 'Internet Download Manager (IDM)',
+    category: 'Download Tools',
+    desc: 'High-speed download accelerator with browser integration and resume support',
+    icon: 'HardDriveDownload',
+    popular: true
+  },
+  {
+    id: 'SoftDeluxe.FreeDownloadManager',
+    name: 'Free Download Manager (FDM)',
+    category: 'Download Tools',
+    desc: 'Modern free download accelerator and BitTorrent client',
+    icon: 'HardDriveDownload',
+    popular: true,
+    altIds: ['FreeDownloadManager.FreeDownloadManager'],
+    directUrl: 'https://files2.freedownloadmanager.org/6/latest/fdm_x64_setup.exe',
+    directArgs: '/VERYSILENT /NORESTART'
+  },
+  {
+    id: 'qBittorrent.qBittorrent',
+    name: 'qBittorrent',
+    category: 'Download Tools',
+    desc: 'Free, open source, clean ad-free BitTorrent client with search engine',
+    icon: 'HardDriveDownload',
+    popular: true
+  },
 
   // 10. Database & Server
-  { id: 'dbeaver.dbeaver', name: 'DBeaver', category: 'Database & Server', desc: 'Universal free database tool supporting PostgreSQL, MySQL, SQLite and more', icon: 'Database', popular: true },
-  { id: 'FileZilla.FileZilla', name: 'FileZilla', category: 'Database & Server', desc: 'Fast and reliable cross-platform FTP, FTPS and SFTP client', icon: 'Database', popular: true },
-  { id: 'PostgreSQL.pgAdmin', name: 'pgAdmin', category: 'Database & Server', desc: 'Management tool and administration platform for PostgreSQL databases', icon: 'Database', popular: true },
+  {
+    id: 'dbeaver.dbeaver',
+    name: 'DBeaver',
+    category: 'Database & Server',
+    desc: 'Universal free database tool supporting PostgreSQL, MySQL, SQLite and more',
+    icon: 'Database',
+    popular: true,
+    directUrl: 'https://dbeaver.io/files/dbeaver-ce-latest-x86_64-setup.exe',
+    directArgs: '/S /allusers'
+  },
+  {
+    id: 'TimKosse.FileZilla.Client',
+    name: 'FileZilla',
+    category: 'Database & Server',
+    desc: 'Fast and reliable cross-platform FTP, FTPS and SFTP client',
+    icon: 'Database',
+    popular: true,
+    altIds: ['FileZilla.FileZilla'],
+    directUrl: 'https://download.filezilla-project.org/client/FileZilla_3.68.1_win64-setup.exe',
+    directArgs: '/S'
+  },
+  {
+    id: 'PostgreSQL.pgAdmin',
+    name: 'pgAdmin',
+    category: 'Database & Server',
+    desc: 'Management tool and administration platform for PostgreSQL databases',
+    icon: 'Database',
+    popular: true
+  },
 
   // 11. Web Browsers
-  { id: 'Google.Chrome', name: 'Google Chrome', category: 'Web Browsers', desc: 'Fast, secure and official web browser by Google', icon: 'Globe', popular: true },
-  { id: 'Mozilla.Firefox', name: 'Mozilla Firefox', category: 'Web Browsers', desc: 'Privacy-first open source web browser with tracking protection', icon: 'Globe', popular: true },
-  { id: 'Microsoft.Edge', name: 'Microsoft Edge', category: 'Web Browsers', desc: 'Chromium-based native Windows browser with AI copilot integration', icon: 'Globe' },
-  { id: 'Brave.Brave', name: 'Brave Browser', category: 'Web Browsers', desc: 'Privacy browser with built-in ad, popup and tracker blocking', icon: 'Globe', popular: true },
-  { id: 'Opera.Opera', name: 'Opera Browser', category: 'Web Browsers', desc: 'Feature-rich web browser with built-in VPN and social messenger sidebar', icon: 'Globe' },
+  {
+    id: 'Google.Chrome',
+    name: 'Google Chrome',
+    category: 'Web Browsers',
+    desc: 'Fast, secure and official web browser by Google',
+    icon: 'Globe',
+    popular: true,
+    directUrl: 'https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi',
+    installerType: 'msi'
+  },
+  {
+    id: 'Mozilla.Firefox',
+    name: 'Mozilla Firefox',
+    category: 'Web Browsers',
+    desc: 'Privacy-first open source web browser with tracking protection',
+    icon: 'Globe',
+    popular: true,
+    directUrl: 'https://download.mozilla.org/?product=firefox-latest-ssl&os=win64&lang=en-US',
+    directArgs: '/S'
+  },
+  {
+    id: 'Microsoft.Edge',
+    name: 'Microsoft Edge',
+    category: 'Web Browsers',
+    desc: 'Chromium-based native Windows browser with AI copilot integration',
+    icon: 'Globe'
+  },
+  {
+    id: 'Brave.Brave',
+    name: 'Brave Browser',
+    category: 'Web Browsers',
+    desc: 'Privacy browser with built-in ad, popup and tracker blocking',
+    icon: 'Globe',
+    popular: true,
+    directUrl: 'https://laptop-updates.brave.com/latest/winx64',
+    directArgs: '--silent --install'
+  },
+  {
+    id: 'Opera.Opera',
+    name: 'Opera Browser',
+    category: 'Web Browsers',
+    desc: 'Feature-rich web browser with built-in VPN and social messenger sidebar',
+    icon: 'Globe',
+    altIds: ['Opera.OperaGX'],
+    directUrl: 'https://net.geo.opera.com/opera/stable/windows',
+    directArgs: '/install /silent /launchopera=0'
+  },
 
   // 12. Developer & Coding
-  { id: 'Microsoft.VisualStudioCode', name: 'Microsoft Visual Studio Code', category: 'Developer & Coding', desc: 'Industry standard code editor with extensions, debugging & terminal', icon: 'Code2', popular: true },
-  { id: 'Microsoft.VisualStudioCode.Insiders', name: 'Microsoft Visual Studio Code Insiders', category: 'Developer & Coding', desc: 'Daily preview build of Visual Studio Code with cutting-edge features', icon: 'Code2', popular: true },
-  { id: 'Git.Git', name: 'Git for Windows', category: 'Developer & Coding', desc: 'Distributed version control system and Git Bash CLI environment', icon: 'Code2', popular: true },
-  { id: 'Python.Python.3.14', name: 'Python 3', category: 'Developer & Coding', desc: 'Powerful high-level programming language and PIP package manager', icon: 'Code2', popular: true },
-  { id: 'OpenJS.NodeJS.LTS', name: 'Node.js (LTS)', category: 'Developer & Coding', desc: 'JavaScript runtime environment with NPM package manager', icon: 'Code2', popular: true },
+  {
+    id: 'Microsoft.VisualStudioCode',
+    name: 'Microsoft Visual Studio Code',
+    category: 'Developer & Coding',
+    desc: 'Industry standard code editor with extensions, debugging & terminal',
+    icon: 'Code2',
+    popular: true,
+    directUrl: 'https://update.code.visualstudio.com/latest/win32-x64-user/stable',
+    directArgs: '/VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,addtopath'
+  },
+  {
+    id: 'Microsoft.VisualStudioCode.Insiders',
+    name: 'Microsoft Visual Studio Code Insiders',
+    category: 'Developer & Coding',
+    desc: 'Daily preview build of Visual Studio Code with cutting-edge features',
+    icon: 'Code2',
+    popular: true,
+    directUrl: 'https://update.code.visualstudio.com/latest/win32-x64-user/insider',
+    directArgs: '/VERYSILENT /NORESTART /MERGETASKS=!runcode,addtopath'
+  },
+  {
+    id: 'Git.Git',
+    name: 'Git for Windows',
+    category: 'Developer & Coding',
+    desc: 'Distributed version control system and Git Bash CLI environment',
+    icon: 'Code2',
+    popular: true
+  },
+  {
+    id: 'Python.Python.3.13',
+    name: 'Python 3',
+    category: 'Developer & Coding',
+    desc: 'Powerful high-level programming language and PIP package manager',
+    icon: 'Code2',
+    popular: true,
+    altIds: ['Python.Python.3.12', 'Python.Python.3.11', 'Python.Python.3.14'],
+    directUrl: 'https://www.python.org/ftp/python/3.13.2/python-3.13.2-amd64.exe',
+    directArgs: '/quiet InstallAllUsers=1 PrependPath=1'
+  },
+  {
+    id: 'OpenJS.NodeJS.LTS',
+    name: 'Node.js (LTS)',
+    category: 'Developer & Coding',
+    desc: 'JavaScript runtime environment with NPM package manager',
+    icon: 'Code2',
+    popular: true,
+    altIds: ['OpenJS.NodeJS']
+  },
 
   // 13. Multimedia
-  { id: 'VideoLAN.VLC', name: 'VLC Media Player', category: 'Multimedia', desc: 'Plays all audio, video formats and streaming protocols natively', icon: 'Film', popular: true },
-  { id: 'Spotify.Spotify', name: 'Spotify Music', category: 'Multimedia', desc: 'Digital streaming music and podcast player with curated playlists', icon: 'Film', popular: true },
-  { id: 'OBSProject.OBSStudio', name: 'OBS Studio', category: 'Multimedia', desc: 'Free open source screen recording and live streaming broadcast studio', icon: 'Film', popular: true },
-  { id: 'Audacity.Audacity', name: 'Audacity Audio Editor', category: 'Multimedia', desc: 'Multi-track audio editor and sound recorder for creators', icon: 'Film' },
-  { id: 'HandBrake.HandBrake', name: 'HandBrake Transcoder', category: 'Multimedia', desc: 'High performance video transcoder and format converter', icon: 'Film' },
+  {
+    id: 'VideoLAN.VLC',
+    name: 'VLC Media Player',
+    category: 'Multimedia',
+    desc: 'Plays all audio, video formats and streaming protocols natively',
+    icon: 'Film',
+    popular: true,
+    directUrl: 'https://get.videolan.org/vlc/3.0.21/win64/vlc-3.0.21-win64.exe',
+    directArgs: '/S'
+  },
+  {
+    id: 'Spotify.Spotify',
+    name: 'Spotify Music',
+    category: 'Multimedia',
+    desc: 'Digital streaming music and podcast player with curated playlists',
+    icon: 'Film',
+    popular: true,
+    altIds: ['9NCBCSZSJRSB'],
+    directUrl: 'https://download.scdn.co/SpotifySetup.exe',
+    installerType: 'user_exe'
+  },
+  {
+    id: 'OBSProject.OBSStudio',
+    name: 'OBS Studio',
+    category: 'Multimedia',
+    desc: 'Free open source screen recording and live streaming broadcast studio',
+    icon: 'Film',
+    popular: true
+  },
+  {
+    id: 'Audacity.Audacity',
+    name: 'Audacity Audio Editor',
+    category: 'Multimedia',
+    desc: 'Multi-track audio editor and sound recorder for creators',
+    icon: 'Film'
+  },
+  {
+    id: 'HandBrake.HandBrake',
+    name: 'HandBrake Transcoder',
+    category: 'Multimedia',
+    desc: 'High performance video transcoder and format converter',
+    icon: 'Film'
+  },
 
   // 14. Utilities & Tools
-  { id: '7zip.7zip', name: '7-Zip Archiver', category: 'Utilities & Tools', desc: 'High compression ratio file archiver for 7z, ZIP, RAR, TAR', icon: 'Wrench', popular: true },
-  { id: 'RARLab.WinRAR', name: 'WinRAR', category: 'Utilities & Tools', desc: 'Powerful archive manager with recovery record capabilities', icon: 'Wrench', popular: true },
-  { id: 'Microsoft.VCRedist.2015+.x64', name: 'Visual C++ 2015-2022 Runtimes (x64)', category: 'Utilities & Tools', desc: 'Fixes missing MSVCP140.dll and VCRUNTIME140.dll errors for games & apps', icon: 'Wrench', popular: true },
-  { id: 'voidtools.Everything', name: 'Everything Search', category: 'Utilities & Tools', desc: 'Instant millisecond filename search engine for Windows NTFS', icon: 'Wrench', popular: true },
-  { id: 'Microsoft.PowerToys', name: 'Microsoft PowerToys', category: 'Utilities & Tools', desc: 'System utilities for power users (FancyZones, ColorPicker, Run)', icon: 'Wrench', popular: true },
-  { id: 'Rufus.Rufus', name: 'Rufus USB Creator', category: 'Utilities & Tools', desc: 'Create bootable USB drives for Windows and Linux installations', icon: 'Wrench' },
-  { id: 'ShareX.ShareX', name: 'ShareX', category: 'Utilities & Tools', desc: 'Advanced screen capture, file sharing and productivity tool', icon: 'Wrench', popular: true },
-  { id: 'File-New-Project.EarTrumpet', name: 'EarTrumpet', category: 'Utilities & Tools', desc: 'Powerful volume control and per-app audio mixer for Windows', icon: 'Wrench', popular: true },
-  { id: 'OmicronLab.Avro', name: 'Avro Keyboard', category: 'Utilities & Tools', desc: 'Standard phonetic Bangla typing software for Windows', icon: 'Wrench', popular: true },
+  {
+    id: '7zip.7zip',
+    name: '7-Zip Archiver',
+    category: 'Utilities & Tools',
+    desc: 'High compression ratio file archiver for 7z, ZIP, RAR, TAR',
+    icon: 'Wrench',
+    popular: true,
+    directUrl: 'https://www.7-zip.org/a/7z2409-x64.exe',
+    directArgs: '/S'
+  },
+  {
+    id: 'RARLab.WinRAR',
+    name: 'WinRAR',
+    category: 'Utilities & Tools',
+    desc: 'Powerful archive manager with recovery record capabilities',
+    icon: 'Wrench',
+    popular: true,
+    directUrl: 'https://www.win-rar.com/fileadmin/winrar-versions/winrar/winrar-x64-701.exe',
+    directArgs: '/S'
+  },
+  {
+    id: 'Microsoft.VCRedist.2015+.x64',
+    name: 'Visual C++ 2015-2022 Runtimes (x64)',
+    category: 'Utilities & Tools',
+    desc: 'Fixes missing MSVCP140.dll and VCRUNTIME140.dll errors for games & apps',
+    icon: 'Wrench',
+    popular: true,
+    altIds: ['Microsoft.VCRedist.2015+.x86'],
+    directUrl: 'https://aka.ms/vs/17/release/vc_redist.x64.exe',
+    directArgs: '/install /quiet /norestart'
+  },
+  {
+    id: 'voidtools.Everything',
+    name: 'Everything Search',
+    category: 'Utilities & Tools',
+    desc: 'Instant millisecond filename search engine for Windows NTFS',
+    icon: 'Wrench',
+    popular: true,
+    directUrl: 'https://www.voidtools.com/Everything-1.4.1.1026.x64-Setup.exe',
+    directArgs: '/S'
+  },
+  {
+    id: 'Microsoft.PowerToys',
+    name: 'Microsoft PowerToys',
+    category: 'Utilities & Tools',
+    desc: 'System utilities for power users (FancyZones, ColorPicker, Run)',
+    icon: 'Wrench',
+    popular: true
+  },
+  {
+    id: 'Rufus.Rufus',
+    name: 'Rufus USB Creator',
+    category: 'Utilities & Tools',
+    desc: 'Create bootable USB drives for Windows and Linux installations',
+    icon: 'Wrench',
+    directUrl: 'https://github.com/pbatard/rufus/releases/download/v4.6/rufus-4.6p.exe'
+  },
+  {
+    id: 'ShareX.ShareX',
+    name: 'ShareX',
+    category: 'Utilities & Tools',
+    desc: 'Advanced screen capture, file sharing and productivity tool',
+    icon: 'Wrench',
+    popular: true
+  },
+  {
+    id: 'File-New-Project.EarTrumpet',
+    name: 'EarTrumpet',
+    category: 'Utilities & Tools',
+    desc: 'Powerful volume control and per-app audio mixer for Windows',
+    icon: 'Wrench',
+    popular: true,
+    altIds: ['9NBLGGH516XP']
+  },
+  {
+    id: 'OmicronLab.AvroKeyboard',
+    name: 'Avro Keyboard',
+    category: 'Utilities & Tools',
+    desc: 'Standard phonetic Bangla typing software for Windows',
+    icon: 'Wrench',
+    popular: true,
+    altIds: ['OmicronLab.Avro'],
+    directUrl: 'https://github.com/ugcoder/avro/releases/download/v5.6.0/setup_avrokeyboard_5.6.0.exe',
+    directArgs: '/VERYSILENT /NORESTART'
+  },
 
   // 15. Communication
-  { id: 'WhatsApp.WhatsApp', name: 'WhatsApp Desktop', category: 'Communication', desc: 'Desktop client for WhatsApp messaging and video calls', icon: 'MessageSquare', popular: true },
-  { id: 'Telegram.TelegramDesktop', name: 'Telegram Desktop', category: 'Communication', desc: 'Fast, secure cloud messaging client with unlimited storage', icon: 'MessageSquare', popular: true },
-  { id: 'Discord.Discord', name: 'Discord', category: 'Communication', desc: 'Voice, video and text chat platform for communities and gaming', icon: 'MessageSquare', popular: true },
-  { id: 'Zoom.Zoom', name: 'Zoom Workplace', category: 'Communication', desc: 'Enterprise video meetings, screen sharing and team chat', icon: 'MessageSquare' },
-  { id: 'Microsoft.Teams', name: 'Microsoft Teams', category: 'Communication', desc: 'Collaboration and video conferencing platform for business', icon: 'MessageSquare' },
+  {
+    id: '9NKSQGP7F2NH',
+    name: 'WhatsApp Desktop',
+    category: 'Communication',
+    desc: 'Desktop client for WhatsApp messaging and video calls',
+    icon: 'MessageSquare',
+    popular: true,
+    source: 'msstore',
+    altIds: ['WhatsApp.WhatsApp'],
+    directUrl: 'https://get.microsoft.com/installer/download/9NKSQGP7F2NH',
+    directArgs: '/silent'
+  },
+  {
+    id: 'Telegram.TelegramDesktop',
+    name: 'Telegram Desktop',
+    category: 'Communication',
+    desc: 'Fast, secure cloud messaging client with unlimited storage',
+    icon: 'MessageSquare',
+    popular: true,
+    directUrl: 'https://telegram.org/dl/desktop/win64',
+    directArgs: '/VERYSILENT /NORESTART'
+  },
+  {
+    id: 'Discord.Discord',
+    name: 'Discord',
+    category: 'Communication',
+    desc: 'Voice, video and text chat platform for communities and gaming',
+    icon: 'MessageSquare',
+    popular: true,
+    directUrl: 'https://discord.com/api/downloads/distributions/app/installers/latest?channel=stable&platform=win&arch=x64',
+    directArgs: '-s'
+  },
+  {
+    id: 'Zoom.Zoom',
+    name: 'Zoom Workplace',
+    category: 'Communication',
+    desc: 'Enterprise video meetings, screen sharing and team chat',
+    icon: 'MessageSquare',
+    directUrl: 'https://zoom.us/client/latest/ZoomInstallerFull.msi?archType=x64',
+    installerType: 'msi'
+  },
+  {
+    id: 'Microsoft.Teams',
+    name: 'Microsoft Teams',
+    category: 'Communication',
+    desc: 'Collaboration and video conferencing platform for business',
+    icon: 'MessageSquare',
+    altIds: ['XP8BT8DW290MPQ'],
+    directUrl: 'https://statics.teams.cdn.office.net/production-windows-x64/enterprise/webview2/lkg/MSTeams-x64.msix',
+    installerType: 'msix'
+  },
 
   // 16. Gaming
-  { id: 'Valve.Steam', name: 'Steam Client', category: 'Gaming', desc: 'Ultimate entertainment platform for playing and creating games', icon: 'Gamepad2', popular: true },
-  { id: 'EpicGames.EpicGamesLauncher', name: 'Epic Games Launcher', category: 'Gaming', desc: 'Play Unreal Engine titles and claim weekly free PC games', icon: 'Gamepad2', popular: true },
-  { id: 'Microsoft.DirectX', name: 'DirectX End-User Runtimes', category: 'Gaming', desc: 'Installs legacy DirectX 9.0c/10/11 runtime libraries to fix gaming crashes', icon: 'Gamepad2', popular: true },
-  { id: 'ElectronicArts.EADesktop', name: 'EA Desktop App', category: 'Gaming', desc: 'Official game launcher for EA games and subscriptions', icon: 'Gamepad2' },
-  { id: 'Ubisoft.Connect', name: 'Ubisoft Connect', category: 'Gaming', desc: 'Ecosystem of players and games across Ubisoft network', icon: 'Gamepad2' },
-  { id: 'RiotGames.RiotClient', name: 'Riot Client', category: 'Gaming', desc: 'Launcher for League of Legends, Valorant and Teamfight Tactics', icon: 'Gamepad2' },
-  { id: 'Microsoft.GamingApp', name: 'Xbox App', category: 'Gaming', desc: 'Play PC Game Pass titles, connect with friends and cloud gaming', icon: 'Gamepad2' },
+  {
+    id: 'Valve.Steam',
+    name: 'Steam Client',
+    category: 'Gaming',
+    desc: 'Ultimate entertainment platform for playing and creating games',
+    icon: 'Gamepad2',
+    popular: true,
+    directUrl: 'https://cdn.cloudflare.steamstatic.com/client/installer/SteamSetup.exe',
+    directArgs: '/S'
+  },
+  {
+    id: 'EpicGames.EpicGamesLauncher',
+    name: 'Epic Games Launcher',
+    category: 'Gaming',
+    desc: 'Play Unreal Engine titles and claim weekly free PC games',
+    icon: 'Gamepad2',
+    popular: true
+  },
+  {
+    id: 'Microsoft.DirectX',
+    name: 'DirectX End-User Runtimes',
+    category: 'Gaming',
+    desc: 'Installs legacy DirectX 9.0c/10/11 runtime libraries to fix gaming crashes',
+    icon: 'Gamepad2',
+    popular: true,
+    directUrl: 'https://download.microsoft.com/download/1/7/1/1718CCC4-6315-4D8E-9543-8E28A4E18C4C/dxwebsetup.exe',
+    directArgs: '/Q'
+  },
+  {
+    id: 'ElectronicArts.EADesktop',
+    name: 'EA Desktop App',
+    category: 'Gaming',
+    desc: 'Official game launcher for EA games and subscriptions',
+    icon: 'Gamepad2',
+    directUrl: 'https://origin-a.akamaihd.net/EA-Desktop-Client-Download/installer-releases/EAappInstaller.exe',
+    directArgs: '/quiet'
+  },
+  {
+    id: 'Ubisoft.Connect',
+    name: 'Ubisoft Connect',
+    category: 'Gaming',
+    desc: 'Ecosystem of players and games across Ubisoft network',
+    icon: 'Gamepad2',
+    directUrl: 'https://ubi.li/4vxt9',
+    directArgs: '/S'
+  },
+  {
+    id: 'RiotGames.Valorant.AP',
+    name: 'Riot Client',
+    category: 'Gaming',
+    desc: 'Launcher for League of Legends, Valorant and Teamfight Tactics',
+    icon: 'Gamepad2',
+    altIds: ['RiotGames.LeagueOfLegends.NA', 'RiotGames.Valorant.NA'],
+    directUrl: 'https://valorant.secure.dyn.riotcdn.net/channels/public/x/installer/current/live.live.ap.exe',
+    directArgs: '--skip-to-install'
+  },
+  {
+    id: '9MV0B5HZVK9Z',
+    name: 'Xbox App',
+    category: 'Gaming',
+    desc: 'Play PC Game Pass titles, connect with friends and cloud gaming',
+    icon: 'Gamepad2',
+    source: 'msstore',
+    altIds: ['Microsoft.GamingApp', 'Microsoft.GamingServices'],
+    directUrl: 'https://get.microsoft.com/installer/download/9MV0B5HZVK9Z',
+    directArgs: '/silent'
+  },
 
   // 17. Security & Privacy
-  { id: 'Bitwarden.Bitwarden', name: 'Bitwarden', category: 'Security & Privacy', desc: 'Secure open-source password manager with end-to-end encryption', icon: 'ShieldCheck', popular: true },
-  { id: 'Malwarebytes.Malwarebytes', name: 'Malwarebytes', category: 'Security & Privacy', desc: 'Industry leading anti-malware, spyware and ransomware scanner', icon: 'ShieldCheck', popular: true },
-  { id: 'Proton.ProtonVPN', name: 'Proton VPN', category: 'Security & Privacy', desc: 'High-speed Swiss VPN with rigorous no-logs policy', icon: 'ShieldCheck' }
+  {
+    id: 'Bitwarden.Bitwarden',
+    name: 'Bitwarden',
+    category: 'Security & Privacy',
+    desc: 'Secure open-source password manager with end-to-end encryption',
+    icon: 'ShieldCheck',
+    popular: true,
+    directUrl: 'https://vault.bitwarden.com/download/?app=desktop&platform=windows&variant=exe',
+    directArgs: '/S'
+  },
+  {
+    id: 'Malwarebytes.Malwarebytes',
+    name: 'Malwarebytes',
+    category: 'Security & Privacy',
+    desc: 'Industry leading anti-malware, spyware and ransomware scanner',
+    icon: 'ShieldCheck',
+    popular: true,
+    directUrl: 'https://downloads.malwarebytes.com/file/mb4_offline',
+    directArgs: '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART'
+  },
+  {
+    id: 'Proton.ProtonVPN',
+    name: 'Proton VPN',
+    category: 'Security & Privacy',
+    desc: 'High-speed Swiss VPN with rigorous no-logs policy',
+    icon: 'ShieldCheck'
+  }
 ];
 
 export const SYSTEM_TWEAKS: SystemTweak[] = [
@@ -685,7 +1360,7 @@ export const PRESET_BUNDLES = [
     name: '💻 Developer Rig',
     badge: 'Code & Tools',
     desc: 'VS Code, Git, Python 3, Node.js LTS, DBeaver, PuTTY & 7-Zip with developer file extensions and telemetry disabled.',
-    apps: ['Microsoft.VisualStudioCode', 'Git.Git', 'Python.Python.3.14', 'OpenJS.NodeJS.LTS', 'Notepad++.Notepad++', 'PuTTY.PuTTY', 'dbeaver.dbeaver', '7zip.7zip'],
+    apps: ['Microsoft.VisualStudioCode', 'Git.Git', 'Python.Python.3.13', 'OpenJS.NodeJS.LTS', 'Notepad++.Notepad++', 'PuTTY.PuTTY', 'dbeaver.dbeaver', '7zip.7zip'],
     tweaks: ['disable_telemetry', 'classic_context_menu', 'show_file_extensions', 'flush_dns_cache']
   },
   {
@@ -693,7 +1368,7 @@ export const PRESET_BUNDLES = [
     name: '🚀 Extreme Debloat (Low-End PC)',
     badge: 'Speed & Lightweight',
     desc: 'Stripped-down setup for maximum speed: Chrome, VLC, 7-Zip + Copilot disable, bloatware purge, hibernate off & temp clean.',
-    apps: ['Google.Chrome', '7zip.7zip', 'VideoLAN.VLC', 'OmicronLab.Avro'],
+    apps: ['Google.Chrome', '7zip.7zip', 'VideoLAN.VLC', 'OmicronLab.AvroKeyboard'],
     tweaks: ['disable_telemetry', 'disable_bing_start', 'disable_win11_copilot', 'remove_uwp_bloatware', 'disable_hibernation', 'clean_temp_files']
   },
   {
@@ -709,7 +1384,7 @@ export const PRESET_BUNDLES = [
     name: '🤖 AI Power User',
     badge: 'AI Assistants',
     desc: 'ChatGPT, Gemini, Claude, Copilot & Perplexity with fast local search and clean temporary disk storage.',
-    apps: ['OpenAI.ChatGPT', 'Google.Gemini', 'Anthropic.Claude', 'Microsoft.Copilot', 'Perplexity.Perplexity'],
+    apps: ['OpenAI.ChatGPT', 'Google.Gemini', 'Anthropic.Claude', '9NHT9RB2F4HD', 'Perplexity.Comet'],
     tweaks: ['disable_bing_start', 'clean_temp_files']
   }
 ];

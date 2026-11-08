@@ -45,7 +45,7 @@ export const CustomBundleTab: React.FC<CustomBundleTabProps> = ({
   const [copied, setCopied] = useState(false);
 
   const selectedAppObjects = selectedApps
-    .map((id) => SOFTWARE_APPS.find((a) => a.id === id))
+    .map((id) => SOFTWARE_APPS.find((a) => a.id === id || (a.altIds && a.altIds.includes(id))))
     .filter(Boolean);
 
   const selectedTweakObjects = selectedTweaks
@@ -55,7 +55,10 @@ export const CustomBundleTab: React.FC<CustomBundleTabProps> = ({
   const totalSelected = selectedApps.length + selectedTweaks.length;
 
   const removeApp = (id: string) => {
-    setSelectedApps((prev) => prev.filter((a) => a !== id));
+    const appObj = SOFTWARE_APPS.find((a) => a.id === id || (a.altIds && a.altIds.includes(id)));
+    setSelectedApps((prev) =>
+      prev.filter((a) => a !== id && (!appObj || (a !== appObj.id && !(appObj.altIds && appObj.altIds.includes(a)))))
+    );
   };
 
   const removeTweak = (id: string) => {
