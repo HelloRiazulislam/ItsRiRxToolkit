@@ -85,13 +85,14 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -Litera
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo [INFO] Administrator rights required. Requesting elevation...
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process cmd.exe -ArgumentList '/c \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/k \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
     if %errorlevel% neq 0 (
         echo.
         echo [!] Automatic elevation could not proceed.
         echo [!] Please right-click this file and choose: 'Run as administrator'
         echo.
-        pause
+        echo Press any key to close this window...
+        pause >nul
     )
     exit /b
 )
@@ -107,8 +108,11 @@ echo.
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "irm 'https://itsrirx-toolkit.vercel.app/i' | iex"
 
 echo.
-echo Press any key to exit...
+echo ============================================================================
+echo   All tasks finished! Press any key to close this window...
+echo ============================================================================
 pause >nul
+exit
 `;
   return res.status(200).send(batContent);
 });
@@ -134,13 +138,14 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -Litera
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo [*] Requesting Administrator privileges to register system command...
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process cmd.exe -ArgumentList '/c \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/k \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
     if %errorlevel% neq 0 (
         echo.
         echo [!] Automatic elevation could not proceed.
         echo [!] Please right-click this file and choose: 'Run as administrator'
         echo.
-        pause
+        echo Press any key to close this window...
+        pause >nul
     )
     exit /b
 )
@@ -202,8 +207,11 @@ echo     3. Command Prompt CMD : Type "rirx" -> hit Enter
 echo     4. Windows Terminal   : Type "rirx" -> hit Enter
 echo ============================================================================
 echo.
-echo Press any key to exit this installer window...
+echo ============================================================================
+echo   All tasks finished! Press any key to close this window...
+echo ============================================================================
 pause >nul
+exit
 `;
   return res.status(200).send(batContent);
 });
@@ -230,7 +238,13 @@ color 0b
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo [*] Administrator rights required for silent installation.
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/k \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    if %errorlevel% neq 0 (
+        echo.
+        echo [!] Please right-click this file and choose: 'Run as administrator'
+        echo Press any key to close this window...
+        pause >nul
+    )
     exit /b
 )
 
@@ -263,8 +277,10 @@ echo.
 
   script += `echo ============================================================================
 echo   [COMPLETED] Automated silent deployment finished!
+echo   All tasks finished! Press any key to close this window...
 echo ============================================================================
-pause
+pause >nul
+exit
 `;
 
   res.setHeader('Content-Type', 'application/x-bat; charset=utf-8');
@@ -299,7 +315,11 @@ foreach ($app in $apps) {
     $idx++
 }
 
-Write-Host "All applications processed successfully!" -ForegroundColor Green
+Write-Host ""
+Write-Host "============================================================================" -ForegroundColor Cyan
+Write-Host "  All applications processed! Press any key to close this window..." -ForegroundColor Green
+Write-Host "============================================================================" -ForegroundColor Cyan
+cmd.exe /c pause | Out-Null
 `;
 
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');

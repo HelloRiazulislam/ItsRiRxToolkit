@@ -150,7 +150,8 @@ export const SystemTweaksTab: React.FC<SystemTweaksTabProps> = ({
 
   const handleCopySingle = (tweak: SystemTweak, e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(tweak.psCode);
+    const cmdWithPause = `${tweak.psCode}; Write-Host "\`nAll tasks finished! Press any key to close this window..." -ForegroundColor Yellow; cmd.exe /c pause | Out-Null`;
+    navigator.clipboard.writeText(cmdWithPause);
     setCopiedId(tweak.id);
     onNotify(`Copied command for ${tweak.title}!`);
     setTimeout(() => setCopiedId(null), 2000);

@@ -14,7 +14,8 @@ import {
   RotateCcw,
   ArrowRight,
   Cpu,
-  Keyboard
+  Keyboard,
+  Wrench
 } from 'lucide-react';
 import { SoftwareInstallerTab } from './components/SoftwareInstallerTab';
 import { SystemTweaksTab } from './components/SystemTweaksTab';
@@ -150,13 +151,14 @@ net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo [*] Administrator privileges required for toolkit execution.
     echo [*] Requesting UAC elevation...
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process cmd.exe -ArgumentList '/c \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/k \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
     if %errorlevel% neq 0 (
         echo.
         echo [!] Automatic elevation could not proceed.
         echo [!] Please right-click this file and choose: 'Run as administrator'
         echo.
-        pause
+        echo Press any key to close this window...
+        pause >nul
     )
     exit /b
 )
@@ -204,8 +206,11 @@ echo.
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%TARGET_PS1%"
 
 echo.
-echo Press any key to exit...
-pause >nul`;
+echo ============================================================================
+echo   All tasks finished! Press any key to close this window...
+echo ============================================================================
+pause >nul
+exit`;
 
   const setupRirxCode = `@echo off
 :: ============================================================================
@@ -232,13 +237,14 @@ net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo [*] Administrator privileges required to register system command.
     echo [*] Requesting UAC elevation...
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process cmd.exe -ArgumentList '/c \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/k \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
     if %errorlevel% neq 0 (
         echo.
         echo [!] Automatic elevation could not proceed.
         echo [!] Please right-click this file and choose: 'Run as administrator'
         echo.
-        pause
+        echo Press any key to close this window...
+        pause >nul
     )
     exit /b
 )
@@ -312,8 +318,11 @@ echo     3. Command Prompt CMD : Type \\"rirx\\" -> hit Enter
 echo     4. Windows Terminal   : Type \\"rirx\\" -> hit Enter
 echo ============================================================================
 echo.
-echo Press any key to exit this installer window...
-pause >nul`;
+echo ============================================================================
+echo   All tasks finished! Press any key to close this window...
+echo ============================================================================
+pause >nul
+exit`;
 
   const totalSelectedCount = selectedApps.length + selectedTweaks.length;
 
@@ -482,8 +491,8 @@ pause >nul`;
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <Cpu className="w-4 h-4" />
-                <span>Power Tools</span>
+                <Wrench className="w-4 h-4" />
+                <span>Fix Center</span>
               </button>
 
               <button
@@ -525,8 +534,8 @@ pause >nul`;
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 space-y-6 relative z-10">
-        {/* Instant Remote PowerShell Endpoint Hero Strip - Hidden in Install & Tester modes for distraction-free space */}
-        {activeTab !== 'install' && activeTab !== 'tester' && (
+        {/* Instant Remote PowerShell Endpoint Hero Strip - Hidden in Install, Tester & Fix Center modes */}
+        {activeTab !== 'install' && activeTab !== 'tester' && activeTab !== 'tools' && (
           <section
             className={`rounded-3xl p-5 md:p-6 backdrop-blur-2xl transition-all duration-300 relative overflow-hidden border ${
               isDark

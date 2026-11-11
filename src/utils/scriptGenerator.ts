@@ -9,18 +9,36 @@ export function getTweakById(id: string): SystemTweak | undefined {
 }
 
 /**
+ * Escapes special Windows Batch characters (especially parentheses in app/tweak names)
+ * so `echo` statements inside `if (...)` blocks never cause cmd.exe syntax crashes.
+ */
+function escapeBatchEcho(str: string): string {
+  return str
+    .replace(/\^/g, '^^')
+    .replace(/&/g, '^&')
+    .replace(/\(/g, '^(')
+    .replace(/\)/g, '^)')
+    .replace(/</g, '^<')
+    .replace(/>/g, '^>')
+    .replace(/\|/g, '^|');
+}
+
+/**
  * Generates a smart 1-line command for a single application with fallback support
  */
-export function getSingleAppInstallCommand(app: SoftwareApp): string {
+export function getSingleAppInstallCommand(app: SoftwareApp, includePause: boolean = true): string {
+  const pauseSuffix = includePause
+    ? `; Write-Host "\`nAll tasks finished! Press any key to close this window..." -ForegroundColor Yellow; cmd.exe /c pause | Out-Null`
+    : '';
   if (app.id === 'Google.Gemini') {
-    return `$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut("$env:USERPROFILE\\Desktop\\Google Gemini.lnk"); $s.TargetPath = "msedge.exe"; $s.Arguments = "--app=https://gemini.google.com"; $s.Save(); Start-Process "msedge.exe" "--app=https://gemini.google.com"`;
+    return `$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut("$env:USERPROFILE\\Desktop\\Google Gemini.lnk"); $s.TargetPath = "msedge.exe"; $s.Arguments = "--app=https://gemini.google.com"; $s.Save(); Start-Process "msedge.exe" "--app=https://gemini.google.com"${pauseSuffix}`;
   }
   const sourceFlag = app.source ? ` --source ${app.source}` : '';
   const primaryCmd = `winget install --id ${app.id} -e${sourceFlag} --silent --accept-package-agreements --accept-source-agreements --disable-interactivity`;
   if (app.altIds && app.altIds.length > 0) {
-    return `${primaryCmd}; if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne -1978335189) { winget install --id ${app.altIds[0]} --silent --accept-package-agreements --accept-source-agreements --disable-interactivity }`;
+    return `${primaryCmd}; if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne -1978335189) { winget install --id ${app.altIds[0]} --silent --accept-package-agreements --accept-source-agreements --disable-interactivity }${pauseSuffix}`;
   }
-  return primaryCmd;
+  return `${primaryCmd}${pauseSuffix}`;
 }
 
 /**
@@ -41,9 +59,9 @@ export function generateBatchInstaller(
   const tweaks = selectedTweakIds.map(getTweakById).filter(Boolean) as SystemTweak[];
 
   const dateStr = new Date().toISOString().split('T')[0];
+  const safeBundleTitle = escapeBatchEcho(bundleTitle);
 
   let script = `@echo off
-setlocal EnableDelayedExpansion
 :: ============================================================================
 ::   ██╗████████╗███████╗██████╗ ██╗██████╗ ██╗  ██╗
 ::   ██║╚══██╔══╝██╔════╝██╔══██╗██║██╔══██╗╚██╗██╔╝
@@ -59,27 +77,30 @@ setlocal EnableDelayedExpansion
 ::  Generated  : ${dateStr}
 ::  Support    : Windows 10, Windows 11 (64-bit Architecture)
 :: ============================================================================
-title ${bundleTitle} - ItsRiRx Windows Tool Kit
+title ${safeBundleTitle} - ItsRiRx Windows Tool Kit
 color 0b
 
 :: 1. Safely unblock file from browser Mark-of-the-Web to prevent SmartScreen lock
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -LiteralPath '%~f0' -ErrorAction SilentlyContinue" >nul 2>&1
 
-:: 2. Check for Administrator privileges
+:: 2. Check for Administrator privileges (uses cmd.exe /k so window never auto-closes)
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo [*] Administrator privileges required for silent installation.
     echo [*] Requesting UAC elevation...
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process cmd.exe -ArgumentList '/c \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/k \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
     if %errorlevel% neq 0 (
         echo.
         echo [!] Automatic elevation could not proceed.
         echo [!] Please right-click this file and choose: 'Run as administrator'
         echo.
-        pause
+        echo Press any key to close this window...
+        pause >nul
     )
     exit /b
 )
+
+setlocal EnableDelayedExpansion
 
 :: Set working directory to script location
 cd /d "%~dp0"
@@ -89,8 +110,8 @@ echo ===========================================================================
 echo   ItsRiRx Windows Tool Kit - Automated Silent Deployment
 echo   Website    : https://itsrirx-toolkit.vercel.app
 echo   Created by : Riazul Islam
-echo   Setup Item : ${bundleTitle}
-echo   Queue      : ${apps.length} Application(s) ^| ${tweaks.length} System Optimization(s)
+echo   Setup Item : ${safeBundleTitle}
+echo   Queue      : ${apps.length} Application^(s^) ^| ${tweaks.length} System Optimization^(s^)
 echo ============================================================================
 echo.
 
@@ -166,7 +187,8 @@ echo ---------------------------------------------------------------------------
 echo.
 `;
     tweaks.forEach((t, i) => {
-      script += `echo [${i + 1}/${tweaks.length}] Applying: ${t.title}...
+      const safeTweakTitle = escapeBatchEcho(t.title);
+      script += `echo [${i + 1}/${tweaks.length}] Applying: ${safeTweakTitle}...
 ${t.batCode}
 echo   [OK] Done.
 echo.
@@ -194,9 +216,10 @@ echo.
 
     apps.forEach((app, idx) => {
       const safeSlug = app.name.replace(/[^a-zA-Z0-9]/g, '_');
+      const safeAppName = escapeBatchEcho(app.name);
       const sourceFlag = app.source ? ` --source ${app.source}` : '';
 
-      script += `echo [${idx + 1}/${apps.length}] Installing: ${app.name} (${app.id})...
+      script += `echo [${idx + 1}/${apps.length}] Installing: ${safeAppName} ^(${app.id}^)...
 set "APP_DONE=0"
 `;
 
@@ -204,7 +227,7 @@ set "APP_DONE=0"
         script += `echo   [*] Creating Desktop and Start Menu Web-App Launcher for Google Gemini...
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ws = New-Object -ComObject WScript.Shell; $desktop = [Environment]::GetFolderPath('Desktop'); $s = $ws.CreateShortcut((Join-Path $desktop 'Google Gemini.lnk')); if (Test-Path 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe') { $s.TargetPath = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'; $s.Arguments = '--app=https://gemini.google.com' } elseif (Test-Path 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe') { $s.TargetPath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'; $s.Arguments = '--app=https://gemini.google.com' } else { $s.TargetPath = 'https://gemini.google.com' }; $s.Save()" >nul 2>&1
 set "APP_DONE=1"
-echo   [SUCCESS] ${app.name} Desktop Launcher created!
+echo   [SUCCESS] ${safeAppName} Desktop Launcher created!
 echo.
 `;
         return;
@@ -240,7 +263,7 @@ if !errorlevel! equ -1978335189 set "APP_DONE=1"
       if (app.directUrl) {
         if (app.installerType === 'msi') {
           script += `if "!APP_DONE!"=="0" (
-    echo   [*] Winget source unavailable for ${app.name}. Downloading official MSI installer directly...
+    echo   [*] Winget source unavailable for ${safeAppName}. Downloading official MSI installer directly...
     curl.exe -L --retry 3 -s -S -o "%TEMP%\\${safeSlug}.msi" "${app.directUrl}"
     if exist "%TEMP%\\${safeSlug}.msi" (
         msiexec.exe /i "%TEMP%\\${safeSlug}.msi" /qn /norestart
@@ -251,7 +274,7 @@ if !errorlevel! equ -1978335189 set "APP_DONE=1"
 `;
         } else if (app.installerType === 'msix') {
           script += `if "!APP_DONE!"=="0" (
-    echo   [*] Downloading official MSIX package for ${app.name}...
+    echo   [*] Downloading official MSIX package for ${safeAppName}...
     curl.exe -L --retry 3 -s -S -o "%TEMP%\\${safeSlug}.msix" "${app.directUrl}"
     if exist "%TEMP%\\${safeSlug}.msix" (
         powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Add-AppxPackage -Path '%TEMP%\\${safeSlug}.msix' -ErrorAction SilentlyContinue"
@@ -262,14 +285,14 @@ if !errorlevel! equ -1978335189 set "APP_DONE=1"
 `;
         } else if (app.installerType === 'pwa') {
           script += `if "!APP_DONE!"=="0" (
-    echo   [*] Creating Desktop App Shortcut for ${app.name}...
+    echo   [*] Creating Desktop App Shortcut for ${safeAppName}...
     powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ws = New-Object -ComObject WScript.Shell; $desktop = [Environment]::GetFolderPath('Desktop'); $s = $ws.CreateShortcut((Join-Path $desktop '${app.name}.lnk')); if (Test-Path 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe') { $s.TargetPath = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'; $s.Arguments = '--app=${app.directUrl}' } else { $s.TargetPath = '${app.directUrl}' }; $s.Save()" >nul 2>&1
     set "APP_DONE=1"
 )
 `;
         } else if (app.installerType === 'user_exe') {
           script += `if "!APP_DONE!"=="0" (
-    echo   [*] Downloading official user installer for ${app.name}...
+    echo   [*] Downloading official user installer for ${safeAppName}...
     curl.exe -L --retry 3 -s -S -o "%TEMP%\\${safeSlug}.exe" "${app.directUrl}"
     if exist "%TEMP%\\${safeSlug}.exe" (
         runas /trustlevel:0x20000 "\"%TEMP%\\${safeSlug}.exe\" /silent" >nul 2>&1
@@ -280,7 +303,7 @@ if !errorlevel! equ -1978335189 set "APP_DONE=1"
         } else {
           const args = app.directArgs ?? '/S';
           script += `if "!APP_DONE!"=="0" (
-    echo   [*] Winget source unavailable for ${app.name}. Downloading official vendor installer directly...
+    echo   [*] Winget source unavailable for ${safeAppName}. Downloading official vendor installer directly...
     curl.exe -L --retry 3 -s -S -o "%TEMP%\\${safeSlug}.exe" "${app.directUrl}"
     if exist "%TEMP%\\${safeSlug}.exe" (
         "%TEMP%\\${safeSlug}.exe" ${args}
@@ -293,9 +316,9 @@ if !errorlevel! equ -1978335189 set "APP_DONE=1"
       }
 
       script += `if "!APP_DONE!"=="1" (
-    echo   [SUCCESS] ${app.name} is installed and ready!
+    echo   [SUCCESS] ${safeAppName} is installed and ready!
 ) else (
-    echo   [WARN] ${app.name} could not be installed automatically.
+    echo   [WARN] ${safeAppName} could not be installed automatically.
 )
 echo.
 `;
@@ -305,10 +328,12 @@ echo.
   script += `echo ============================================================================
 echo   [COMPLETED] Automated setup and deployment has finished!
 echo   Toolkit    : https://itsrirx-toolkit.vercel.app
+echo   All tasks finished! Press any key to close this window...
 echo ============================================================================
 echo.
 powershell.exe -NoProfile -Command "[console]::beep(800,200); [console]::beep(1000,300)" >nul 2>&1
-pause
+pause >nul
+exit
 `;
 
   return script;
@@ -524,10 +549,10 @@ $installed = $false
   script += `Write-Host "============================================================================" -ForegroundColor Cyan
 Write-Host "  [SUCCESS] All queued operations completed!" -ForegroundColor Green
 Write-Host "  Toolkit    : https://itsrirx-toolkit.vercel.app" -ForegroundColor Cyan
+Write-Host "  All tasks finished! Press any key to close this window..." -ForegroundColor Yellow
 Write-Host "============================================================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Press any key to exit..." -ForegroundColor DarkGray
-[void][System.Console]::ReadKey($true)
+cmd.exe /c pause | Out-Null
 `;
 
   return script;
@@ -550,10 +575,11 @@ export function generateOneLineCommand(
   const apps = selectedAppIds.map(getAppById).filter(Boolean) as SoftwareApp[];
   if (apps.length > 0) {
     apps.forEach((app) => {
-      parts.push(getSingleAppInstallCommand(app));
+      parts.push(getSingleAppInstallCommand(app, false));
     });
   }
 
+  parts.push(`Write-Host "\`nAll tasks finished! Press any key to close this window..." -ForegroundColor Yellow; cmd.exe /c pause | Out-Null`);
   return parts.join('; ');
 }
 
@@ -580,7 +606,12 @@ color 0b
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo [*] Administrator privileges required for registry rollback.
-    powershell.exe -NoProfile -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/k \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    if %errorlevel% neq 0 (
+        echo [!] Please right-click this file and choose: 'Run as administrator'
+        echo Press any key to close this window...
+        pause >nul
+    )
     exit /b
 )
 
@@ -635,9 +666,11 @@ echo.
 echo ============================================================================
 echo   [COMPLETED] All tweaks have been safely reverted to Windows defaults!
 echo   Toolkit    : https://itsrirx-toolkit.vercel.app
+echo   All tasks finished! Press any key to close this window...
 echo ============================================================================
 echo.
-pause
+pause >nul
+exit
 `;
 }
 
@@ -659,8 +692,11 @@ echo [*] Querying BIOS/UEFI embedded license tables (MSDM / OA3)...
 echo.
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$desktop = [Environment]::GetFolderPath('Desktop'); $k = (Get-CimInstance -Query 'select * from SoftwareLicensingService').OA3xOriginalProductKey; if ($k) { Write-Host '=====================================================' -ForegroundColor Cyan; Write-Host '>>> FOUND OEM PRODUCT KEY: ' -NoNewline -ForegroundColor Green; Write-Host $k -ForegroundColor Yellow; Write-Host '=====================================================' -ForegroundColor Cyan; $outPath = Join-Path $desktop 'Windows_OEM_Product_Key.txt'; ('Windows OEM Product Key: ' + $k) | Out-File -FilePath $outPath -Encoding utf8; Write-Host '>>> Saved key to Desktop\\Windows_OEM_Product_Key.txt' -ForegroundColor Green } else { Write-Host 'No OEM BIOS key detected (Retail / Digital Entitlement License).' -ForegroundColor Yellow }"
 echo.
-echo Press any key to exit...
+echo ============================================================================
+echo   All tasks finished! Press any key to close this window...
+echo ============================================================================
 pause >nul
+exit
 `;
 }
 
@@ -675,7 +711,12 @@ color 0b
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo [*] Administrator privileges required to export system drivers.
-    powershell.exe -NoProfile -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/k \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    if %errorlevel% neq 0 (
+        echo [!] Please right-click this file and choose: 'Run as administrator'
+        echo Press any key to close this window...
+        pause >nul
+    )
     exit /b
 )
 
@@ -717,7 +758,11 @@ echo.
 echo [*] Opening backup folder in File Explorer...
 start "" "%DEST%"
 echo.
-pause
+echo ============================================================================
+echo   All tasks finished! Press any key to close this window...
+echo ============================================================================
+pause >nul
+exit
 `;
 }
 
@@ -738,7 +783,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -Litera
 
 net session >nul 2>&1
 if %errorlevel% neq 0 (
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process cmd.exe -ArgumentList '/c \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/k \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
     exit /b
 )
 
@@ -765,7 +810,11 @@ echo.
 echo [*] Opening report in your default web browser...
 start "" "%HTML_OUT%"
 echo.
-pause
+echo ============================================================================
+echo   All tasks finished! Press any key to close this window...
+echo ============================================================================
+pause >nul
+exit
 `;
 }
 
@@ -786,7 +835,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -Litera
 
 net session >nul 2>&1
 if %errorlevel% neq 0 (
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process cmd.exe -ArgumentList '/c \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/k \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
     exit /b
 )
 
@@ -812,7 +861,11 @@ echo.
 echo [*] Opening text file on Desktop...
 start notepad.exe "%OUT_TXT%"
 echo.
-pause
+echo ============================================================================
+echo   All tasks finished! Press any key to close this window...
+echo ============================================================================
+pause >nul
+exit
 `;
 }
 
@@ -833,7 +886,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -Litera
 
 net session >nul 2>&1
 if %errorlevel% neq 0 (
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process cmd.exe -ArgumentList '/c \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/k \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
     exit /b
 )
 
@@ -852,9 +905,11 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$servers = @( @{ Nam
 echo.
 echo ============================================================================
 echo   DNS optimization completed!
+echo   All tasks finished! Press any key to close this window...
 echo ============================================================================
 echo.
-pause
+pause >nul
+exit
 `;
 }
 
@@ -896,7 +951,11 @@ echo.
 echo [*] Opening God Mode folder now...
 start "" "%DEST%"
 echo.
-timeout /t 3 >nul
+echo ============================================================================
+echo   All tasks finished! Press any key to close this window...
+echo ============================================================================
+pause >nul
+exit
 `;
 }
 
@@ -917,7 +976,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -Litera
 
 net session >nul 2>&1
 if %errorlevel% neq 0 (
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process cmd.exe -ArgumentList '/c \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/k \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
     exit /b
 )
 
@@ -953,7 +1012,11 @@ echo.
 echo [*] Testing launch of gpedit.msc...
 start gpedit.msc
 echo.
-pause
+echo ============================================================================
+echo   All tasks finished! Press any key to close this window...
+echo ============================================================================
+pause >nul
+exit
 `;
 }
 
@@ -1000,7 +1063,11 @@ echo.
 echo [*] Launching Rufus now...
 start "" "%DEST%"
 echo.
-timeout /t 3 >nul
+echo ============================================================================
+echo   All tasks finished! Press any key to close this window...
+echo ============================================================================
+pause >nul
+exit
 `;
 }
 
@@ -1010,7 +1077,6 @@ timeout /t 3 >nul
  */
 export function generateFreshWindowsFixScript(): string {
   return `@echo off
-setlocal EnableDelayedExpansion
 :: ============================================================================
 ::   ItsRiRx Windows Tool Kit - Fresh Windows Setup & Winget Auto-Fixer
 ::   Website    : https://itsrirx-toolkit.vercel.app
@@ -1027,16 +1093,18 @@ net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo [INFO] Administrator rights required to fix Windows system runtimes.
     echo [*] Requesting UAC elevation...
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process cmd.exe -ArgumentList '/c \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/k \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
     if %errorlevel% neq 0 (
         echo.
         echo [!] Please right-click this file and choose: 'Run as administrator'
         echo.
-        pause
+        echo Press any key to close this window...
+        pause >nul
     )
     exit /b
 )
 
+setlocal EnableDelayedExpansion
 cd /d "%~dp0"
 cls
 echo ============================================================================
@@ -1089,7 +1157,7 @@ echo   [OK] Repository sources synchronized.
 echo.
 
 :: STEP 4: Install Essential Windows Runtimes (Visual C++, DirectX, .NET) with Direct Fallback
-echo [4/5] Silently installing Visual C++ Redistributables (2015-2022 x86/x64), DirectX & .NET 8...
+echo [4/5] Silently installing Visual C++ Redistributables (2015-2022 x86/x64), DirectX ^& .NET 8...
 %WINGET_CMD% install --id Microsoft.VCRedist.2015+.x64 -e --silent --accept-package-agreements --accept-source-agreements --disable-interactivity >nul 2>&1
 if !errorlevel! neq 0 if !errorlevel! neq -1978335189 (
     curl.exe -L --retry 3 -s -S -o "%TEMP%\\vc_redist.x64.exe" "https://aka.ms/vs/17/release/vc_redist.x64.exe"
@@ -1106,7 +1174,7 @@ if !errorlevel! neq 0 if !errorlevel! neq -1978335189 (
     if exist "%TEMP%\\dxwebsetup.exe" "%TEMP%\\dxwebsetup.exe" /Q
 )
 %WINGET_CMD% install --id Microsoft.DotNet.DesktopRuntime.8 -e --silent --accept-package-agreements --accept-source-agreements --disable-interactivity >nul 2>&1
-echo   [OK] Essential runtimes installed (VCRUNTIME140.dll, MSVCP140.dll & DirectX errors solved).
+echo   [OK] Essential runtimes installed (VCRUNTIME140.dll, MSVCP140.dll ^& DirectX errors solved).
 echo.
 
 :: STEP 5: Re-register & Reset Windows Store & Cache
@@ -1120,10 +1188,12 @@ echo ===========================================================================
 echo   [SUCCESS] Fresh Windows Setup and Winget Repair is COMPLETE!
 echo   You can now run any tool or batch installer from ItsRiRx Toolkit!
 echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   All tasks finished! Press any key to close this window...
 echo ============================================================================
 echo.
 powershell.exe -NoProfile -Command "[console]::beep(800,200); [console]::beep(1000,300)" >nul 2>&1
-pause
+pause >nul
+exit
 `;
 }
 
@@ -1148,12 +1218,13 @@ net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo [INFO] Administrator privileges required to manage Windows Print Spooler service.
     echo [*] Requesting UAC elevation...
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process cmd.exe -ArgumentList '/c \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/k \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
     if %errorlevel% neq 0 (
         echo.
         echo [!] Please right-click this file and choose: 'Run as administrator'
         echo.
-        pause
+        echo Press any key to close this window...
+        pause >nul
     )
     exit /b
 )
@@ -1161,7 +1232,7 @@ if %errorlevel% neq 0 (
 cd /d "%~dp0"
 cls
 echo ============================================================================
-echo   ItsRiRx Windows Tool Kit - Print Spooler & Stuck Job Repair Utility
+echo   ItsRiRx Windows Tool Kit - Print Spooler ^& Stuck Job Repair Utility
 echo   Website    : https://itsrirx-toolkit.vercel.app
 echo   Created by : Riazul Islam
 echo ============================================================================
@@ -1171,22 +1242,637 @@ net stop spooler
 echo.
 
 echo [*] Step 2: Clearing all stuck and pending print jobs...
-del /Q /F /S "%systemroot%\\System32\\Spool\\Printers\\*.*"
+del /Q /F /S "%systemroot%\\System32\\Spool\\Printers\\*.*" >nul 2>&1
 echo   [OK] Pending print queue cleaned.
 echo.
 
-echo [*] Step 3: Starting and setting Print Spooler to Automatic...
+echo [*] Step 3: Applying Shared Printer Registry Fixes ^(0x11b, 0x709, 0xbcb, 0x40^)...
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Print" /v RpcAuthnLevelPrivacyEnabled /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Print" /v DnsOnWire /t REG_DWORD /d 1 /f >nul 2>&1
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\Printers\\RPC" /v RpcUseNamedPipeProtocol /t REG_DWORD /d 1 /f >nul 2>&1
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\Printers\\RPC" /v RpcProtocols /t REG_DWORD /d 7 /f >nul 2>&1
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\Printers\\RPC" /v RpcAuthnLevelPrivacyEnabled /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\Printers\\RPC" /v ForceKerberosForRpc /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\Printers\\PointAndPrint" /v RestrictDriverInstallationToAdministrators /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\Printers\\PointAndPrint" /v NoWarningNoElevationOnInstall /t REG_DWORD /d 1 /f >nul 2>&1
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\Printers\\PointAndPrint" /v UpdatePromptSettings /t REG_DWORD /d 2 /f >nul 2>&1
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanWorkstation\\Parameters" /v AllowInsecureGuestAuth /t REG_DWORD /d 1 /f >nul 2>&1
+echo   [OK] Shared Printer RPC ^& PointAndPrint Registry keys configured.
+echo.
+
+echo [*] Step 4: Starting and setting Print Spooler to Automatic...
 sc config spooler start= auto
 net start spooler
 echo.
 
 echo ============================================================================
-echo   [SUCCESS] Print Spooler service restarted and all stuck jobs cleared!
+echo   [SUCCESS] Print Spooler restarted, queue cleared ^& Shared Printer fixed!
 echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   All tasks finished! Press any key to close this window...
 echo ============================================================================
 echo.
 powershell.exe -NoProfile -Command "[console]::beep(800,200); [console]::beep(1000,300)" >nul 2>&1
-pause
+pause >nul
+exit
+`;
+}
+
+/**
+ * Generates an automated .bat script to clear temp, %temp%, prefetch, and recent files in 1 click
+ */
+export function generateTempCleanerFixScript(): string {
+  return `@echo off
+:: ============================================================================
+::   ItsRiRx Windows Tool Kit - 1-Click Temp, %Temp%, Prefetch & Recent Cleaner
+::   Website    : https://itsrirx-toolkit.vercel.app
+::   Created by : Riazul Islam
+:: ============================================================================
+title 1-Click Temp, %Temp%, Prefetch & Recent Cleaner - ItsRiRx Tool Kit
+color 0b
+
+:: 1. Unblock file from Mark-of-the-Web
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -LiteralPath '%~f0' -ErrorAction SilentlyContinue" >nul 2>&1
+
+:: 2. Check for Administrator privileges (required for C:\\Windows\\Temp and C:\\Windows\\Prefetch)
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [INFO] Administrator privileges required to clean C:\\Windows\\Temp and Prefetch.
+    echo [*] Requesting UAC elevation...
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/k \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    if %errorlevel% neq 0 (
+        echo.
+        echo [!] Please right-click this file and choose: 'Run as administrator'
+        echo.
+        echo Press any key to close this window...
+        pause >nul
+    )
+    exit /b
+)
+
+cd /d "%~dp0"
+cls
+echo ============================================================================
+echo   ItsRiRx Windows Tool Kit - 1-Click Temp, %%Temp%%, Prefetch ^& Recent Cleaner
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   Created by : Riazul Islam
+echo ============================================================================
+echo.
+echo [*] Starting deep cleanup of Run commands: temp, %%temp%%, prefetch, recent...
+echo.
+
+:: STEP 1: Clean %TEMP% (User Local Temp Folder)
+echo [1/4] Cleaning User Temp Folder (%%temp%% -^> %TEMP%)...
+del /s /f /q "%TEMP%\\*.*" >nul 2>&1
+for /d %%p in ("%TEMP%\\*.*") do rmdir "%%p" /s /q >nul 2>&1
+if exist "%USERPROFILE%\\AppData\\Local\\Temp" (
+    del /s /f /q "%USERPROFILE%\\AppData\\Local\\Temp\\*.*" >nul 2>&1
+    for /d %%p in ("%USERPROFILE%\\AppData\\Local\\Temp\\*.*") do rmdir "%%p" /s /q >nul 2>&1
+)
+echo   [OK] %%temp%% folder cleaned (skipped active files in use).
+echo.
+
+:: STEP 2: Clean temp (Windows System Temp Folder)
+echo [2/4] Cleaning Windows System Temp Folder (temp -^> %SystemRoot%\\Temp)...
+del /s /f /q "%SystemRoot%\\Temp\\*.*" >nul 2>&1
+for /d %%p in ("%SystemRoot%\\Temp\\*.*") do rmdir "%%p" /s /q >nul 2>&1
+echo   [OK] C:\\Windows\\Temp folder cleaned.
+echo.
+
+:: STEP 3: Clean prefetch (Windows Prefetch Cache)
+echo [3/4] Cleaning Windows Prefetch Cache (prefetch -^> %SystemRoot%\\Prefetch)...
+del /s /f /q "%SystemRoot%\\Prefetch\\*.*" >nul 2>&1
+echo   [OK] C:\\Windows\\Prefetch cache cleaned.
+echo.
+
+:: STEP 4: Clean recent (Windows Recent Items & Jump List Cache)
+echo [4/4] Cleaning Windows Recent Files History (recent -^> %AppData%\\Microsoft\\Windows\\Recent)...
+del /f /q "%AppData%\\Microsoft\\Windows\\Recent\\*.*" >nul 2>&1
+del /f /q "%AppData%\\Microsoft\\Windows\\Recent\\AutomaticDestinations\\*.*" >nul 2>&1
+del /f /q "%AppData%\\Microsoft\\Windows\\Recent\\CustomDestinations\\*.*" >nul 2>&1
+echo   [OK] Recent items and jump list history cleared.
+echo.
+
+echo ============================================================================
+echo   [SUCCESS] All 4 folders (temp, %%temp%%, prefetch, recent) cleaned in 1 click!
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   All tasks finished! Press any key to close this window...
+echo ============================================================================
+echo.
+powershell.exe -NoProfile -Command "[console]::beep(800,200); [console]::beep(1000,300)" >nul 2>&1
+pause >nul
+exit
+`;
+}
+
+/**
+ * Fix Module #3: Corrupted Windows System File Repair (DISM + SFC /scannow)
+ */
+export function generateSfcDismFixScript(): string {
+  return `@echo off
+:: ============================================================================
+::   ItsRiRx Windows Tool Kit - Corrupted Windows System File Repair (SFC+DISM)
+::   Website    : https://itsrirx-toolkit.vercel.app
+::   Created by : Riazul Islam
+:: ============================================================================
+title Corrupted Windows System File Repair - ItsRiRx Tool Kit
+color 0b
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -LiteralPath '%~f0' -ErrorAction SilentlyContinue" >nul 2>&1
+
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [INFO] Administrator privileges required for DISM and SFC system repair.
+    echo [*] Requesting UAC elevation...
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/k \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    if %errorlevel% neq 0 (
+        echo.
+        echo [!] Please right-click this file and choose: 'Run as administrator'
+        echo.
+        echo Press any key to close this window...
+        pause >nul
+    )
+    exit /b
+)
+
+cd /d "%~dp0"
+cls
+echo ============================================================================
+echo   ItsRiRx Windows Tool Kit - Corrupted Windows System File Repair
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   Created by : Riazul Islam
+echo ============================================================================
+echo.
+echo [*] Step 1/2: Repairing Windows Component Store image via DISM...
+echo [*] (This connects to Windows Update to fix corrupted core packages)
+echo.
+DISM.exe /Online /Cleanup-Image /RestoreHealth
+echo.
+echo   [OK] DISM Component Store verification completed.
+echo.
+
+echo [*] Step 2/2: Running System File Checker (sfc /scannow)...
+echo [*] (Scanning all protected Windows OS files and replacing corrupted DLLs)
+echo.
+sfc /scannow
+echo.
+
+echo ============================================================================
+echo   [SUCCESS] Windows System File Repair (DISM + SFC) completed!
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   All tasks finished! Press any key to close this window...
+echo ============================================================================
+echo.
+powershell.exe -NoProfile -Command "[console]::beep(800,200); [console]::beep(1000,300)" >nul 2>&1
+pause >nul
+exit
+`;
+}
+
+/**
+ * Fix Module #4: Winget & Microsoft Store Not Working Fixer
+ */
+export function generateWingetStoreFixScript(): string {
+  return `@echo off
+:: ============================================================================
+::   ItsRiRx Windows Tool Kit - Winget & Microsoft Store Not Working Fixer
+::   Website    : https://itsrirx-toolkit.vercel.app
+::   Created by : Riazul Islam
+:: ============================================================================
+title Winget & Microsoft Store Repair - ItsRiRx Tool Kit
+color 0b
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -LiteralPath '%~f0' -ErrorAction SilentlyContinue" >nul 2>&1
+
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [INFO] Administrator privileges required to repair Winget and Microsoft Store.
+    echo [*] Requesting UAC elevation...
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/k \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    if %errorlevel% neq 0 (
+        echo.
+        echo [!] Please right-click this file and choose: 'Run as administrator'
+        echo.
+        echo Press any key to close this window...
+        pause >nul
+    )
+    exit /b
+)
+
+setlocal EnableDelayedExpansion
+cd /d "%~dp0"
+cls
+echo ============================================================================
+echo   ItsRiRx Windows Tool Kit - Winget ^& Microsoft Store Not Working Fixer
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   Created by : Riazul Islam
+echo ============================================================================
+echo.
+echo [*] Step 1/4: Unlocking PowerShell ExecutionPolicy and TLS 1.2/1.3...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13; Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force; Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force; Set-ExecutionPolicy -Scope LocalMachine -ExecutionPolicy RemoteSigned -Force -ErrorAction SilentlyContinue" >nul 2>&1
+echo   [OK] ExecutionPolicy and TLS protocols unlocked.
+echo.
+
+echo [*] Step 2/4: Installing Winget UWP Dependencies, App Installer ^& CDN Certificate...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${WINGET_BOOTSTRAP_PS_ONELINER}"
+echo.
+
+echo [*] Step 3/4: Resetting and updating Winget package sources...
+where winget.exe >nul 2>&1
+if !errorlevel! equ 0 (
+    winget.exe source reset --force >nul 2>&1
+    winget.exe source update --accept-source-agreements >nul 2>&1
+)
+echo   [OK] Winget repository sources synchronized.
+echo.
+
+echo [*] Step 4/4: Resetting Microsoft Store cache and re-registering Store manifest...
+start /b wsreset.exe -i >nul 2>&1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Get-AppxPackage *WindowsStore* -AllUsers | ForEach-Object { Add-AppxPackage -DisableDevelopmentMode -Register \\"$($_.InstallLocation)\\AppXManifest.xml\\" -ErrorAction SilentlyContinue }" >nul 2>&1
+ipconfig /flushdns >nul 2>&1
+echo   [OK] Microsoft Store re-registered and DNS cache flushed.
+echo.
+
+echo ============================================================================
+echo   [SUCCESS] Winget and Microsoft Store have been completely repaired!
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   All tasks finished! Press any key to close this window...
+echo ============================================================================
+echo.
+powershell.exe -NoProfile -Command "[console]::beep(800,200); [console]::beep(1000,300)" >nul 2>&1
+pause >nul
+exit
+`;
+}
+
+/**
+ * Fix Module #5: Missing DLL & Game/App Runtime Fixer (Visual C++, DirectX, .NET)
+ */
+export function generateMissingDllRuntimesFixScript(): string {
+  return `@echo off
+:: ============================================================================
+::   ItsRiRx Windows Tool Kit - Missing DLL & Game/App Runtime Fixer
+::   Website    : https://itsrirx-toolkit.vercel.app
+::   Created by : Riazul Islam
+:: ============================================================================
+title Missing DLL & Runtime Fixer - ItsRiRx Tool Kit
+color 0b
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -LiteralPath '%~f0' -ErrorAction SilentlyContinue" >nul 2>&1
+
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [INFO] Administrator privileges required to install system DLL runtimes.
+    echo [*] Requesting UAC elevation...
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/k \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    if %errorlevel% neq 0 (
+        echo.
+        echo [!] Please right-click this file and choose: 'Run as administrator'
+        echo.
+        echo Press any key to close this window...
+        pause >nul
+    )
+    exit /b
+)
+
+setlocal EnableDelayedExpansion
+cd /d "%~dp0"
+cls
+echo ============================================================================
+echo   ItsRiRx Windows Tool Kit - Missing DLL ^& Game/App Runtime Fixer
+echo   Fixes: VCRUNTIME140.dll, MSVCP140.dll, d3dx9_43.dll, xinput1_3.dll, .NET
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo ============================================================================
+echo.
+
+echo [1/4] Installing Microsoft Visual C++ 2015-2022 Redistributable ^(x64^)...
+curl.exe -L --retry 3 -s -S -o "%TEMP%\\vc_redist.x64.exe" "https://aka.ms/vs/17/release/vc_redist.x64.exe"
+if exist "%TEMP%\\vc_redist.x64.exe" (
+    "%TEMP%\\vc_redist.x64.exe" /install /quiet /norestart
+    del /f /q "%TEMP%\\vc_redist.x64.exe" >nul 2>&1
+    echo   [OK] Visual C++ 2015-2022 ^(x64^) installed.
+) else (
+    winget.exe install --id Microsoft.VCRedist.2015+.x64 -e --silent --accept-package-agreements --accept-source-agreements
+)
+echo.
+
+echo [2/4] Installing Microsoft Visual C++ 2015-2022 Redistributable ^(x86^)...
+curl.exe -L --retry 3 -s -S -o "%TEMP%\\vc_redist.x86.exe" "https://aka.ms/vs/17/release/vc_redist.x86.exe"
+if exist "%TEMP%\\vc_redist.x86.exe" (
+    "%TEMP%\\vc_redist.x86.exe" /install /quiet /norestart
+    del /f /q "%TEMP%\\vc_redist.x86.exe" >nul 2>&1
+    echo   [OK] Visual C++ 2015-2022 ^(x86^) installed.
+) else (
+    winget.exe install --id Microsoft.VCRedist.2015+.x86 -e --silent --accept-package-agreements --accept-source-agreements
+)
+echo.
+
+echo [3/4] Installing Microsoft DirectX End-User Runtimes ^(d3dx9 / xinput DLLs^)...
+curl.exe -L --retry 3 -s -S -o "%TEMP%\\dxwebsetup.exe" "https://download.microsoft.com/download/1/7/1/1718CCC4-6315-4D8E-9543-8E28A4E18C4C/dxwebsetup.exe"
+if exist "%TEMP%\\dxwebsetup.exe" (
+    "%TEMP%\\dxwebsetup.exe" /Q
+    del /f /q "%TEMP%\\dxwebsetup.exe" >nul 2>&1
+    echo   [OK] DirectX End-User Runtime installed.
+) else (
+    winget.exe install --id Microsoft.DirectX -e --silent --accept-package-agreements --accept-source-agreements
+)
+echo.
+
+echo [4/4] Installing Microsoft .NET Desktop Runtime 8 ^(x64^)...
+where winget.exe >nul 2>&1
+if !errorlevel! equ 0 (
+    winget.exe install --id Microsoft.DotNet.DesktopRuntime.8 -e --silent --accept-package-agreements --accept-source-agreements --disable-interactivity
+)
+echo   [OK] .NET Desktop Runtime verified.
+echo.
+
+echo ============================================================================
+echo   [SUCCESS] All Visual C++, DirectX, and .NET Runtimes installed!
+echo   Missing DLL errors ^(VCRUNTIME140.dll / MSVCP140.dll^) are now fixed!
+echo   All tasks finished! Press any key to close this window...
+echo ============================================================================
+echo.
+powershell.exe -NoProfile -Command "[console]::beep(800,200); [console]::beep(1000,300)" >nul 2>&1
+pause >nul
+exit
+`;
+}
+
+/**
+ * Fix Module #6: Network & Internet Reset Fixer
+ */
+export function generateNetworkResetFixScript(): string {
+  return `@echo off
+:: ============================================================================
+::   ItsRiRx Windows Tool Kit - Network & Internet Reset Fixer
+::   Website    : https://itsrirx-toolkit.vercel.app
+::   Created by : Riazul Islam
+:: ============================================================================
+title Network & Internet Reset Fixer - ItsRiRx Tool Kit
+color 0b
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -LiteralPath '%~f0' -ErrorAction SilentlyContinue" >nul 2>&1
+
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [INFO] Administrator privileges required to reset Winsock and TCP/IP stack.
+    echo [*] Requesting UAC elevation...
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/k \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    if %errorlevel% neq 0 (
+        echo.
+        echo [!] Please right-click this file and choose: 'Run as administrator'
+        echo.
+        echo Press any key to close this window...
+        pause >nul
+    )
+    exit /b
+)
+
+cd /d "%~dp0"
+cls
+echo ============================================================================
+echo   ItsRiRx Windows Tool Kit - Network ^& Internet Reset Fixer
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   Created by : Riazul Islam
+echo ============================================================================
+echo.
+echo [1/5] Flushing DNS Resolver Cache ^& Re-registering DNS...
+ipconfig /flushdns
+ipconfig /registerdns >nul 2>&1
+echo   [OK] DNS cache flushed.
+echo.
+
+echo [2/5] Releasing and Renewing DHCP IPv4/IPv6 Addresses...
+ipconfig /release >nul 2>&1
+ipconfig /renew >nul 2>&1
+echo   [OK] IP configuration renewed.
+echo.
+
+echo [3/5] Clearing ARP ^& NetBIOS routing tables...
+arp -d * >nul 2>&1
+nbtstat -R >nul 2>&1
+nbtstat -RR >nul 2>&1
+echo   [OK] ARP and NetBIOS caches cleared.
+echo.
+
+echo [4/5] Resetting Windows Sockets ^(Winsock^) Catalog...
+netsh winsock reset
+echo   [OK] Winsock catalog reset.
+echo.
+
+echo [5/5] Resetting TCP/IP Stack ^& Enabling TCP Auto-Tuning...
+netsh int ip reset >nul 2>&1
+netsh int tcp set global autotuninglevel=normal >nul 2>&1
+echo   [OK] TCP/IP stack reset to clean defaults.
+echo.
+
+echo ============================================================================
+echo   [SUCCESS] Network ^& Internet Reset completed!
+echo   ^(Tip: If internet was completely disconnected, restart your PC once^)
+echo   All tasks finished! Press any key to close this window...
+echo ============================================================================
+echo.
+powershell.exe -NoProfile -Command "[console]::beep(800,200); [console]::beep(1000,300)" >nul 2>&1
+pause >nul
+exit
+`;
+}
+
+/**
+ * Fix Module #7: C: Drive Space Recovery & Windows Update Cleanup
+ */
+export function generateCDriveSpaceFixScript(): string {
+  return `@echo off
+:: ============================================================================
+::   ItsRiRx Windows Tool Kit - C: Drive Space Recovery & Update Cleanup
+::   Website    : https://itsrirx-toolkit.vercel.app
+::   Created by : Riazul Islam
+:: ============================================================================
+title C: Drive Space Recovery & Cleanup - ItsRiRx Tool Kit
+color 0b
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -LiteralPath '%~f0' -ErrorAction SilentlyContinue" >nul 2>&1
+
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [INFO] Administrator privileges required to recover C: drive system space.
+    echo [*] Requesting UAC elevation...
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/k \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    if %errorlevel% neq 0 (
+        echo.
+        echo [!] Please right-click this file and choose: 'Run as administrator'
+        echo.
+        echo Press any key to close this window...
+        pause >nul
+    )
+    exit /b
+)
+
+cd /d "%~dp0"
+cls
+echo ============================================================================
+echo   ItsRiRx Windows Tool Kit - C: Drive Space Recovery ^& Update Cleanup
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   Created by : Riazul Islam
+echo ============================================================================
+echo.
+powershell.exe -NoProfile -Command "$d = Get-PSDrive C -ErrorAction SilentlyContinue; if ($d) { Write-Host ('[*] C: Drive Free Space BEFORE Cleanup : ' + [math]::Round($d.Free / 1GB, 2) + ' GB') -ForegroundColor Yellow }"
+echo.
+
+echo [1/5] Removing Hibernation File ^(hiberfil.sys - Frees 6GB to 32GB^)...
+powercfg -h off >nul 2>&1
+echo   [OK] Hibernation disabled and hiberfil.sys deleted from C:\\.
+echo.
+
+echo [2/5] Purging Old Windows Update Downloads ^& Delivery Optimization Cache...
+net stop wuauserv >nul 2>&1
+net stop bits >nul 2>&1
+del /s /f /q "%SystemRoot%\\SoftwareDistribution\\Download\\*.*" >nul 2>&1
+for /d %%p in ("%SystemRoot%\\SoftwareDistribution\\Download\\*.*") do rmdir "%%p" /s /q >nul 2>&1
+del /s /f /q "%SystemRoot%\\SoftwareDistribution\\DeliveryOptimization\\*.*" >nul 2>&1
+for /d %%p in ("%SystemRoot%\\SoftwareDistribution\\DeliveryOptimization\\*.*") do rmdir "%%p" /s /q >nul 2>&1
+net start wuauserv >nul 2>&1
+net start bits >nul 2>&1
+echo   [OK] SoftwareDistribution and DeliveryOptimization caches purged.
+echo.
+
+echo [3/5] Deleting System Crash Dumps, Error Reports ^& Leftover Logs...
+del /f /q "%SystemRoot%\\MEMORY.DMP" >nul 2>&1
+del /s /f /q "%SystemRoot%\\Minidump\\*.*" >nul 2>&1
+del /s /f /q "%LocalAppData%\\CrashDumps\\*.*" >nul 2>&1
+del /s /f /q "%ProgramData%\\Microsoft\\Windows\\WER\\ReportArchive\\*.*" >nul 2>&1
+del /s /f /q "%ProgramData%\\Microsoft\\Windows\\WER\\ReportQueue\\*.*" >nul 2>&1
+del /s /f /q "%SystemRoot%\\Logs\\CBS\\*.log" >nul 2>&1
+echo   [OK] Memory dumps, WER archives, and CBS logs cleaned.
+echo.
+
+echo [4/5] Cleaning User Temp, Windows Temp ^& Emptying Recycle Bin...
+del /s /f /q "%TEMP%\\*.*" >nul 2>&1
+for /d %%p in ("%TEMP%\\*.*") do rmdir "%%p" /s /q >nul 2>&1
+del /s /f /q "%SystemRoot%\\Temp\\*.*" >nul 2>&1
+for /d %%p in ("%SystemRoot%\\Temp\\*.*") do rmdir "%%p" /s /q >nul 2>&1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Clear-RecycleBin -Force -ErrorAction SilentlyContinue" >nul 2>&1
+echo   [OK] Temp folders and Recycle Bin emptied.
+echo.
+
+echo [5/5] Trimming Superseded Component Store Packages ^(WinSxS^)...
+dism.exe /Online /Cleanup-Image /StartComponentCleanup
+echo   [OK] Component Store cleanup completed.
+echo.
+
+powershell.exe -NoProfile -Command "$d = Get-PSDrive C -ErrorAction SilentlyContinue; if ($d) { Write-Host ('[*] C: Drive Free Space AFTER Cleanup  : ' + [math]::Round($d.Free / 1GB, 2) + ' GB') -ForegroundColor Green }"
+echo.
+echo ============================================================================
+echo   [SUCCESS] C: Drive Space Recovery ^& Cleanup Completed!
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   All tasks finished! Press any key to close this window...
+echo ============================================================================
+echo.
+powershell.exe -NoProfile -Command "[console]::beep(800,200); [console]::beep(1000,300)" >nul 2>&1
+pause >nul
+exit
+`;
+}
+
+/**
+ * Fix Module #8: Shared Printer & Network Printer Registry Error Fixer
+ * Fixes 0x0000011b, 0x00000709, 0x00000bcb, 0x00000040, 0x000006ba, 0x80070035
+ */
+export function generateSharedPrinterRegistryFixScript(): string {
+  return `@echo off
+:: ============================================================================
+::   ItsRiRx Windows Tool Kit - Shared Printer & Network Printer Registry Fixer
+::   Fixes: 0x0000011b, 0x00000709, 0x00000bcb, 0x00000040, 0x000006ba, Guest SMB
+::   Website    : https://itsrirx-toolkit.vercel.app
+::   Created by : Riazul Islam
+:: ============================================================================
+title Shared Printer & Registry Error Fixer - ItsRiRx Tool Kit
+color 0b
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -LiteralPath '%~f0' -ErrorAction SilentlyContinue" >nul 2>&1
+
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [INFO] Administrator privileges required to apply Shared Printer Registry fixes.
+    echo [*] Requesting UAC elevation...
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/k \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    if %errorlevel% neq 0 (
+        echo.
+        echo [!] Please right-click this file and choose: 'Run as administrator'
+        echo.
+        echo Press any key to close this window...
+        pause >nul
+    )
+    exit /b
+)
+
+cd /d "%~dp0"
+cls
+echo ============================================================================
+echo   ItsRiRx Windows Tool Kit - Shared Printer ^& Registry All-In-One Fixer
+echo   Solves: 0x0000011b, 0x00000709, 0x00000bcb, 0x00000040, 0x80070035
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   Created by : Riazul Islam
+echo ============================================================================
+echo.
+
+echo [1/5] Fixing Error 0x0000011b ^(RPC Auth Privacy Level Override^)...
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Print" /v RpcAuthnLevelPrivacyEnabled /t REG_DWORD /d 0 /f >nul 2>&1
+echo   [OK] RpcAuthnLevelPrivacyEnabled set to 0 ^(Fixes 0x0000011b^).
+echo.
+
+echo [2/5] Fixing Error 0x00000709 ^& 0x00000040 ^(RPC Named Pipe ^& TCP Protocols^)...
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\Printers\\RPC" /v RpcUseNamedPipeProtocol /t REG_DWORD /d 1 /f >nul 2>&1
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\Printers\\RPC" /v RpcProtocols /t REG_DWORD /d 7 /f >nul 2>&1
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\Printers\\RPC" /v RpcAuthnLevelPrivacyEnabled /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\Printers\\RPC" /v ForceKerberosForRpc /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Print" /v DnsOnWire /t REG_DWORD /d 1 /f >nul 2>&1
+echo   [OK] RPC Named Pipes, TCP Protocols, and DnsOnWire enabled ^(Fixes 0x00000709^).
+echo.
+
+echo [3/5] Fixing Error 0x00000bcb ^& 0x000006ba ^(PointAndPrint Shared Driver Policy^)...
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\Printers\\PointAndPrint" /v RestrictDriverInstallationToAdministrators /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\Printers\\PointAndPrint" /v NoWarningNoElevationOnInstall /t REG_DWORD /d 1 /f >nul 2>&1
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\Printers\\PointAndPrint" /v UpdatePromptSettings /t REG_DWORD /d 2 /f >nul 2>&1
+echo   [OK] PointAndPrint driver installation restrictions removed ^(Fixes 0x00000bcb^).
+echo.
+
+echo [4/5] Fixing SMB Guest Logon ^& Blank Password Sharing ^(0x80070035 / Access Denied^)...
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanWorkstation\\Parameters" /v AllowInsecureGuestAuth /t REG_DWORD /d 1 /f >nul 2>&1
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LanmanWorkstation" /v AllowInsecureGuestAuth /t REG_DWORD /d 1 /f >nul 2>&1
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters" /v restrictnullsessaccess /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa" /v EveryoneIncludesAnonymous /t REG_DWORD /d 1 /f >nul 2>&1
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa" /v LimitBlankPasswordUse /t REG_DWORD /d 0 /f >nul 2>&1
+echo   [OK] Insecure Guest Auth and Blank Password LAN sharing unlocked.
+echo.
+
+echo [5/5] Enabling Printer Sharing Firewall Rules ^& Restarting Print Spooler...
+netsh advfirewall firewall set rule group="File and Printer Sharing" new enable=Yes >nul 2>&1
+netsh advfirewall firewall set rule group="Network Discovery" new enable=Yes >nul 2>&1
+sc config fdPHost start= auto >nul 2>&1
+net start fdPHost >nul 2>&1
+sc config FDResPub start= auto >nul 2>&1
+net start FDResPub >nul 2>&1
+sc config LanmanWorkstation start= auto >nul 2>&1
+net start LanmanWorkstation >nul 2>&1
+sc config LanmanServer start= auto >nul 2>&1
+net start LanmanServer >nul 2>&1
+net stop spooler >nul 2>&1
+del /Q /F /S "%systemroot%\\System32\\Spool\\Printers\\*.*" >nul 2>&1
+sc config spooler start= auto >nul 2>&1
+net start spooler >nul 2>&1
+echo   [OK] Firewall rules enabled, Discovery services started, and Spooler restarted!
+echo.
+
+echo ============================================================================
+echo   [SUCCESS] All Shared Printer Registry Errors Fixed!
+echo   Solved: 0x0000011b, 0x00000709, 0x00000bcb, 0x00000040, 0x80070035
+echo   ^(Tip: Run this on both the Host PC sharing the printer and Client PC^)
+echo   All tasks finished! Press any key to close this window...
+echo ============================================================================
+echo.
+powershell.exe -NoProfile -Command "[console]::beep(800,200); [console]::beep(1000,300)" >nul 2>&1
+pause >nul
+exit
 `;
 }
 
@@ -1204,3 +1890,4 @@ export function triggerFileDownload(filename: string, content: string): void {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+

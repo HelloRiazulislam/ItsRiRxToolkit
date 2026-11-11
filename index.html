@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ItsRiRx Windows Tool Kit</title>
     <meta name="description" content="Cloud-hosted PowerShell Windows administration toolkit for system repair, network diagnostics, cleanup, and software deployment." />
@@ -10,10 +11,21 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
 
-    <!-- Google Fonts - Nunito (Exact font style from reference winstall.app) -->
+    <!-- Google Fonts - Non-blocking load so fresh Windows DNS/SSL delays never block CSS -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
 
     <!-- OpenGraph & Meta -->
     <meta property="og:title" content="ItsRiRx Windows Tool Kit" />
@@ -21,6 +33,46 @@
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#06b6d4" />
+
+    <!-- Critical Inline Base CSS & Cross-Browser Fallback -->
+    <style>
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+      html, body {
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        font-family: 'Nunito', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        background-color: #f6f9fc;
+        color: #1e293b;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      html.dark, html.dark body {
+        background-color: #090b10;
+        color: #f4f4f5;
+      }
+    </style>
+
+    <!-- Self-Healing CSS Watchdog for Fresh Windows Browsers -->
+    <script>
+      window.addEventListener('load', function () {
+        setTimeout(function () {
+          try {
+            var rootEl = document.querySelector('.min-h-screen');
+            if (rootEl) {
+              var computed = window.getComputedStyle(rootEl);
+              if (computed.display !== 'flex' && computed.minHeight !== '100vh') {
+                var twScript = document.createElement('script');
+                twScript.src = 'https://cdn.tailwindcss.com';
+                document.head.appendChild(twScript);
+              }
+            }
+          } catch (e) {}
+        }, 400);
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>

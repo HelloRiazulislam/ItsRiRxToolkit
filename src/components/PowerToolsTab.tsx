@@ -1,41 +1,33 @@
 import React, { useState } from 'react';
 import {
-  Cpu,
-  Wifi,
-  Sparkles,
-  Disc,
   Download,
   Copy,
   Check,
   Terminal,
-  ExternalLink,
   ShieldCheck,
-  HardDrive,
-  Gauge,
-  FolderOpen,
-  Key,
-  Layers,
   Zap,
-  Info,
-  Laptop,
-  CheckCircle2,
-  Lock,
-  ArrowRight,
   Wrench,
-  PackageCheck,
+  Printer,
+  Trash2,
+  FileCode,
+  CheckCircle2,
   RefreshCw,
-  AlertTriangle,
-  Printer
+  HardDrive,
+  PackageCheck,
+  Layers,
+  Wifi,
+  Database,
+  Share2
 } from 'lucide-react';
 import {
-  generateHardwareReportScript,
-  generateWifiPasswordExtractorScript,
-  generateFastestDnsBenchmarkScript,
-  generateGodModeFolderScript,
-  generateEnableGpeditScript,
-  generateRufusDownloaderScript,
-  generateFreshWindowsFixScript,
   generatePrintSpoolerFixScript,
+  generateTempCleanerFixScript,
+  generateSfcDismFixScript,
+  generateWingetStoreFixScript,
+  generateMissingDllRuntimesFixScript,
+  generateNetworkResetFixScript,
+  generateCDriveSpaceFixScript,
+  generateSharedPrinterRegistryFixScript,
   triggerFileDownload
 } from '../utils/scriptGenerator';
 
@@ -44,9 +36,36 @@ interface PowerToolsTabProps {
   isDark?: boolean;
 }
 
+type FixFilterType =
+  | 'all'
+  | 'temp_cleaner'
+  | 'printer_fix'
+  | 'shared_printer_fix'
+  | 'sfc_dism'
+  | 'winget_store'
+  | 'dll_runtimes'
+  | 'network_reset'
+  | 'c_drive_space';
+
+interface FixModuleItem {
+  id: Exclude<FixFilterType, 'all'>;
+  number: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  filename: string;
+  downloadLabel: string;
+  generator: () => string;
+  psCommand: string;
+  accentColor: 'emerald' | 'indigo' | 'cyan' | 'rose' | 'purple' | 'amber';
+  icon: React.ReactNode;
+  steps: { badge: string; cmd: string; desc: string }[];
+}
+
 export const PowerToolsTab: React.FC<PowerToolsTabProps> = ({ onNotify, isDark = false }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'fresh_windows' | 'hardware' | 'wifi_dns' | 'god_mode' | 'iso_rufus' | 'printer_fix'>('fresh_windows');
+  const [activeFilter, setActiveFilter] = useState<FixFilterType>('all');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [previewKey, setPreviewKey] = useState<string | null>(null);
 
   const handleCopy = (text: string, key: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -61,22 +80,333 @@ export const PowerToolsTab: React.FC<PowerToolsTabProps> = ({ onNotify, isDark =
     onNotify(`Downloaded ${label}!`);
   };
 
-  // Commands for quick terminal copy
-  const freshWingetBootstrapCmd = `$ProgressPreference = 'SilentlyContinue'; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13; $dir = Join-Path $env:TEMP 'wg_boot'; New-Item -ItemType Directory -Path $dir -Force | Out-Null; Write-Host '[1/4] Downloading Winget Dependencies archive...' -ForegroundColor Cyan; curl.exe -L -s -S --retry 3 -o "$dir\\deps.zip" "https://github.com/microsoft/winget-cli/releases/latest/download/DesktopAppInstaller_Dependencies.zip"; if (Test-Path "$dir\\deps.zip") { Expand-Archive -Path "$dir\\deps.zip" -DestinationPath "$dir\\deps" -Force; Get-ChildItem -Path "$dir\\deps" -Recurse -Include *x64*.appx,*x64*.msix | ForEach-Object { Add-AppxPackage -Path $_.FullName -ErrorAction SilentlyContinue } }; Write-Host '[2/4] Installing VCLibs & UI.Xaml...' -ForegroundColor Cyan; curl.exe -L -s -S -o "$dir\\vclibs.appx" "https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx"; Add-AppxPackage -Path "$dir\\vclibs.appx" -ErrorAction SilentlyContinue; curl.exe -L -s -S -o "$dir\\xaml.appx" "https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx"; Add-AppxPackage -Path "$dir\\xaml.appx" -ErrorAction SilentlyContinue; Write-Host '[3/4] Installing Winget MSIXBundle...' -ForegroundColor Cyan; curl.exe -L -s -S --retry 3 -o "$dir\\winget.msixbundle" "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"; Add-AppxPackage -Path "$dir\\winget.msixbundle" -ErrorAction SilentlyContinue; Add-AppxProvisionedPackage -Online -PackagePath "$dir\\winget.msixbundle" -SkipLicense -ErrorAction SilentlyContinue | Out-Null; Write-Host '[4/4] Repairing Winget CDN Source Certificate (fixes 0x8a15000f / 0x8a15005e)...' -ForegroundColor Cyan; curl.exe -L -s -S -o "$dir\\source.msix" "https://cdn.winget.microsoft.com/cache/source.msix"; Add-AppxPackage -Path "$dir\\source.msix" -ErrorAction SilentlyContinue; winget source reset --force; winget source update --accept-source-agreements; Write-Host '[SUCCESS] Winget package manager & sources ready!' -ForegroundColor Green`;
+  const fixModules: FixModuleItem[] = [
+    {
+      id: 'temp_cleaner',
+      number: 'Fix Module #1',
+      title: '1-Click Temp, %Temp%, Prefetch & Recent Cleaner',
+      subtitle: 'Replaces manual Win+R cleanup',
+      description:
+        'Instead of opening Win + R four separate times to type temp, %temp%, prefetch, and recent, this single .bat file elevates to Administrator and force-cleans all four directories at once.',
+      filename: 'Clean-Temp-Prefetch-Recent.bat',
+      downloadLabel: 'Temp, %Temp%, Prefetch & Recent Cleaner (.bat)',
+      generator: generateTempCleanerFixScript,
+      psCommand: `Remove-Item -Path "$env:TEMP\\*" -Recurse -Force -ErrorAction SilentlyContinue; Remove-Item -Path "$env:SystemRoot\\Temp\\*" -Recurse -Force -ErrorAction SilentlyContinue; Remove-Item -Path "$env:SystemRoot\\Prefetch\\*" -Recurse -Force -ErrorAction SilentlyContinue; Remove-Item -Path "$env:APPDATA\\Microsoft\\Windows\\Recent\\*" -Recurse -Force -ErrorAction SilentlyContinue; Write-Host "[SUCCESS] Cleaned temp, %temp%, prefetch, and recent folders!" -ForegroundColor Green; Write-Host "\`nAll tasks finished! Press any key to close this window..." -ForegroundColor Yellow; cmd.exe /c pause | Out-Null`,
+      accentColor: 'emerald',
+      icon: <Trash2 className="w-5 h-5" />,
+      steps: [
+        {
+          badge: '%temp%',
+          cmd: 'C:\\Users\\<User>\\AppData\\Local\\Temp',
+          desc: 'Deletes leftover app installer caches, browser temp files, and crash logs.'
+        },
+        {
+          badge: 'temp',
+          cmd: 'C:\\Windows\\Temp',
+          desc: 'Clears OS-level system temporary files and background service cache.'
+        },
+        {
+          badge: 'prefetch',
+          cmd: 'C:\\Windows\\Prefetch',
+          desc: 'Removes outdated application launch trace files (.pf) to refresh startup speed.'
+        },
+        {
+          badge: 'recent',
+          cmd: 'AppData\\Roaming\\Microsoft\\Windows\\Recent',
+          desc: 'Clears Recent file shortcuts and File Explorer Quick Access jump-list history.'
+        }
+      ]
+    },
+    {
+      id: 'printer_fix',
+      number: 'Fix Module #2',
+      title: 'Print Spooler & Stuck Jobs Repair Tool',
+      subtitle: 'Clears stuck queue & restarts Spooler',
+      description:
+        '1-Click utility to force-stop the Windows Print Spooler service, permanently delete all stuck or corrupted print jobs inside System32\\Spool\\Printers, and restart the print service cleanly.',
+      filename: 'Fix-Printer-Spooler.bat',
+      downloadLabel: 'Print Spooler Fixer (.bat)',
+      generator: generatePrintSpoolerFixScript,
+      psCommand: `Stop-Service Spooler -Force -ErrorAction SilentlyContinue; Remove-Item -Path "$env:SystemRoot\\System32\\Spool\\Printers\\*" -Force -Recurse -ErrorAction SilentlyContinue; Set-Service Spooler -StartupType Automatic; Start-Service Spooler; Write-Host "[SUCCESS] Print Spooler restarted & all stuck print jobs deleted!" -ForegroundColor Green; Write-Host "\`nAll tasks finished! Press any key to close this window..." -ForegroundColor Yellow; cmd.exe /c pause | Out-Null`,
+      accentColor: 'indigo',
+      icon: <Printer className="w-5 h-5" />,
+      steps: [
+        {
+          badge: 'Step 1',
+          cmd: 'net stop spooler',
+          desc: 'Safely stops the background Windows Print Spooler service so locked queue files can be deleted.'
+        },
+        {
+          badge: 'Step 2',
+          cmd: 'del /Q /F /S Spool\\Printers\\*.*',
+          desc: 'Purges all stuck .SPL and .SHD print queue jobs blocking new documents from printing.'
+        },
+        {
+          badge: 'Step 3',
+          cmd: 'sc config spooler start= auto & net start',
+          desc: 'Sets Print Spooler startup type to Automatic and restarts the service immediately.'
+        }
+      ]
+    },
+    {
+      id: 'sfc_dism',
+      number: 'Fix Module #3',
+      title: 'Corrupted Windows System File Repair (DISM + SFC)',
+      subtitle: 'Repairs OS image & corrupted system DLLs',
+      description:
+        'Automatically runs DISM /RestoreHealth followed by sfc /scannow to repair the Windows Component Store and replace any damaged, missing, or corrupted operating system files.',
+      filename: 'Fix-System-SFC-DISM.bat',
+      downloadLabel: 'Corrupted System File Repair (.bat)',
+      generator: generateSfcDismFixScript,
+      psCommand: `DISM.exe /Online /Cleanup-Image /RestoreHealth; sfc /scannow; Write-Host "[SUCCESS] DISM and SFC system file repair completed!" -ForegroundColor Green; Write-Host "\`nAll tasks finished! Press any key to close this window..." -ForegroundColor Yellow; cmd.exe /c pause | Out-Null`,
+      accentColor: 'cyan',
+      icon: <HardDrive className="w-5 h-5" />,
+      steps: [
+        {
+          badge: 'Step 1',
+          cmd: 'DISM /Online /Cleanup-Image /RestoreHealth',
+          desc: 'Verifies and repairs corrupted Windows Component Store packages from official Microsoft Update servers.'
+        },
+        {
+          badge: 'Step 2',
+          cmd: 'sfc /scannow',
+          desc: 'Scans all protected Windows operating system files and replaces corrupted files with verified cached copies.'
+        },
+        {
+          badge: 'Step 3',
+          cmd: 'Verify & Keep Window Open',
+          desc: 'Displays full repair summary and waits for your key press before closing the console.'
+        }
+      ]
+    },
+    {
+      id: 'winget_store',
+      number: 'Fix Module #4',
+      title: 'Winget & Microsoft Store Not Working Fixer',
+      subtitle: 'Fixes fresh Windows Winget & Store errors',
+      description:
+        'Resolves "winget is not recognized", certificate errors (0x8a15000f / 0x8a15005e), missing UWP dependencies (VCLibs / UI.Xaml), and stuck Microsoft Store downloads on newly installed Windows PCs.',
+      filename: 'Fix-Winget-And-Store.bat',
+      downloadLabel: 'Winget & Store Repair (.bat)',
+      generator: generateWingetStoreFixScript,
+      psCommand: `$ProgressPreference='SilentlyContinue'; [Net.ServicePointManager]::SecurityProtocol = 3072; $d = Join-Path $env:TEMP 'wg_fix'; New-Item -ItemType Directory -Path $d -Force | Out-Null; curl.exe -L -s -S -o "$d\\deps.zip" "https://github.com/microsoft/winget-cli/releases/latest/download/DesktopAppInstaller_Dependencies.zip"; if (Test-Path "$d\\deps.zip") { Expand-Archive "$d\\deps.zip" "$d\\deps" -Force; Get-ChildItem "$d\\deps" -Recurse -Include *x64*.appx,*x64*.msix | ForEach-Object { Add-AppxPackage $_.FullName -ErrorAction SilentlyContinue } }; curl.exe -L -s -S -o "$d\\winget.msixbundle" "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"; Add-AppxPackage "$d\\winget.msixbundle" -ErrorAction SilentlyContinue; curl.exe -L -s -S -o "$d\\source.msix" "https://cdn.winget.microsoft.com/cache/source.msix"; Add-AppxPackage "$d\\source.msix" -ErrorAction SilentlyContinue; winget source reset --force; wsreset -i; Write-Host "[SUCCESS] Winget & Microsoft Store repaired!" -ForegroundColor Green; Write-Host "\`nAll tasks finished! Press any key to close this window..." -ForegroundColor Yellow; cmd.exe /c pause | Out-Null`,
+      accentColor: 'rose',
+      icon: <PackageCheck className="w-5 h-5" />,
+      steps: [
+        {
+          badge: 'Step 1',
+          cmd: 'Install VCLibs, UI.Xaml & DesktopAppInstaller',
+          desc: 'Downloads and registers official Winget UWP dependencies and App Installer directly from GitHub.'
+        },
+        {
+          badge: 'Step 2',
+          cmd: 'Add-AppxPackage source.msix & source reset',
+          desc: 'Repairs expired Winget CDN source certificates (fixes 0x8a15000f & 0x8a15005e errors).'
+        },
+        {
+          badge: 'Step 3',
+          cmd: 'wsreset -i & Re-register WindowsStore',
+          desc: 'Clears corrupted Microsoft Store cache and re-registers the Store AppX manifest.'
+        }
+      ]
+    },
+    {
+      id: 'dll_runtimes',
+      number: 'Fix Module #5',
+      title: 'Missing DLL & Game/App Runtime Fixer',
+      subtitle: 'Fixes VCRUNTIME140.dll, MSVCP140.dll & DirectX',
+      description:
+        'Eliminates "VCRUNTIME140.dll was not found", "MSVCP140.dll is missing", "d3dx9_43.dll", and "0xc000007b" application startup errors by installing Visual C++ 2015-2022 (x86/x64), DirectX, and .NET 8.',
+      filename: 'Fix-Missing-DLL-Runtimes.bat',
+      downloadLabel: 'Missing DLL & Runtime Fixer (.bat)',
+      generator: generateMissingDllRuntimesFixScript,
+      psCommand: `@('Microsoft.VCRedist.2015+.x64','Microsoft.VCRedist.2015+.x86','Microsoft.DirectX','Microsoft.DotNet.DesktopRuntime.8') | ForEach-Object { winget install --id $_ -e --silent --accept-package-agreements --accept-source-agreements --disable-interactivity }; Write-Host "[SUCCESS] All Visual C++, DirectX, and .NET Runtimes installed!" -ForegroundColor Green; Write-Host "\`nAll tasks finished! Press any key to close this window..." -ForegroundColor Yellow; cmd.exe /c pause | Out-Null`,
+      accentColor: 'purple',
+      icon: <Layers className="w-5 h-5" />,
+      steps: [
+        {
+          badge: 'Visual C++',
+          cmd: 'vc_redist.x64.exe & vc_redist.x86.exe',
+          desc: 'Installs both 64-bit and 32-bit Visual C++ 2015-2022 Redistributable packages from Microsoft CDN.'
+        },
+        {
+          badge: 'DirectX',
+          cmd: 'dxwebsetup.exe /Q',
+          desc: 'Installs legacy and modern DirectX End-User Runtimes (d3dx9, xinput1_3, xaudio2 DLLs).'
+        },
+        {
+          badge: '.NET Runtime',
+          cmd: 'Microsoft.DotNet.DesktopRuntime.8',
+          desc: 'Ensures modern .NET 8 Desktop Runtime is installed for Windows desktop utilities and games.'
+        }
+      ]
+    },
+    {
+      id: 'network_reset',
+      number: 'Fix Module #6',
+      title: 'Network & Internet Reset Fixer',
+      subtitle: 'Fixes "No Internet, Secured" & DNS errors',
+      description:
+        '1-Click complete network repair that flushes DNS cache, renews DHCP IP leases, clears ARP/NetBIOS tables, resets Winsock catalog, and restores clean TCP/IP stack defaults.',
+      filename: 'Fix-Network-Internet.bat',
+      downloadLabel: 'Network & Internet Reset Fixer (.bat)',
+      generator: generateNetworkResetFixScript,
+      psCommand: `ipconfig /flushdns; ipconfig /release; ipconfig /renew; arp -d *; netsh winsock reset; netsh int ip reset; Write-Host "[SUCCESS] Network stack, DNS, and Winsock reset complete!" -ForegroundColor Green; Write-Host "\`nAll tasks finished! Press any key to close this window..." -ForegroundColor Yellow; cmd.exe /c pause | Out-Null`,
+      accentColor: 'amber',
+      icon: <Wifi className="w-5 h-5" />,
+      steps: [
+        {
+          badge: 'Step 1',
+          cmd: 'ipconfig /flushdns & /release & /renew',
+          desc: 'Flushes poisoned DNS cache records and requests a fresh IPv4/IPv6 lease from your router.'
+        },
+        {
+          badge: 'Step 2',
+          cmd: 'arp -d * & nbtstat -R / -RR',
+          desc: 'Clears stale MAC address ARP routing tables and reloads NetBIOS name cache.'
+        },
+        {
+          badge: 'Step 3',
+          cmd: 'netsh winsock reset & netsh int ip reset',
+          desc: 'Repairs corrupted Windows Sockets (Winsock) and resets the TCP/IP stack to factory defaults.'
+        }
+      ]
+    },
+    {
+      id: 'c_drive_space',
+      number: 'Fix Module #7',
+      title: 'C: Drive Space Recovery & Windows Update Cleanup',
+      subtitle: 'Reclaims 10GB-30GB+ of hidden system bloat',
+      description:
+        'Frees up massive amounts of C: drive space by removing hiberfil.sys, purging downloaded Windows Update caches (SoftwareDistribution & DeliveryOptimization), deleting crash dumps/WER logs, emptying Recycle Bin, and running DISM WinSxS component cleanup.',
+      filename: 'Fix-C-Drive-Space.bat',
+      downloadLabel: 'C: Drive Space Recovery (.bat)',
+      generator: generateCDriveSpaceFixScript,
+      psCommand: `powercfg -h off; Stop-Service wuauserv,bits,dosvc -Force -ErrorAction SilentlyContinue; Remove-Item "$env:SystemRoot\\SoftwareDistribution\\Download\\*" -Recurse -Force -ErrorAction SilentlyContinue; Start-Service wuauserv,bits -ErrorAction SilentlyContinue; Remove-Item "$env:SystemRoot\\Minidump\\*","$env:SystemRoot\\MEMORY.DMP","$env:ProgramData\\Microsoft\\Windows\\WER\\*" -Recurse -Force -ErrorAction SilentlyContinue; Clear-RecycleBin -Force -ErrorAction SilentlyContinue; Dism.exe /Online /Cleanup-Image /StartComponentCleanup; Write-Host "[SUCCESS] C: Drive Space Recovery & Update Cleanup completed!" -ForegroundColor Green; Write-Host "\`nAll tasks finished! Press any key to close this window..." -ForegroundColor Yellow; cmd.exe /c pause | Out-Null`,
+      accentColor: 'emerald',
+      icon: <Database className="w-5 h-5" />,
+      steps: [
+        {
+          badge: 'hiberfil.sys',
+          cmd: 'powercfg -h off',
+          desc: 'Disables Hibernation and removes the massive hidden C:\\hiberfil.sys file (saves 4GB to 16GB immediately).'
+        },
+        {
+          badge: 'Update Cache',
+          cmd: 'SoftwareDistribution\\Download & DO',
+          desc: 'Stops Update services temporarily and purges leftover Windows Update & Delivery Optimization cache.'
+        },
+        {
+          badge: 'Crash Dumps',
+          cmd: 'MEMORY.DMP, Minidump & WER Reports',
+          desc: 'Deletes gigantic kernel crash dumps, BSOD minidumps, and Windows Error Reporting archives.'
+        },
+        {
+          badge: 'WinSxS & Bin',
+          cmd: 'DISM /StartComponentCleanup + RecycleBin',
+          desc: 'Compresses superseded WinSxS component packages and empties the Recycle Bin across all drives.'
+        }
+      ]
+    },
+    {
+      id: 'shared_printer_fix',
+      number: 'Fix Module #8',
+      title: 'Shared Printer & Network Printer Registry Fixer',
+      subtitle: 'Fixes 0x0000011b, 0x00000709, 0x00000bcb, 0x00000040 & Guest SMB',
+      description:
+        'All-in-one registry and service repair for LAN/Wi-Fi Shared Printers that refuse to connect on Windows 10 & 11. Automatically fixes RPC Auth Privacy (0x0000011b), RPC Named Pipes (0x00000709), PointAndPrint driver restrictions (0x00000bcb), SMB Guest Logon (0x80070035), and Printer Sharing Firewall rules.',
+      filename: 'Fix-Shared-Printer-Registry.bat',
+      downloadLabel: 'Shared Printer Registry Fixer (.bat)',
+      generator: generateSharedPrinterRegistryFixScript,
+      psCommand: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Print" /v RpcAuthnLevelPrivacyEnabled /t REG_DWORD /d 0 /f; reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Print" /v DnsOnWire /t REG_DWORD /d 1 /f; reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\Printers\\RPC" /v RpcUseNamedPipeProtocol /t REG_DWORD /d 1 /f; reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\Printers\\RPC" /v RpcProtocols /t REG_DWORD /d 7 /f; reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\Printers\\RPC" /v RpcAuthnLevelPrivacyEnabled /t REG_DWORD /d 0 /f; reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\Printers\\PointAndPrint" /v RestrictDriverInstallationToAdministrators /t REG_DWORD /d 0 /f; reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\Printers\\PointAndPrint" /v NoWarningNoElevationOnInstall /t REG_DWORD /d 1 /f; reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanWorkstation\\Parameters" /v AllowInsecureGuestAuth /t REG_DWORD /d 1 /f; netsh advfirewall firewall set rule group="File and Printer Sharing" new enable=Yes; Restart-Service Spooler -Force; Write-Host "[SUCCESS] All Shared Printer Registry keys & Spooler repaired!" -ForegroundColor Green; Write-Host "\`nAll tasks finished! Press any key to close this window..." -ForegroundColor Yellow; cmd.exe /c pause | Out-Null`,
+      accentColor: 'indigo',
+      icon: <Share2 className="w-5 h-5" />,
+      steps: [
+        {
+          badge: '0x0000011b',
+          cmd: 'RpcAuthnLevelPrivacyEnabled = 0',
+          desc: 'Disables strict RPC privacy enforcement under HKLM\\System\\CurrentControlSet\\Control\\Print.'
+        },
+        {
+          badge: '0x00000709',
+          cmd: 'RpcUseNamedPipeProtocol = 1 & RpcProtocols = 7',
+          desc: 'Enables RPC over Named Pipes, TCP protocols, and DnsOnWire for Windows 11 22H2/23H2/24H2 shared printers.'
+        },
+        {
+          badge: '0x00000bcb',
+          cmd: 'PointAndPrint Driver Restrictions = 0',
+          desc: 'Unlocks PointAndPrint policies so shared printer drivers install cleanly without elevation blocks.'
+        },
+        {
+          badge: 'SMB & Firewall',
+          cmd: 'AllowInsecureGuestAuth = 1 & Firewall Enable',
+          desc: 'Enables Guest SMB sharing, Blank Password LAN logon, Function Discovery services, and restarts Spooler.'
+        }
+      ]
+    }
+  ];
 
-  const runtimesInstallCmd = `@('Microsoft.VCRedist.2015+.x64','Microsoft.VCRedist.2015+.x86','Microsoft.DirectX','Microsoft.DotNet.DesktopRuntime.8') | ForEach-Object { winget install --id $_ -e --silent --accept-package-agreements --accept-source-agreements --disable-interactivity }`;
+  const visibleModules =
+    activeFilter === 'all' ? fixModules : fixModules.filter((m) => m.id === activeFilter);
 
-  const fixExecutionPolicyCmd = `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force; Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13; Write-Host "[OK] ExecutionPolicy and TLS 1.2/1.3 protocols unlocked!" -ForegroundColor Green`;
-
-  const storeResetCmd = `wsreset -i; Get-AppXPackage *WindowsStore* -AllUsers | Foreach {Add-AppxPackage -DisableDevelopmentMode -Register "$($_.InstallLocation)\\AppXManifest.xml" -ErrorAction SilentlyContinue}; ipconfig /flushdns`;
-
-  const printerFixCmd = `Stop-Service Spooler; Remove-Item -Path "$env:systemroot\\System32\\Spool\\Printers\\*" -Force -Recurse -ErrorAction SilentlyContinue; Set-Service Spooler -StartupType Automatic; Start-Service Spooler; Write-Host "[SUCCESS] Print Spooler restarted & pending print jobs deleted!" -ForegroundColor Green`;
-
-  const wifiPsCommand = `(netsh wlan show profiles) | Select-String 'All User Profile\\s+:\\s+(.*)' | ForEach-Object { $p = $_.Matches.Groups[1].Value.Trim(); $pass = (netsh wlan show profile name="$p" key=clear) | Select-String 'Key Content\\s+:\\s+(.*)' | ForEach-Object { $_.Matches.Groups[1].Value.Trim() }; [PSCustomObject]@{ SSID = $p; Password = if ($pass) { $pass } else { '[Open]' } } } | Format-Table -AutoSize`;
-
-  const godModeCmd = `mkdir "$env:USERPROFILE\\Desktop\\GodMode.{ED7BA470-8E54-465E-825C-99712043E01C}"`;
-
-  const dnsBenchmarkPs = `$s = @('1.1.1.1','8.8.8.8','9.9.9.9'); foreach ($ip in $s) { Test-Connection $ip -Count 2 | Select-Object Address, ResponseTime }`;
+  const getColorClasses = (color: FixModuleItem['accentColor']) => {
+    switch (color) {
+      case 'emerald':
+        return {
+          badge: 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30',
+          iconBg: 'bg-emerald-500/15 text-emerald-500',
+          btn: 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/25',
+          stepBadge: 'bg-emerald-500/15 text-emerald-500',
+          text: 'text-emerald-500',
+          codeText: 'text-emerald-300'
+        };
+      case 'indigo':
+        return {
+          badge: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30',
+          iconBg: 'bg-indigo-500/15 text-indigo-500',
+          btn: 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/25',
+          stepBadge: 'bg-indigo-500/15 text-indigo-400',
+          text: 'text-indigo-400',
+          codeText: 'text-indigo-300'
+        };
+      case 'cyan':
+        return {
+          badge: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30',
+          iconBg: 'bg-cyan-500/15 text-cyan-500',
+          btn: 'bg-cyan-600 hover:bg-cyan-500 shadow-cyan-600/25',
+          stepBadge: 'bg-cyan-500/15 text-cyan-400',
+          text: 'text-cyan-400',
+          codeText: 'text-cyan-300'
+        };
+      case 'rose':
+        return {
+          badge: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
+          iconBg: 'bg-rose-500/15 text-rose-500',
+          btn: 'bg-rose-600 hover:bg-rose-500 shadow-rose-600/25',
+          stepBadge: 'bg-rose-500/15 text-rose-400',
+          text: 'text-rose-400',
+          codeText: 'text-rose-300'
+        };
+      case 'purple':
+        return {
+          badge: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
+          iconBg: 'bg-purple-500/15 text-purple-500',
+          btn: 'bg-purple-600 hover:bg-purple-500 shadow-purple-600/25',
+          stepBadge: 'bg-purple-500/15 text-purple-400',
+          text: 'text-purple-400',
+          codeText: 'text-purple-300'
+        };
+      case 'amber':
+        return {
+          badge: 'bg-amber-500/15 text-amber-500 border-amber-500/30',
+          iconBg: 'bg-amber-500/15 text-amber-500',
+          btn: 'bg-amber-600 hover:bg-amber-500 shadow-amber-600/25',
+          stepBadge: 'bg-amber-500/15 text-amber-500',
+          text: 'text-amber-500',
+          codeText: 'text-amber-300'
+        };
+    }
+  };
 
   return (
     <div className="space-y-6 relative z-10">
@@ -93,14 +423,14 @@ export const PowerToolsTab: React.FC<PowerToolsTabProps> = ({ onNotify, isDark =
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
               <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}>
-                Advanced System Hub & Utilities
+                Dedicated 1-Click Repair Hub
               </span>
             </div>
             <h1 className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Windows Power Tools & Diagnostics
+              Windows Fix Center
             </h1>
             <p className={`text-sm sm:text-base leading-relaxed ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
-              Fresh Windows setup repair, Winget bootstrapper, 1-click PC specs auditor, saved Wi-Fi password recovery, fast DNS benchmark, God Mode, and official bootable ISO tools.
+              Standalone, auto-elevating <code className="font-mono text-cyan-500 font-bold">.bat</code> fix modules for regular Windows repairs. Every script stays open upon completion until you press a key to close.
             </p>
           </div>
 
@@ -110,769 +440,275 @@ export const PowerToolsTab: React.FC<PowerToolsTabProps> = ({ onNotify, isDark =
                 isDark ? 'bg-cyan-950/60 border-cyan-800/50 text-cyan-300' : 'bg-cyan-50 border-cyan-200 text-cyan-700'
               }`}
             >
-              <ShieldCheck className="w-4 h-4 text-cyan-500" /> 100% Safe & Clean
+              <ShieldCheck className="w-4 h-4 text-cyan-500" /> Auto-Admin & No Auto-Close
             </span>
             <span
               className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 ${
-                isDark ? 'bg-purple-950/60 border-purple-800/50 text-purple-300' : 'bg-purple-50 border-purple-200 text-purple-700'
+                isDark ? 'bg-emerald-950/60 border-emerald-800/50 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
               }`}
             >
-              <Zap className="w-4 h-4 text-purple-500" /> Windows 10 & 11
+              <Zap className="w-4 h-4 text-emerald-500" /> {fixModules.length} Active Fix Modules
             </span>
           </div>
         </div>
       </div>
 
-      {/* Sub-Navigation Selector Tabs */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 p-1.5 rounded-2xl bg-slate-200/50 dark:bg-zinc-900/50 border border-slate-300/40 dark:border-white/10 backdrop-blur-xl">
+      {/* Filter Bar */}
+      <div className="flex flex-wrap gap-2 p-1.5 rounded-2xl bg-slate-200/50 dark:bg-zinc-900/50 border border-slate-300/40 dark:border-white/10 backdrop-blur-xl">
         <button
-          onClick={() => setActiveSubTab('fresh_windows')}
-          className={`px-3 py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-            activeSubTab === 'fresh_windows'
-              ? 'bg-rose-600 text-white shadow-md shadow-rose-600/25'
-              : isDark
-              ? 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-          }`}
-        >
-          <Wrench className="w-4 h-4 shrink-0" />
-          <span>Fresh Windows Fixer</span>
-        </button>
-
-        <button
-          onClick={() => setActiveSubTab('hardware')}
-          className={`px-3 py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-            activeSubTab === 'hardware'
+          onClick={() => setActiveFilter('all')}
+          className={`px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+            activeFilter === 'all'
               ? 'bg-cyan-600 text-white shadow-md shadow-cyan-600/25'
               : isDark
               ? 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
               : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
           }`}
         >
-          <Cpu className="w-4 h-4 shrink-0" />
-          <span>PC Specs Reporter</span>
+          <Wrench className="w-3.5 h-3.5 shrink-0" />
+          <span>All Fix Modules ({fixModules.length})</span>
         </button>
 
         <button
-          onClick={() => setActiveSubTab('wifi_dns')}
-          className={`px-3 py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-            activeSubTab === 'wifi_dns'
-              ? 'bg-purple-600 text-white shadow-md shadow-purple-600/25'
-              : isDark
-              ? 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-          }`}
-        >
-          <Wifi className="w-4 h-4 shrink-0" />
-          <span>Wi-Fi & Fast DNS</span>
-        </button>
-
-        <button
-          onClick={() => setActiveSubTab('printer_fix')}
-          className={`px-3 py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-            activeSubTab === 'printer_fix'
-              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/25'
-              : isDark
-              ? 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-          }`}
-        >
-          <Printer className="w-4 h-4 shrink-0" />
-          <span>Printer Spooler Fix</span>
-        </button>
-
-        <button
-          onClick={() => setActiveSubTab('god_mode')}
-          className={`px-3 py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-            activeSubTab === 'god_mode'
-              ? 'bg-amber-600 text-white shadow-md shadow-amber-600/25'
-              : isDark
-              ? 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-          }`}
-        >
-          <Sparkles className="w-4 h-4 shrink-0" />
-          <span>God Mode</span>
-        </button>
-
-        <button
-          onClick={() => setActiveSubTab('iso_rufus')}
-          className={`px-3 py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer col-span-2 sm:col-span-1 ${
-            activeSubTab === 'iso_rufus'
+          onClick={() => setActiveFilter('temp_cleaner')}
+          className={`px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+            activeFilter === 'temp_cleaner'
               ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
               : isDark
               ? 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
               : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
           }`}
         >
-          <Disc className="w-4 h-4 shrink-0" />
-          <span>Windows ISO & Rufus</span>
+          <Trash2 className="w-3.5 h-3.5 shrink-0" />
+          <span>Temp & Prefetch Cleaner</span>
+        </button>
+
+        <button
+          onClick={() => setActiveFilter('printer_fix')}
+          className={`px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+            activeFilter === 'printer_fix'
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/25'
+              : isDark
+              ? 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+          }`}
+        >
+          <Printer className="w-3.5 h-3.5 shrink-0" />
+          <span>Print Spooler Fix</span>
+        </button>
+
+        <button
+          onClick={() => setActiveFilter('sfc_dism')}
+          className={`px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+            activeFilter === 'sfc_dism'
+              ? 'bg-cyan-600 text-white shadow-md shadow-cyan-600/25'
+              : isDark
+              ? 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+          }`}
+        >
+          <HardDrive className="w-3.5 h-3.5 shrink-0" />
+          <span>Corrupted System Repair</span>
+        </button>
+
+        <button
+          onClick={() => setActiveFilter('winget_store')}
+          className={`px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+            activeFilter === 'winget_store'
+              ? 'bg-rose-600 text-white shadow-md shadow-rose-600/25'
+              : isDark
+              ? 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+          }`}
+        >
+          <PackageCheck className="w-3.5 h-3.5 shrink-0" />
+          <span>Winget & Store Fixer</span>
+        </button>
+
+        <button
+          onClick={() => setActiveFilter('dll_runtimes')}
+          className={`px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+            activeFilter === 'dll_runtimes'
+              ? 'bg-purple-600 text-white shadow-md shadow-purple-600/25'
+              : isDark
+              ? 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+          }`}
+        >
+          <Layers className="w-3.5 h-3.5 shrink-0" />
+          <span>Missing DLL & Runtimes</span>
+        </button>
+
+        <button
+          onClick={() => setActiveFilter('network_reset')}
+          className={`px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+            activeFilter === 'network_reset'
+              ? 'bg-amber-600 text-white shadow-md shadow-amber-600/25'
+              : isDark
+              ? 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+          }`}
+        >
+          <Wifi className="w-3.5 h-3.5 shrink-0" />
+          <span>Network & Internet Reset</span>
+        </button>
+
+        <button
+          onClick={() => setActiveFilter('c_drive_space')}
+          className={`px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+            activeFilter === 'c_drive_space'
+              ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+              : isDark
+              ? 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+          }`}
+        >
+          <Database className="w-3.5 h-3.5 shrink-0" />
+          <span>C: Drive Space Recovery</span>
+        </button>
+
+        <button
+          onClick={() => setActiveFilter('shared_printer_fix')}
+          className={`px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+            activeFilter === 'shared_printer_fix'
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/25'
+              : isDark
+              ? 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+          }`}
+        >
+          <Share2 className="w-3.5 h-3.5 shrink-0" />
+          <span>Shared Printer Registry Fix</span>
         </button>
       </div>
 
-      {/* ========================================================================= */}
-      {/* PRINTER SPOOLER & STUCK JOBS REPAIR UTILITY */}
-      {/* ========================================================================= */}
-      {activeSubTab === 'printer_fix' && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          <div
-            className={`rounded-3xl p-6 md:p-8 border ${
-              isDark ? 'bg-zinc-900/60 border-zinc-800' : 'bg-white border-slate-200 shadow-sm'
-            }`}
-          >
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200 dark:border-zinc-800">
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <Printer className="w-5 h-5 text-indigo-500" />
-                  <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                    Print Spooler & Stuck Jobs Repair Tool
-                  </h2>
-                </div>
-                <p className={`text-sm ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
-                  1-Click utility to delete all pending/stuck print queue jobs, stop and restart the Windows Print Spooler service, and resolve common printer errors.
-                </p>
-              </div>
+      {/* Fix Modules List */}
+      <div className="space-y-6">
+        {visibleModules.map((mod) => {
+          const colors = getColorClasses(mod.accentColor);
+          const isPreviewOpen = previewKey === mod.id;
 
-              <div className="flex flex-wrap items-center gap-3 shrink-0">
-                <button
-                  onClick={() => handleDownload('Fix-Printer-Spooler.bat', generatePrintSpoolerFixScript, 'Print Spooler Fixer (.bat)')}
-                  className="px-5 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-indigo-600/25 transition-all active:scale-95 cursor-pointer"
-                >
-                  <Download className="w-4 h-4" /> Download Fix-Printer-Spooler.bat
-                </button>
-              </div>
-            </div>
-
-            {/* Quick Copy Command Section */}
-            <div className="pt-6 space-y-4">
-              <div className={`p-5 rounded-2xl border space-y-3 ${isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Terminal className="w-4 h-4 text-indigo-500" />
-                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">Quick PowerShell Command (Run as Administrator)</h3>
+          return (
+            <div
+              key={mod.id}
+              className={`rounded-3xl p-6 md:p-8 border transition-all ${
+                isDark ? 'bg-zinc-900/60 border-zinc-800' : 'bg-white border-slate-200 shadow-sm'
+              }`}
+            >
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200 dark:border-zinc-800">
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider border ${colors.badge}`}>
+                      {mod.number}
+                    </span>
+                    <span className="text-xs font-mono text-slate-400 dark:text-zinc-500">
+                      {mod.subtitle}
+                    </span>
                   </div>
-                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 font-bold">Instant Fix</span>
-                </div>
-                <p className="text-xs text-slate-600 dark:text-zinc-400">
-                  Copy and paste this command into PowerShell (Admin) to instantly clear pending print jobs and restart the spooler:
-                </p>
-                <div className="p-3 rounded-xl bg-black/90 text-indigo-300 font-mono text-[11px] truncate select-all">
-                  {printerFixCmd}
-                </div>
-                <button
-                  onClick={() => handleCopy(printerFixCmd, 'printer_fix_cmd', 'Printer Fix command')}
-                  className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                >
-                  {copiedKey === 'printer_fix_cmd' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedKey === 'printer_fix_cmd' ? 'Copied to Clipboard!' : 'Copy Printer Repair Command'}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* 0. FRESH WINDOWS SETUP & WINGET REPAIR KIT */}
-      {/* ========================================================================= */}
-      {activeSubTab === 'fresh_windows' && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          <div
-            className={`rounded-3xl p-6 md:p-8 border ${
-              isDark ? 'bg-zinc-900/60 border-zinc-800' : 'bg-white border-slate-200 shadow-sm'
-            }`}
-          >
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200 dark:border-zinc-800">
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <Wrench className="w-5 h-5 text-rose-500" />
-                  <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                    Fresh Windows Setup & Winget Auto-Fixer
-                  </h2>
-                </div>
-                <p className={`text-sm ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
-                  1-Click automated post-installation repair for freshly installed PCs. Resolves <code className="font-mono px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-500 font-bold">'winget' is not recognized</code>, missing Visual C++ DLLs, ExecutionPolicy restrictions, and network download errors.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3 shrink-0">
-                <button
-                  onClick={() => handleDownload('Fix-Fresh-Windows.bat', generateFreshWindowsFixScript, 'Fresh Windows Fixer (.bat)')}
-                  className="px-5 py-3 rounded-2xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-rose-600/25 transition-all active:scale-95 cursor-pointer"
-                >
-                  <Download className="w-4 h-4" /> Download Fix-Fresh-Windows.bat
-                </button>
-              </div>
-            </div>
-
-            {/* Quick 1-Click Fix Cards Grid */}
-            <div className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-              
-              {/* Fix 1: Winget Bootstrapper */}
-              <div className={`p-5 rounded-2xl border space-y-3 ${isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <PackageCheck className="w-4 h-4 text-emerald-500" />
-                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">1. Bootstrap Winget & App Installer</h3>
+                  <div className="flex items-center gap-2.5">
+                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${colors.iconBg}`}>
+                      {mod.icon}
+                    </div>
+                    <h2 className={`text-xl font-extrabold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                      {mod.title}
+                    </h2>
                   </div>
-                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 font-bold">No Store Login</span>
+                  <p className={`text-sm leading-relaxed max-w-2xl ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
+                    {mod.description}
+                  </p>
                 </div>
-                <p className="text-xs text-slate-600 dark:text-zinc-400">
-                  Installs Microsoft App Installer (Winget), Microsoft.VCLibs, and Microsoft.UI.Xaml directly from official GitHub releases without Microsoft Store.
-                </p>
-                <div className="p-3 rounded-xl bg-black/90 text-emerald-400 font-mono text-[11px] truncate select-all">
-                  {freshWingetBootstrapCmd}
+
+                <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                  <button
+                    onClick={() => handleDownload(mod.filename, mod.generator, mod.downloadLabel)}
+                    className={`px-5 py-3.5 rounded-2xl text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg transition-all active:scale-95 cursor-pointer ${colors.btn}`}
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download {mod.filename}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setPreviewKey(isPreviewOpen ? null : mod.id)}
+                    className={`px-3.5 py-3.5 rounded-2xl border text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                      isDark
+                        ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border-zinc-700'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                    }`}
+                    title="View .bat source code"
+                  >
+                    <FileCode className={`w-4 h-4 ${colors.text}`} />
+                    <span>{isPreviewOpen ? 'Hide .bat' : 'View .bat'}</span>
+                  </button>
                 </div>
-                <button
-                  onClick={() => handleCopy(freshWingetBootstrapCmd, 'winget_boot', 'Winget Bootstrapper command')}
-                  className="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                >
-                  {copiedKey === 'winget_boot' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedKey === 'winget_boot' ? 'Copied to Clipboard!' : 'Copy Winget Bootstrap Command'}</span>
-                </button>
               </div>
 
-              {/* Fix 2: Visual C++ All-In-One Runtimes */}
-              <div className={`p-5 rounded-2xl border space-y-3 ${isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-cyan-500" />
-                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">2. All Visual C++ Runtimes & DirectX</h3>
-                  </div>
-                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-500 font-bold">Fix DLL Errors</span>
-                </div>
-                <p className="text-xs text-slate-600 dark:text-zinc-400">
-                  Installs Visual C++ 2015-2022 (x86 & x64), DirectX End-User Runtimes, and .NET 8 to resolve missing runtime DLL errors.
-                </p>
-                <div className="p-3 rounded-xl bg-black/90 text-cyan-400 font-mono text-[11px] truncate select-all">
-                  {runtimesInstallCmd}
-                </div>
-                <button
-                  onClick={() => handleCopy(runtimesInstallCmd, 'vc_runtimes', 'VC++ Runtimes installer command')}
-                  className="w-full py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                >
-                  {copiedKey === 'vc_runtimes' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedKey === 'vc_runtimes' ? 'Copied to Clipboard!' : 'Copy VC++ & DirectX Installer'}</span>
-                </button>
-              </div>
-
-              {/* Fix 3: ExecutionPolicy & TLS 1.2 Unblock */}
-              <div className={`p-5 rounded-2xl border space-y-3 ${isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Lock className="w-4 h-4 text-purple-500" />
-                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">3. Fix ExecutionPolicy & TLS 1.2/1.3</h3>
-                  </div>
-                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 font-bold">Fix Script Block</span>
-                </div>
-                <p className="text-xs text-slate-600 dark:text-zinc-400">
-                  Unblocks PowerShell script execution restrictions and enables TLS 1.2 / TLS 1.3 secure download protocols.
-                </p>
-                <div className="p-3 rounded-xl bg-black/90 text-purple-300 font-mono text-[11px] truncate select-all">
-                  {fixExecutionPolicyCmd}
-                </div>
-                <button
-                  onClick={() => handleCopy(fixExecutionPolicyCmd, 'exec_policy', 'ExecutionPolicy fix command')}
-                  className="w-full py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                >
-                  {copiedKey === 'exec_policy' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedKey === 'exec_policy' ? 'Copied to Clipboard!' : 'Copy ExecutionPolicy Unlock'}</span>
-                </button>
-              </div>
-
-              {/* Fix 4: Microsoft Store & DNS Stack Reset */}
-              <div className={`p-5 rounded-2xl border space-y-3 ${isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <RefreshCw className="w-4 h-4 text-amber-500" />
-                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">4. Reset Windows Store & DNS Stack</h3>
-                  </div>
-                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 font-bold">Fix Store Stuck</span>
-                </div>
-                <p className="text-xs text-slate-600 dark:text-zinc-400">
-                  Cleans corrupted Windows Store cache via wsreset, re-registers store manifests, and flushes local DNS cache.
-                </p>
-                <div className="p-3 rounded-xl bg-black/90 text-amber-300 font-mono text-[11px] truncate select-all">
-                  {storeResetCmd}
-                </div>
-                <button
-                  onClick={() => handleCopy(storeResetCmd, 'store_reset', 'Store reset command')}
-                  className="w-full py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                >
-                  {copiedKey === 'store_reset' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedKey === 'store_reset' ? 'Copied to Clipboard!' : 'Copy Store Reset Command'}</span>
-                </button>
-              </div>
-
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* 1. PC Specs & Hardware Report Generator */}
-      {/* ========================================================================= */}
-      {activeSubTab === 'hardware' && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          <div
-            className={`rounded-3xl p-6 md:p-8 border ${
-              isDark ? 'bg-zinc-900/60 border-zinc-800' : 'bg-white border-slate-200 shadow-sm'
-            }`}
-          >
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200 dark:border-zinc-800">
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <Cpu className="w-5 h-5 text-cyan-500" />
-                  <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                    1-Click Hardware & PC Specs Reporter
-                  </h2>
-                </div>
-                <p className={`text-sm ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
-                  Exports a complete breakdown of your PC's CPU, GPU, RAM clock, SSD health, Motherboard, and Battery into a styled HTML dashboard saved directly to your Desktop.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3 shrink-0">
-                <button
-                  onClick={() => handleDownload('Generate-PC-Hardware-Report.bat', generateHardwareReportScript, 'Hardware Reporter (.bat)')}
-                  className="px-5 py-3 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-cyan-600/25 transition-all active:scale-95 cursor-pointer"
-                >
-                  <Download className="w-4 h-4" /> Download Hardware Reporter (.bat)
-                </button>
-              </div>
-            </div>
-
-            {/* Spec Inspection Highlights Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-6">
-              <div className={`p-4 rounded-2xl border ${isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
-                <div className="flex items-center gap-2.5 mb-2">
-                  <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-500">
-                    <Cpu className="w-4 h-4" />
-                  </div>
-                  <h3 className={`text-sm font-bold ${isDark ? 'text-zinc-100' : 'text-slate-800'}`}>CPU & Clocks</h3>
-                </div>
-                <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                  Full Processor Model, Physical Cores, Logical Threads, Base & Max Turbo Clock Speeds, and L3 Cache.
-                </p>
-              </div>
-
-              <div className={`p-4 rounded-2xl border ${isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
-                <div className="flex items-center gap-2.5 mb-2">
-                  <div className="p-2 rounded-xl bg-purple-500/10 text-purple-500">
-                    <Layers className="w-4 h-4" />
-                  </div>
-                  <h3 className={`text-sm font-bold ${isDark ? 'text-zinc-100' : 'text-slate-800'}`}>GPU & Dedicated VRAM</h3>
-                </div>
-                <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                  NVIDIA GeForce, AMD Radeon, or Intel Arc GPU details, Dedicated Video Memory (VRAM), and active Driver version.
-                </p>
-              </div>
-
-              <div className={`p-4 rounded-2xl border ${isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
-                <div className="flex items-center gap-2.5 mb-2">
-                  <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500">
-                    <Gauge className="w-4 h-4" />
-                  </div>
-                  <h3 className={`text-sm font-bold ${isDark ? 'text-zinc-100' : 'text-slate-800'}`}>RAM Speeds & Channels</h3>
-                </div>
-                <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                  Total installed Gigabytes, individual stick manufacturer, configured MHz frequency, and Dual-Channel status.
-                </p>
-              </div>
-
-              <div className={`p-4 rounded-2xl border ${isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
-                <div className="flex items-center gap-2.5 mb-2">
-                  <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
-                    <HardDrive className="w-4 h-4" />
-                  </div>
-                  <h3 className={`text-sm font-bold ${isDark ? 'text-zinc-100' : 'text-slate-800'}`}>NVMe / SSD Storage</h3>
-                </div>
-                <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                  Model numbers for all installed NVMe/SATA drives, individual partition letters, total capacity, and free space.
-                </p>
-              </div>
-
-              <div className={`p-4 rounded-2xl border ${isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
-                <div className="flex items-center gap-2.5 mb-2">
-                  <div className="p-2 rounded-xl bg-blue-500/10 text-blue-500">
-                    <Laptop className="w-4 h-4" />
-                  </div>
-                  <h3 className={`text-sm font-bold ${isDark ? 'text-zinc-100' : 'text-slate-800'}`}>Motherboard & BIOS</h3>
-                </div>
-                <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                  Exact motherboard brand and product revision, installed BIOS version date, and UEFI Secure Boot state.
-                </p>
-              </div>
-
-              <div className={`p-4 rounded-2xl border ${isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
-                <div className="flex items-center gap-2.5 mb-2">
-                  <div className="p-2 rounded-xl bg-rose-500/10 text-rose-500">
-                    <Zap className="w-4 h-4" />
-                  </div>
-                  <h3 className={`text-sm font-bold ${isDark ? 'text-zinc-100' : 'text-slate-800'}`}>Battery Health & Cycles</h3>
-                </div>
-                <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                  For laptops: Full charge capacity vs design capacity, current health percentage, and battery cycle counts.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* 2. Wi-Fi Password Viewer & Fastest DNS Benchmark */}
-      {/* ========================================================================= */}
-      {activeSubTab === 'wifi_dns' && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          {/* Card 1: Saved Wi-Fi Password Exporter */}
-          <div
-            className={`rounded-3xl p-6 md:p-8 border ${
-              isDark ? 'bg-zinc-900/60 border-zinc-800' : 'bg-white border-slate-200 shadow-sm'
-            }`}
-          >
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200 dark:border-zinc-800">
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <Wifi className="w-5 h-5 text-purple-500" />
-                  <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                    Saved Wi-Fi Password Viewer & Exporter
-                  </h2>
-                </div>
-                <p className={`text-sm ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
-                  Extracts every previously connected Wi-Fi SSID and its plaintext security key from your Windows profile and writes them cleanly into <code className="text-purple-400 font-mono">Desktop\Saved_WiFi_Passwords.txt</code>.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3 shrink-0">
-                <button
-                  onClick={() => handleDownload('Export-Saved-WiFi-Passwords.bat', generateWifiPasswordExtractorScript, 'Wi-Fi Password Exporter (.bat)')}
-                  className="px-5 py-3 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-purple-600/25 transition-all active:scale-95 cursor-pointer"
-                >
-                  <Download className="w-4 h-4" /> Download Wi-Fi Exporter (.bat)
-                </button>
-                <button
-                  onClick={() => handleCopy(wifiPsCommand, 'wifi_ps', 'PowerShell command')}
-                  className={`px-4 py-3 rounded-2xl border text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer ${
-                    isDark ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border-zinc-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-200'
-                  }`}
-                >
-                  {copiedKey === 'wifi_ps' ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-                  Copy PS Command
-                </button>
-              </div>
-            </div>
-
-            <div className={`mt-5 p-4 rounded-2xl text-xs font-mono border overflow-x-auto ${isDark ? 'bg-zinc-950 border-zinc-800 text-zinc-300' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
-              <span className="text-purple-500 font-bold"># PowerShell Command (Run in Terminal):</span>
-              <br />
-              {wifiPsCommand}
-            </div>
-          </div>
-
-          {/* Card 2: Auto-Fastest DNS Benchmark & Switcher */}
-          <div
-            className={`rounded-3xl p-6 md:p-8 border ${
-              isDark ? 'bg-zinc-900/60 border-zinc-800' : 'bg-white border-slate-200 shadow-sm'
-            }`}
-          >
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200 dark:border-zinc-800">
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <Gauge className="w-5 h-5 text-emerald-500" />
-                  <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                    Auto-Fastest DNS Benchmark & Switcher
-                  </h2>
-                </div>
-                <p className={`text-sm ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
-                  Tests live ping latency from your computer to Cloudflare, Google, Quad9, and AdGuard DNS. Automatically detects the lowest latency resolver and assigns it to your active Wi-Fi / Ethernet adapter.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3 shrink-0">
-                <button
-                  onClick={() => handleDownload('Auto-Fastest-DNS-Selector.bat', generateFastestDnsBenchmarkScript, 'Auto-Fastest DNS (.bat)')}
-                  className="px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-emerald-600/25 transition-all active:scale-95 cursor-pointer"
-                >
-                  <Download className="w-4 h-4" /> Benchmark & Apply Fastest DNS (.bat)
-                </button>
-                <button
-                  onClick={() => handleCopy(dnsBenchmarkPs, 'dns_bench', 'DNS benchmark command')}
-                  className={`px-4 py-3 rounded-2xl border text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer ${
-                    isDark ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border-zinc-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-200'
-                  }`}
-                >
-                  {copiedKey === 'dns_bench' ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-                  Copy Ping Test
-                </button>
-              </div>
-            </div>
-
-            {/* DNS Comparison Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-6">
-              <div className={`p-4 rounded-2xl border ${isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
-                <span className="text-xs font-bold text-amber-500 uppercase tracking-wider">Cloudflare DNS</span>
-                <div className="text-base font-extrabold text-slate-900 dark:text-white mt-1">1.1.1.1 / 1.0.0.1</div>
-                <p className={`text-xs mt-1.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                  World's fastest DNS resolver with strict zero-logging privacy policy.
-                </p>
-              </div>
-
-              <div className={`p-4 rounded-2xl border ${isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
-                <span className="text-xs font-bold text-blue-500 uppercase tracking-wider">Google Public DNS</span>
-                <div className="text-base font-extrabold text-slate-900 dark:text-white mt-1">8.8.8.8 / 8.8.4.4</div>
-                <p className={`text-xs mt-1.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                  Massive global server network ensuring 99.99% uptime and zero cache drops.
-                </p>
-              </div>
-
-              <div className={`p-4 rounded-2xl border ${isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
-                <span className="text-xs font-bold text-purple-500 uppercase tracking-wider">Quad9 Secure</span>
-                <div className="text-base font-extrabold text-slate-900 dark:text-white mt-1">9.9.9.9 / 149.112.112.112</div>
-                <p className={`text-xs mt-1.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                  Non-profit security DNS blocking known phishing and malware domains.
-                </p>
-              </div>
-
-              <div className={`p-4 rounded-2xl border ${isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
-                <span className="text-xs font-bold text-emerald-500 uppercase tracking-wider">AdGuard Public DNS</span>
-                <div className="text-base font-extrabold text-slate-900 dark:text-white mt-1">94.140.14.14 / 94.140.15.15</div>
-                <p className={`text-xs mt-1.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                  Filters ads, trackers, and malicious scripts at the network resolver level.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* 3. God Mode & Secret Windows Utilities */}
-      {/* ========================================================================= */}
-      {activeSubTab === 'god_mode' && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          <div
-            className={`rounded-3xl p-6 md:p-8 border ${
-              isDark ? 'bg-zinc-900/60 border-zinc-800' : 'bg-white border-slate-200 shadow-sm'
-            }`}
-          >
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200 dark:border-zinc-800">
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-amber-500" />
-                  <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                    Windows "God Mode" Folder Creator
-                  </h2>
-                </div>
-                <p className={`text-sm ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
-                  Creates an all-powerful system shortcut on your Desktop containing over 206+ categorized Windows administrative applets, hardware configs, and hidden control settings in a single unified view.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3 shrink-0">
-                <button
-                  onClick={() => handleDownload('Create-God-Mode-Folder.bat', generateGodModeFolderScript, 'God Mode Creator (.bat)')}
-                  className="px-5 py-3 rounded-2xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-amber-600/25 transition-all active:scale-95 cursor-pointer"
-                >
-                  <Download className="w-4 h-4" /> Create God Mode Folder (.bat)
-                </button>
-                <button
-                  onClick={() => handleCopy(godModeCmd, 'god_cmd', 'Command')}
-                  className={`px-4 py-3 rounded-2xl border text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer ${
-                    isDark ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border-zinc-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-200'
-                  }`}
-                >
-                  {copiedKey === 'god_cmd' ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-                  Copy Command
-                </button>
-              </div>
-            </div>
-
-            {/* Enable Group Policy on Windows Home */}
-            <div className="pt-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-slate-200 dark:border-zinc-800 pb-6">
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <Lock className="w-5 h-5 text-purple-500" />
-                  <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                    Enable Group Policy Editor (gpedit.msc) on Windows Home
-                  </h3>
-                </div>
-                <p className={`text-sm ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
-                  Windows 10/11 Home editions disable the Group Policy Editor by default. This script adds the official Microsoft DISM servicing packages to activate <code className="text-purple-400 font-mono">gpedit.msc</code> without upgrading to Pro.
-                </p>
-              </div>
-
-              <button
-                onClick={() => handleDownload('Enable-gpedit-msc-Home.bat', generateEnableGpeditScript, 'Enable gpedit.msc (.bat)')}
-                className="px-5 py-3 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-purple-600/25 transition-all active:scale-95 cursor-pointer shrink-0"
+              {/* Steps / Details Grid */}
+              <div
+                className={`grid grid-cols-1 sm:grid-cols-2 ${
+                  mod.steps.length === 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'
+                } gap-3 pt-6`}
               >
-                <Download className="w-4 h-4" /> Enable gpedit.msc (.bat)
-              </button>
-            </div>
-
-            {/* Quick System Launchers Grid */}
-            <div className="pt-6 space-y-3">
-              <h3 className={`text-sm font-bold uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                Quick Run Commands (Press Win + R, type command and press Enter)
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                {[
-                  { name: 'DirectX Diagnostics', cmd: 'dxdiag' },
-                  { name: 'Resource Monitor', cmd: 'resmon' },
-                  { name: 'System Config', cmd: 'msconfig' },
-                  { name: 'Disk Management', cmd: 'diskmgmt.msc' },
-                  { name: 'Device Manager', cmd: 'devmgmt.msc' },
-                  { name: 'Advanced Cleanup', cmd: 'cleanmgr /sageset:1' }
-                ].map((item) => (
+                {mod.steps.map((s) => (
                   <div
-                    key={item.cmd}
-                    onClick={() => handleCopy(item.cmd, item.cmd, item.cmd)}
-                    className={`p-3 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
-                      isDark ? 'bg-zinc-950/60 hover:bg-zinc-800 border-zinc-800' : 'bg-slate-50 hover:bg-slate-100 border-slate-200'
+                    key={s.badge}
+                    className={`p-4 rounded-2xl border space-y-1.5 ${
+                      isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-slate-50 border-slate-200'
                     }`}
                   >
-                    <span className="text-xs font-semibold text-slate-700 dark:text-zinc-300 truncate">{item.name}</span>
-                    <div className="flex items-center justify-between mt-2">
-                      <code className="text-xs text-purple-600 dark:text-purple-400 font-mono font-bold">{item.cmd}</code>
-                      {copiedKey === item.cmd ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
+                    <div className="flex items-center justify-between">
+                      <span className={`px-2.5 py-0.5 rounded-lg font-mono text-xs font-extrabold ${colors.stepBadge}`}>
+                        {s.badge}
+                      </span>
+                      <CheckCircle2 className={`w-4 h-4 ${colors.text}`} />
                     </div>
+                    <div className={`text-[11px] font-mono truncate ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                      {s.cmd}
+                    </div>
+                    <p className={`text-xs leading-relaxed ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
+                      {s.desc}
+                    </p>
                   </div>
                 ))}
               </div>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* ========================================================================= */}
-      {/* 4. Windows Official ISO & Rufus Bootable Media Hub */}
-      {/* ========================================================================= */}
-      {activeSubTab === 'iso_rufus' && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          <div
-            className={`rounded-3xl p-6 md:p-8 border ${
-              isDark ? 'bg-zinc-900/60 border-zinc-800' : 'bg-white border-slate-200 shadow-sm'
-            }`}
-          >
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200 dark:border-zinc-800">
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <Disc className="w-5 h-5 text-emerald-500" />
-                  <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                    Official Windows ISO Downloads & Rufus Tool
-                  </h2>
+              {/* Optional Script Source Code Preview */}
+              {isPreviewOpen && (
+                <div className={`mt-4 p-4 rounded-2xl bg-black/95 border border-zinc-800 font-mono text-xs overflow-x-auto max-h-80 overflow-y-auto ${colors.codeText}`}>
+                  <pre>{mod.generator()}</pre>
                 </div>
-                <p className={`text-sm ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
-                  Direct access to authentic, untouched Microsoft Windows ISOs and 1-click Rufus download with automatic TPM 2.0 / Secure Boot bypass instructions.
-                </p>
-              </div>
+              )}
 
-              <div className="flex flex-wrap items-center gap-3 shrink-0">
-                <button
-                  onClick={() => handleDownload('Download-Rufus-Portable.bat', generateRufusDownloaderScript, 'Rufus Portable (.bat)')}
-                  className="px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-emerald-600/25 transition-all active:scale-95 cursor-pointer"
+              {/* Quick PowerShell One-Liner */}
+              <div className="pt-5">
+                <div
+                  className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                    isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-slate-50 border-slate-200'
+                  }`}
                 >
-                  <Download className="w-4 h-4" /> Download Rufus Portable (.bat)
-                </button>
-              </div>
-            </div>
-
-            {/* Official Windows ISO Direct Sources */}
-            <div className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className={`p-5 rounded-2xl border ${isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-sm">
-                      11
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Terminal className={`w-3.5 h-3.5 shrink-0 ${colors.text}`} />
+                      <span className={`text-xs font-bold ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
+                        Instant PowerShell Command (Admin):
+                      </span>
                     </div>
-                    <div>
-                      <h3 className={`text-base font-bold ${isDark ? 'text-zinc-100' : 'text-slate-900'}`}>
-                        Windows 11 (24H2) Official ISO
-                      </h3>
-                      <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>Direct from Microsoft Software Download</p>
+                    <div className={`font-mono text-[11px] truncate select-all ${colors.text}`}>
+                      {mod.psCommand}
                     </div>
                   </div>
-                  <span className="px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-500 font-bold text-[11px]">Latest</span>
-                </div>
-                <p className={`text-xs leading-relaxed mb-4 ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
-                  Includes Windows 11 Home, Pro, and Enterprise editions (Multi-edition ISO) with the latest security updates.
-                </p>
-                <a
-                  href="https://www.microsoft.com/software-download/windows11"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                >
-                  <span>Open Microsoft Windows 11 Download</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              </div>
-
-              <div className={`p-5 rounded-2xl border ${isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-cyan-600 text-white flex items-center justify-center font-black text-sm">
-                      10
-                    </div>
-                    <div>
-                      <h3 className={`text-base font-bold ${isDark ? 'text-zinc-100' : 'text-slate-900'}`}>
-                        Windows 10 (22H2) Official ISO
-                      </h3>
-                      <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>Direct from Microsoft Media Creation</p>
-                    </div>
-                  </div>
-                  <span className="px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-500 font-bold text-[11px]">Stable</span>
-                </div>
-                <p className={`text-xs leading-relaxed mb-4 ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
-                  The most stable, battle-tested release of Windows 10 for legacy systems and maximum game compatibility.
-                </p>
-                <a
-                  href="https://www.microsoft.com/software-download/windows10"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                >
-                  <span>Open Microsoft Windows 10 Download</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              </div>
-            </div>
-
-            {/* Rufus Setup Instructions & Bypass Guide */}
-            <div className={`mt-6 p-6 rounded-2xl border ${isDark ? 'bg-zinc-950/80 border-zinc-800/90' : 'bg-slate-50 border-slate-200'}`}>
-              <div className="flex items-center gap-2 mb-4">
-                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                <h3 className={`text-base font-bold ${isDark ? 'text-zinc-100' : 'text-slate-900'}`}>
-                  Rufus Recommended USB Setup Cheat-sheet
-                </h3>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                <div className={`p-4 rounded-xl border ${isDark ? 'bg-zinc-900/60 border-zinc-800' : 'bg-white border-slate-200'}`}>
-                  <span className="font-bold text-emerald-500 text-sm">1. Partition Scheme</span>
-                  <p className={`mt-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
-                    Choose <strong>GPT</strong> for modern UEFI systems (Windows 11). Choose <strong>MBR</strong> only for older legacy BIOS computers (pre-2015).
-                  </p>
-                </div>
-
-                <div className={`p-4 rounded-xl border ${isDark ? 'bg-zinc-900/60 border-zinc-800' : 'bg-white border-slate-200'}`}>
-                  <span className="font-bold text-purple-500 text-sm">2. TPM & SecureBoot Bypass</span>
-                  <p className={`mt-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
-                    When clicking "START", check: <em>"Remove requirement for 4GB+ RAM, Secure Boot and TPM 2.0"</em> to install Windows 11 on any PC!
-                  </p>
-                </div>
-
-                <div className={`p-4 rounded-xl border ${isDark ? 'bg-zinc-900/60 border-zinc-800' : 'bg-white border-slate-200'}`}>
-                  <span className="font-bold text-cyan-500 text-sm">3. Local Account Creation</span>
-                  <p className={`mt-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
-                    Check: <em>"Remove requirement for an online Microsoft account"</em> to create an offline local Windows user without entering an email.
-                  </p>
+                  <button
+                    onClick={() => handleCopy(mod.psCommand, `${mod.id}_cmd`, `${mod.title} command`)}
+                    className={`px-4 py-2 rounded-xl text-white font-bold text-xs flex items-center justify-center gap-1.5 shrink-0 transition-all cursor-pointer ${colors.btn}`}
+                  >
+                    {copiedKey === `${mod.id}_cmd` ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedKey === `${mod.id}_cmd` ? 'Copied!' : 'Copy Command'}</span>
+                  </button>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          );
+        })}
+      </div>
     </div>
   );
 };
