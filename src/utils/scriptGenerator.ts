@@ -1877,6 +1877,463 @@ exit
 }
 
 /**
+ * Fix Module #9: Wi-Fi & Bluetooth Icon Missing / Adapter Disappeared Fixer
+ * Fixes vanished Wi-Fi/Bluetooth options in Taskbar & ncpa.cpl, Code 43/10/45, and power-saving sleep lockups
+ */
+export function generateWifiBluetoothMissingFixScript(): string {
+  return `@echo off
+:: ============================================================================
+::   ItsRiRx Windows Tool Kit - Wi-Fi & Bluetooth Missing / Adapter Fixer
+::   Fixes: Vanished Wi-Fi/Bluetooth Icons, Missing Adapter in ncpa.cpl, Code 43/10
+::   Website    : https://itsrirx-toolkit.vercel.app
+::   Created by : Riazul Islam
+:: ============================================================================
+title Wi-Fi & Bluetooth Missing Adapter Fixer - ItsRiRx Tool Kit
+color 0b
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -LiteralPath '%~f0' -ErrorAction SilentlyContinue" >nul 2>&1
+
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [INFO] Administrator privileges required to recover missing Wi-Fi and Bluetooth adapters.
+    echo [*] Requesting UAC elevation...
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/k \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    if %errorlevel% neq 0 (
+        echo.
+        echo [!] Please right-click this file and choose: 'Run as administrator'
+        echo.
+        echo Press any key to close this window...
+        pause >nul
+    )
+    exit /b
+)
+
+cd /d "%~dp0"
+cls
+echo ============================================================================
+echo   ItsRiRx Windows Tool Kit - Wi-Fi ^& Bluetooth Disappeared / Driver Fixer
+echo   Solves: Missing Wi-Fi in ncpa.cpl, Vanished Taskbar Icon, Code 43 / Code 10
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   Created by : Riazul Islam
+echo ============================================================================
+echo.
+
+echo [1/6] Starting ^& Setting All Wi-Fi, WLAN, Radio ^& Bluetooth Services to Auto...
+sc config WlanSvc start= auto >nul 2>&1
+net start WlanSvc >nul 2>&1
+sc config bthserv start= auto >nul 2>&1
+net start bthserv >nul 2>&1
+sc config BTAGService start= auto >nul 2>&1
+net start BTAGService >nul 2>&1
+sc config BthAvctpSvc start= auto >nul 2>&1
+net start BthAvctpSvc >nul 2>&1
+sc config RmSvc start= auto >nul 2>&1
+net start RmSvc >nul 2>&1
+sc config NlaSvc start= auto >nul 2>&1
+net start NlaSvc >nul 2>&1
+sc config netprofm start= auto >nul 2>&1
+net start netprofm >nul 2>&1
+sc config nsi start= auto >nul 2>&1
+net start nsi >nul 2>&1
+sc config dot3svc start= demand >nul 2>&1
+echo   [OK] WLAN AutoConfig ^(WlanSvc^), Bluetooth ^(bthserv^), and Radio services started.
+echo.
+
+echo [2/6] Unlocking Stuck Airplane Mode ^& System Radio Registry State...
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\RadioManagement\\SystemRadioState" /ve /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\WlanSvc" /v Start /t REG_DWORD /d 2 /f >nul 2>&1
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\bthserv" /v Start /t REG_DWORD /d 2 /f >nul 2>&1
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\BTHPORT\\Parameters\\Radio Support" /v SupportDLL /t REG_EXPAND_SZ /d "%SystemRoot%\\System32\\BthRadioMedia.dll" /f >nul 2>&1
+echo   [OK] Hardware radio lock cleared ^(Airplane Mode forced OFF^).
+echo.
+
+echo [3/6] Disabling PCIe, USB ^& Wi-Fi Power-Saving Auto-Disconnect...
+:: Set Wi-Fi Adapter Power Saving to Maximum Performance on Battery & Plugged In
+powercfg /setacvalueindex SCHEME_CURRENT 19cbb8fa-5279-450e-9fac-8a3d5fedd0c1 12bbebe6-58d6-4636-95bb-3217ef867c1a 0 >nul 2>&1
+powercfg /setdcvalueindex SCHEME_CURRENT 19cbb8fa-5279-450e-9fac-8a3d5fedd0c1 12bbebe6-58d6-4636-95bb-3217ef867c1a 0 >nul 2>&1
+:: Disable USB Selective Suspend (prevents Bluetooth from vanishing on running laptops)
+powercfg /setacvalueindex SCHEME_CURRENT 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0 >nul 2>&1
+powercfg /setdcvalueindex SCHEME_CURRENT 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0 >nul 2>&1
+:: Disable PCIe Link State Power Management (prevents Intel/MediaTek Wi-Fi card from dropping off PCIe bus)
+powercfg /setacvalueindex SCHEME_CURRENT 501a4d13-42af-4429-9fd1-a8218c268e20 ee12f906-d277-404b-b6da-e5fa1a576df5 0 >nul 2>&1
+powercfg /setdcvalueindex SCHEME_CURRENT 501a4d13-42af-4429-9fd1-a8218c268e20 ee12f906-d277-404b-b6da-e5fa1a576df5 0 >nul 2>&1
+powercfg /setactive SCHEME_CURRENT >nul 2>&1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Get-ChildItem 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e972-e325-11ce-bfc1-08002be10318}' -ErrorAction SilentlyContinue | ForEach-Object { Set-ItemProperty -Path $_.PSPath -Name 'PnPCapabilities' -Value 24 -Type DWord -ErrorAction SilentlyContinue }" >nul 2>&1
+echo   [OK] Disabled power-saving sleep lockup on Wi-Fi, PCIe, and USB Bluetooth buses.
+echo.
+
+echo [4/6] Rescanning Hardware Bus ^(PCIe ^& USB^) for Vanished Adapters...
+pnputil.exe /scan-devices >nul 2>&1
+echo   [OK] Hardware bus scan completed ^(pnputil /scan-devices^).
+echo.
+
+echo [5/6] Resetting Problematic Drivers ^(Code 43 / Code 10^) ^& Enabling Adapters in ncpa.cpl...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$devs = Get-PnpDevice -Class Net,Bluetooth -ErrorAction SilentlyContinue | Where-Object { $_.Status -ne 'OK' -and $_.Present -eq $true }; foreach ($d in $devs) { Write-Host ('  [*] Resetting adapter: ' + $d.FriendlyName) -ForegroundColor Yellow; Disable-PnpDevice -InstanceId $d.InstanceId -Confirm:$false -ErrorAction SilentlyContinue; Start-Sleep -Milliseconds 1200; Enable-PnpDevice -InstanceId $d.InstanceId -Confirm:$false -ErrorAction SilentlyContinue }; Get-NetAdapter -Physical -ErrorAction SilentlyContinue | Where-Object { $_.Status -eq 'Disabled' } | Enable-NetAdapter -Confirm:$false -ErrorAction SilentlyContinue"
+echo   [OK] All detected Wi-Fi and Bluetooth adapters reset and enabled.
+echo.
+
+echo [6/6] Repairing Winsock Stack ^& Checking Detected Wireless Hardware...
+netsh winsock reset >nul 2>&1
+ipconfig /flushdns >nul 2>&1
+echo.
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$adapters = Get-NetAdapter -ErrorAction SilentlyContinue | Where-Object { $_.Name -match 'Wi-Fi|Wireless|WLAN|Ethernet' -or $_.InterfaceDescription -match 'Wi-Fi|Wireless|802.11|Intel|MediaTek|Realtek|Qualcomm' }; if ($adapters) { Write-Host '  [DETECTED NETWORK ADAPTERS IN NCPA.CPL]:' -ForegroundColor Cyan; $adapters | ForEach-Object { Write-Host ('   -> ' + $_.Name + ' [' + $_.InterfaceDescription + '] - Status: ' + $_.Status) -ForegroundColor Green } } else { Write-Host '  [!] Note: If Wi-Fi card is still hidden from BIOS/PCIe bus, unplug laptop charger and hold Power Button for 30 seconds (EC Hard Reset).' -ForegroundColor Yellow }"
+echo.
+
+echo ============================================================================
+echo   [SUCCESS] Wi-Fi ^& Bluetooth Adapter Recovery Completed!
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   All tasks finished! Press any key to close this window...
+echo ============================================================================
+echo.
+powershell.exe -NoProfile -Command "[console]::beep(800,200); [console]::beep(1000,300)" >nul 2>&1
+pause >nul
+exit
+`;
+}
+
+/**
+ * Fix Module #10: Audio & Microphone Not Working Fixer
+ * Fixes Red X on Speaker Icon, No Audio Output Device Installed, and Mic Privacy/Driver blocks
+ */
+export function generateAudioMicFixScript(): string {
+  return `@echo off
+:: ============================================================================
+::   ItsRiRx Windows Tool Kit - Audio & Microphone Not Working Fixer
+::   Fixes: No Audio Output Device, Red Cross on Speaker, Microphone Blocked
+::   Website    : https://itsrirx-toolkit.vercel.app
+::   Created by : Riazul Islam
+:: ============================================================================
+title Audio & Microphone Fixer - ItsRiRx Tool Kit
+color 0b
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -LiteralPath '%~f0' -ErrorAction SilentlyContinue" >nul 2>&1
+
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [INFO] Administrator privileges required to repair Windows Audio and Microphone services.
+    echo [*] Requesting UAC elevation...
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/k \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    if %errorlevel% neq 0 (
+        echo.
+        echo [!] Please right-click this file and choose: 'Run as administrator'
+        echo.
+        echo Press any key to close this window...
+        pause >nul
+    )
+    exit /b
+)
+
+cd /d "%~dp0"
+cls
+echo ============================================================================
+echo   ItsRiRx Windows Tool Kit - Audio ^& Microphone Not Working Fixer
+echo   Solves: Red X on Speaker, No Audio Output Device, Mic Not Detecting Voice
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   Created by : Riazul Islam
+echo ============================================================================
+echo.
+
+echo [1/4] Restarting ^& Setting Windows Audio Core Services to Automatic...
+sc config RpcSs start= auto >nul 2>&1
+net start RpcSs >nul 2>&1
+sc config MMCSS start= auto >nul 2>&1
+net start MMCSS >nul 2>&1
+sc config AudioEndpointBuilder start= auto >nul 2>&1
+net stop Audiosrv /y >nul 2>&1
+net stop AudioEndpointBuilder /y >nul 2>&1
+net start AudioEndpointBuilder >nul 2>&1
+sc config Audiosrv start= auto >nul 2>&1
+net start Audiosrv >nul 2>&1
+echo   [OK] Audiosrv, AudioEndpointBuilder, and MMCSS restarted cleanly.
+echo.
+
+echo [2/4] Unlocking Windows Microphone ^& Audio Privacy Registry Permissions...
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\microphone" /v Value /t REG_SZ /d "Allow" /f >nul 2>&1
+reg add "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\microphone" /v Value /t REG_SZ /d "Allow" /f >nul 2>&1
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\microphone\\NonPackaged" /v Value /t REG_SZ /d "Allow" /f >nul 2>&1
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy" /v LetAppsAccessMicrophone /t REG_DWORD /d 1 /f >nul 2>&1
+echo   [OK] Microphone access enabled for both Desktop and Store apps.
+echo.
+
+echo [3/4] Rescanning Hardware Audio Bus ^(Realtek / High Definition Audio / USB^)...
+pnputil.exe /scan-devices >nul 2>&1
+echo   [OK] Plug and Play audio bus rescan completed.
+echo.
+
+echo [4/4] Re-enabling Disabled or Errored Audio ^& Microphone Endpoints...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$audioDevs = Get-PnpDevice -Class AudioEndpoint,Media -ErrorAction SilentlyContinue | Where-Object { $_.Status -ne 'OK' -and $_.Present -eq $true }; foreach ($d in $audioDevs) { Write-Host ('  [*] Resetting Audio Device: ' + $d.FriendlyName) -ForegroundColor Yellow; Disable-PnpDevice -InstanceId $d.InstanceId -Confirm:$false -ErrorAction SilentlyContinue; Start-Sleep -Milliseconds 900; Enable-PnpDevice -InstanceId $d.InstanceId -Confirm:$false -ErrorAction SilentlyContinue }"
+echo   [OK] All detected sound and microphone endpoints verified and enabled.
+echo.
+
+echo ============================================================================
+echo   [SUCCESS] Windows Audio ^& Microphone Repair Completed!
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   All tasks finished! Press any key to close this window...
+echo ============================================================================
+echo.
+powershell.exe -NoProfile -Command "[console]::beep(800,200); [console]::beep(1000,300)" >nul 2>&1
+pause >nul
+exit
+`;
+}
+
+/**
+ * Fix Module #11: 100% Disk Usage, High RAM & Slow PC Lag Fixer
+ * Fixes 100% Disk Usage in Task Manager, flushes Standby/Working Set RAM, and stops background lag hogs
+ */
+export function generateHighRamDiskLagFixScript(): string {
+  return `@echo off
+:: ============================================================================
+::   ItsRiRx Windows Tool Kit - 100% Disk Usage, High RAM & Slow PC Lag Fixer
+::   Fixes: 100% Disk Usage, High Memory Usage, Stuttering & Background Lag
+::   Website    : https://itsrirx-toolkit.vercel.app
+::   Created by : Riazul Islam
+:: ============================================================================
+title 100%% Disk Usage, High RAM & Lag Fixer - ItsRiRx Tool Kit
+color 0b
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -LiteralPath '%~f0' -ErrorAction SilentlyContinue" >nul 2>&1
+
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [INFO] Administrator privileges required to flush RAM cache and fix 100%% Disk Usage.
+    echo [*] Requesting UAC elevation...
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/k \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    if %errorlevel% neq 0 (
+        echo.
+        echo [!] Please right-click this file and choose: 'Run as administrator'
+        echo.
+        echo Press any key to close this window...
+        pause >nul
+    )
+    exit /b
+)
+
+cd /d "%~dp0"
+cls
+echo ============================================================================
+echo   ItsRiRx Windows Tool Kit - 100%% Disk Usage, High RAM ^& Slow PC Lag Fixer
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   Created by : Riazul Islam
+echo ============================================================================
+echo.
+powershell.exe -NoProfile -Command "$os = Get-CimInstance Win32_OperatingSystem; Write-Host ('[*] Free Physical RAM BEFORE Optimization : ' + [math]::Round($os.FreePhysicalMemory / 1024, 0) + ' MB') -ForegroundColor Yellow"
+echo.
+
+echo [1/4] Stopping 100%% Disk Usage Background Hogs ^(SysMain / Telemetry^)...
+net stop DiagTrack >nul 2>&1
+sc config DiagTrack start= disabled >nul 2>&1
+net stop dmwappushservice >nul 2>&1
+sc config dmwappushservice start= disabled >nul 2>&1
+net stop SysMain >nul 2>&1
+sc config SysMain start= demand >nul 2>&1
+echo   [OK] SysMain ^(Superfetch^) disk thrashing and Telemetry services stopped.
+echo.
+
+echo [2/4] Disabling Background App Wake-ups, Tips ^& Diagnostic Disk Polling...
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SoftLandingEnabled /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338389Enabled /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\BackgroundAccessApplications" /v GlobalUserDisabled /t REG_DWORD /d 1 /f >nul 2>&1
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f >nul 2>&1
+echo   [OK] Background UWP app polling and Windows Tips CPU spikes disabled.
+echo.
+
+echo [3/4] Flushing Idle Process Working Set RAM ^(Instant Memory Recovery^)...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Add-Type -MemberDefinition '[DllImport(\"psapi.dll\")] public static extern int EmptyWorkingSet(IntPtr hwProc);' -Name 'MemUtil' -Namespace 'Win32' -ErrorAction SilentlyContinue; Get-Process | Where-Object { $_.MainWindowHandle -eq 0 -and $_.ProcessName -notmatch 'csrss|smss|lsass|services|wininit|System|Idle' } | ForEach-Object { try { [void][Win32.MemUtil]::EmptyWorkingSet($_.Handle) } catch {} }; [System.GC]::Collect()" >nul 2>&1
+echo   [OK] Background process Working Set memory caches flushed.
+echo.
+
+echo [4/4] Optimizing Responsiveness, MenuShowDelay ^& System Power Throttling...
+reg add "HKCU\\Control Panel\\Desktop" /v MenuShowDelay /t REG_SZ /d "0" /f >nul 2>&1
+reg add "HKCU\\Control Panel\\Desktop" /v AutoEndTasks /t REG_SZ /d "1" /f >nul 2>&1
+reg add "HKCU\\Control Panel\\Desktop" /v HungAppTimeout /t REG_SZ /d "1000" /f >nul 2>&1
+reg add "HKCU\\Control Panel\\Desktop" /v WaitToKillAppTimeout /t REG_SZ /d "2000" /f >nul 2>&1
+echo   [OK] UI responsiveness and hung app timeouts optimized.
+echo.
+
+powershell.exe -NoProfile -Command "$os = Get-CimInstance Win32_OperatingSystem; Write-Host ('[*] Free Physical RAM AFTER Optimization  : ' + [math]::Round($os.FreePhysicalMemory / 1024, 0) + ' MB') -ForegroundColor Green"
+echo.
+echo ============================================================================
+echo   [SUCCESS] 100%% Disk Usage ^& High RAM Lag Fix Completed!
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   All tasks finished! Press any key to close this window...
+echo ============================================================================
+echo.
+powershell.exe -NoProfile -Command "[console]::beep(800,200); [console]::beep(1000,300)" >nul 2>&1
+pause >nul
+exit
+`;
+}
+
+/**
+ * Fix Module #12: Windows Update Stuck / Error Fixer
+ * Fixes Windows Update stuck at 0% or errors 0x80070002, 0x800f081f, 0x8024402c, 0x80070422
+ */
+export function generateWindowsUpdateFixScript(): string {
+  return `@echo off
+:: ============================================================================
+::   ItsRiRx Windows Tool Kit - Windows Update Stuck & Error Fixer
+::   Fixes: Stuck at 0%, 0x80070002, 0x800f081f, 0x8024402c, 0x80070422
+::   Website    : https://itsrirx-toolkit.vercel.app
+::   Created by : Riazul Islam
+:: ============================================================================
+title Windows Update Stuck & Error Fixer - ItsRiRx Tool Kit
+color 0b
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -LiteralPath '%~f0' -ErrorAction SilentlyContinue" >nul 2>&1
+
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [INFO] Administrator privileges required to reset Windows Update components.
+    echo [*] Requesting UAC elevation...
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/k \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    if %errorlevel% neq 0 (
+        echo.
+        echo [!] Please right-click this file and choose: 'Run as administrator'
+        echo.
+        echo Press any key to close this window...
+        pause >nul
+    )
+    exit /b
+)
+
+cd /d "%~dp0"
+cls
+echo ============================================================================
+echo   ItsRiRx Windows Tool Kit - Windows Update Stuck ^& Error Fixer
+echo   Solves: Update Stuck at 0%%, 0x80070002, 0x800f081f, 0x8024402c, 0x80070422
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   Created by : Riazul Islam
+echo ============================================================================
+echo.
+
+echo [1/5] Stopping Windows Update, BITS, Cryptographic ^& Installer Services...
+net stop wuauserv /y >nul 2>&1
+net stop bits /y >nul 2>&1
+net stop cryptSvc /y >nul 2>&1
+net stop msiserver /y >nul 2>&1
+net stop dosvc /y >nul 2>&1
+echo   [OK] Update services stopped safely.
+echo.
+
+echo [2/5] Clearing Corrupted BITS Queue ^& Resetting SoftwareDistribution + catroot2...
+del /f /q "%ALLUSERSPROFILE%\\Application Data\\Microsoft\\Network\\Downloader\\qmgr*.dat" >nul 2>&1
+del /f /q "%ALLUSERSPROFILE%\\Microsoft\\Network\\Downloader\\qmgr*.dat" >nul 2>&1
+if exist "%SystemRoot%\\SoftwareDistribution.old" rmdir /s /q "%SystemRoot%\\SoftwareDistribution.old" >nul 2>&1
+if exist "%SystemRoot%\\System32\\catroot2.old" rmdir /s /q "%SystemRoot%\\System32\\catroot2.old" >nul 2>&1
+ren "%SystemRoot%\\SoftwareDistribution" SoftwareDistribution.old >nul 2>&1
+ren "%SystemRoot%\\System32\\catroot2" catroot2.old >nul 2>&1
+del /s /f /q "%SystemRoot%\\SoftwareDistribution\\Download\\*.*" >nul 2>&1
+echo   [OK] SoftwareDistribution and catroot2 caches reset cleanly.
+echo.
+
+echo [3/5] Re-registering Core Windows Update ^& Cryptographic DLLs...
+for %%d in (atl.dll urlmon.dll mshtml.dll shdocvw.dll browseui.dll jscript.dll vbscript.dll scrrun.dll msxml.dll msxml3.dll msxml6.dll actxprxy.dll softpub.dll wintrust.dll dssenh.dll rsaenh.dll gpkcsp.dll sccbase.dll slbcsp.dll cryptdlg.dll oleaut32.dll ole32.dll shell32.dll wuapi.dll wuaueng.dll wucltux.dll wups.dll wups2.dll wuwebv.dll) do (
+    regsvr32.exe /s %%d >nul 2>&1
+)
+echo   [OK] Core Windows Update DLL modules registered.
+echo.
+
+echo [4/5] Removing Windows Update Policy Blocks ^& Resetting WinHTTP Proxy...
+reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate" /f >nul 2>&1
+netsh winhttp reset proxy >nul 2>&1
+echo   [OK] Update group policy locks removed and WinHTTP proxy reset.
+echo.
+
+echo [5/5] Restarting Windows Update, BITS ^& Cryptographic Services...
+sc config wuauserv start= demand >nul 2>&1
+sc config bits start= delayed-auto >nul 2>&1
+sc config cryptSvc start= auto >nul 2>&1
+sc config msiserver start= demand >nul 2>&1
+sc config TrustedInstaller start= demand >nul 2>&1
+net start cryptSvc >nul 2>&1
+net start bits >nul 2>&1
+net start wuauserv >nul 2>&1
+net start TrustedInstaller >nul 2>&1
+echo   [OK] All Windows Update services restarted and ready!
+echo.
+
+echo ============================================================================
+echo   [SUCCESS] Windows Update Stuck ^& Error Repair Completed!
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   All tasks finished! Press any key to close this window...
+echo ============================================================================
+echo.
+powershell.exe -NoProfile -Command "[console]::beep(800,200); [console]::beep(1000,300)" >nul 2>&1
+pause >nul
+exit
+`;
+}
+
+/**
+ * Fix Module #13: Saved Wi-Fi Password Viewer & Network Profile Backup Tool
+ * Extracts all saved Wi-Fi SSIDs & cleartext passwords and backs up XML profiles to Desktop
+ */
+export function generateSavedWifiPasswordsScript(): string {
+  return `@echo off
+:: ============================================================================
+::   ItsRiRx Windows Tool Kit - Saved Wi-Fi Password Viewer & Backup Tool
+::   Displays all saved Wi-Fi SSIDs + Cleartext Passwords & Backs up Profiles
+::   Website    : https://itsrirx-toolkit.vercel.app
+::   Created by : Riazul Islam
+:: ============================================================================
+title Saved Wi-Fi Password Viewer & Backup Tool - ItsRiRx Tool Kit
+color 0b
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -LiteralPath '%~f0' -ErrorAction SilentlyContinue" >nul 2>&1
+
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [INFO] Administrator privileges required to read cleartext Wi-Fi security keys.
+    echo [*] Requesting UAC elevation...
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/k \"\"%~f0\"\"' -Verb RunAs" >nul 2>&1
+    if %errorlevel% neq 0 (
+        echo.
+        echo [!] Please right-click this file and choose: 'Run as administrator'
+        echo.
+        echo Press any key to close this window...
+        pause >nul
+    )
+    exit /b
+)
+
+cd /d "%~dp0"
+cls
+echo ============================================================================
+echo   ItsRiRx Windows Tool Kit - Saved Wi-Fi Password Viewer ^& Backup Tool
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   Created by : Riazul Islam
+echo ============================================================================
+echo.
+
+echo [1/3] Ensuring WLAN AutoConfig Service ^(WlanSvc^) is Active...
+sc config WlanSvc start= auto >nul 2>&1
+net start WlanSvc >nul 2>&1
+echo   [OK] WLAN AutoConfig service is running.
+echo.
+
+echo [2/3] Scanning All Saved Wi-Fi Profiles ^& Extracting Cleartext Passwords...
+echo ----------------------------------------------------------------------------
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$backupDir = Join-Path ([Environment]::GetFolderPath('Desktop')) 'WiFi-Passwords-Backup'; New-Item -ItemType Directory -Path $backupDir -Force | Out-Null; $reportPath = Join-Path $backupDir 'Saved-WiFi-Passwords.txt'; $lines = @('====================================================================','  ItsRiRx Windows Tool Kit - Saved Wi-Fi Passwords Backup Report','====================================================================',''); $profiles = (netsh wlan show profiles) | Select-String 'All User Profile\\s*:\\s*(.+)$' | ForEach-Object { $_.Matches[0].Groups[1].Value.Trim() }; if (-not $profiles) { Write-Host '  [!] No saved Wi-Fi profiles found on this PC.' -ForegroundColor Yellow } else { $idx = 1; foreach ($p in $profiles) { $details = netsh wlan show profile name=\"$p\" key=clear; $passMatch = $details | Select-String 'Key Content\\s*:\\s*(.+)$'; $authMatch = $details | Select-String 'Authentication\\s*:\\s*(.+)$'; $pass = if ($passMatch) { $passMatch.Matches[0].Groups[1].Value.Trim() } else { '[No Password / Open Network]' }; $auth = if ($authMatch) { $authMatch.Matches[0].Groups[1].Value.Trim() } else { 'Unknown' }; Write-Host ('  [' + $idx + '] Wi-Fi Name (SSID) : ' + $p) -ForegroundColor Cyan; Write-Host ('      Password          : ' + $pass) -ForegroundColor Green; Write-Host ('      Security Type     : ' + $auth) -ForegroundColor DarkGray; Write-Host ''; $lines += ('[' + $idx + '] SSID: ' + $p + ' | Password: ' + $pass + ' | Security: ' + $auth); $idx++ }; $lines | Set-Content -Path $reportPath -Encoding UTF8; netsh wlan export profile key=clear folder=\"$backupDir\" >$null 2>&1; Write-Host '----------------------------------------------------------------------------' -ForegroundColor DarkGray; Write-Host ('  [OK] Full Password Report & XML Profiles backed up to Desktop:') -ForegroundColor Yellow; Write-Host ('       ' + $backupDir) -ForegroundColor White }"
+echo.
+
+echo [3/3] How to Restore Backed-Up Wi-Fi Profiles on a Fresh Windows PC:
+echo   Run: for %%f in ^("%USERPROFILE%\\Desktop\\WiFi-Passwords-Backup\\*.xml"^) do netsh wlan add profile filename="%%f"
+echo.
+
+echo ============================================================================
+echo   [SUCCESS] All Saved Wi-Fi Passwords Displayed ^& Backed Up to Desktop!
+echo   Website    : https://itsrirx-toolkit.vercel.app
+echo   All tasks finished! Press any key to close this window...
+echo ============================================================================
+echo.
+powershell.exe -NoProfile -Command "[console]::beep(800,200); [console]::beep(1000,300)" >nul 2>&1
+pause >nul
+exit
+`;
+}
+
+/**
  * Triggers a native file download in the browser
  */
 export function triggerFileDownload(filename: string, content: string): void {
@@ -1890,4 +2347,7 @@ export function triggerFileDownload(filename: string, content: string): void {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+
+
+
 

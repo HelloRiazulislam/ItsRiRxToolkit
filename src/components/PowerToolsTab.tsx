@@ -17,7 +17,11 @@ import {
   Layers,
   Wifi,
   Database,
-  Share2
+  Share2,
+  Bluetooth,
+  Volume2,
+  Gauge,
+  KeyRound
 } from 'lucide-react';
 import {
   generatePrintSpoolerFixScript,
@@ -28,6 +32,11 @@ import {
   generateNetworkResetFixScript,
   generateCDriveSpaceFixScript,
   generateSharedPrinterRegistryFixScript,
+  generateWifiBluetoothMissingFixScript,
+  generateAudioMicFixScript,
+  generateHighRamDiskLagFixScript,
+  generateWindowsUpdateFixScript,
+  generateSavedWifiPasswordsScript,
   triggerFileDownload
 } from '../utils/scriptGenerator';
 
@@ -45,7 +54,12 @@ type FixFilterType =
   | 'winget_store'
   | 'dll_runtimes'
   | 'network_reset'
-  | 'c_drive_space';
+  | 'c_drive_space'
+  | 'wifi_bt_missing'
+  | 'audio_mic_fix'
+  | 'ram_disk_lag_fix'
+  | 'windows_update_fix'
+  | 'saved_wifi_passwords';
 
 interface FixModuleItem {
   id: Exclude<FixFilterType, 'all'>;
@@ -343,6 +357,186 @@ export const PowerToolsTab: React.FC<PowerToolsTabProps> = ({ onNotify, isDark =
           desc: 'Enables Guest SMB sharing, Blank Password LAN logon, Function Discovery services, and restarts Spooler.'
         }
       ]
+    },
+    {
+      id: 'wifi_bt_missing',
+      number: 'Fix Module #9',
+      title: 'Wi-Fi & Bluetooth Disappeared / Missing Adapter Fixer',
+      subtitle: 'Fixes vanished Wi-Fi/BT icons, missing adapter in ncpa.cpl & Code 43/10',
+      description:
+        'Recovers Wi-Fi and Bluetooth adapters that suddenly disappear from the Windows Taskbar, Settings, and ncpa.cpl on running laptops/PCs. Force-starts WlanSvc & Bluetooth services, clears Airplane Mode radio locks, disables PCIe/USB power-saving sleep lockup, rescans hardware buses (pnputil /scan-devices), and resets Code 43/10 drivers.',
+      filename: 'Fix-WiFi-Bluetooth-Missing.bat',
+      downloadLabel: 'Wi-Fi & Bluetooth Missing Fixer (.bat)',
+      generator: generateWifiBluetoothMissingFixScript,
+      psCommand: `sc.exe config WlanSvc start= auto; Start-Service WlanSvc,bthserv,BTAGService,BthAvctpSvc,RmSvc,NlaSvc,netprofm,nsi -ErrorAction SilentlyContinue; reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\RadioManagement\\SystemRadioState" /ve /t REG_DWORD /d 0 /f; powercfg /setacvalueindex SCHEME_CURRENT 19cbb8fa-5279-450e-9fac-8a3d5fedd0c1 12bbebe6-58d6-4636-95bb-3217ef867c1a 0; powercfg /setdcvalueindex SCHEME_CURRENT 19cbb8fa-5279-450e-9fac-8a3d5fedd0c1 12bbebe6-58d6-4636-95bb-3217ef867c1a 0; powercfg /setactive SCHEME_CURRENT; pnputil.exe /scan-devices; Get-PnpDevice -Class Net,Bluetooth -ErrorAction SilentlyContinue | Where-Object { $_.Status -ne 'OK' -and $_.Present -eq $true } | ForEach-Object { Disable-PnpDevice -InstanceId $_.InstanceId -Confirm:$false -ErrorAction SilentlyContinue; Start-Sleep -Milliseconds 1000; Enable-PnpDevice -InstanceId $_.InstanceId -Confirm:$false -ErrorAction SilentlyContinue }; Get-NetAdapter -Physical -ErrorAction SilentlyContinue | Enable-NetAdapter -Confirm:$false -ErrorAction SilentlyContinue; Write-Host "[SUCCESS] Wi-Fi & Bluetooth services, power state, and hardware bus recovered!" -ForegroundColor Green; Write-Host "\`nAll tasks finished! Press any key to close this window..." -ForegroundColor Yellow; cmd.exe /c pause | Out-Null`,
+      accentColor: 'cyan',
+      icon: <Bluetooth className="w-5 h-5" />,
+      steps: [
+        {
+          badge: 'Services & Radio',
+          cmd: 'WlanSvc, bthserv, RmSvc & SystemRadioState = 0',
+          desc: 'Force-starts WLAN AutoConfig, Bluetooth Support, and Radio Management services and unlocks stuck Airplane Mode.'
+        },
+        {
+          badge: 'Power Wake',
+          cmd: 'PnPCapabilities = 24 & PCIe/USB Sleep Off',
+          desc: 'Prevents Windows from cutting power to M.2 Wi-Fi & USB Bluetooth combo chips while your laptop is running.'
+        },
+        {
+          badge: 'Bus Rescan',
+          cmd: 'pnputil.exe /scan-devices',
+          desc: 'Forces a PCIe and USB hardware bus rescan so vanished Intel, MediaTek, Realtek, or Qualcomm cards reappear.'
+        },
+        {
+          badge: 'ncpa.cpl Reset',
+          cmd: 'Reset Code 43/10 & Enable-NetAdapter',
+          desc: 'Automatically resets errored drivers in Device Manager and re-enables hidden wireless adapters in ncpa.cpl.'
+        }
+      ]
+    },
+    {
+      id: 'audio_mic_fix',
+      number: 'Fix Module #10',
+      title: 'Audio & Microphone Not Working Fixer',
+      subtitle: 'Fixes Red X on Speaker, No Audio Output Device & Mic Blocked',
+      description:
+        '1-Click repair for sudden sound loss, "No Audio Output Device is Installed" (Red X icon), and microphone not detecting voice in apps or browser. Restarts Audiosrv & AudioEndpointBuilder, unlocks Microphone privacy registry blocks, and resets Realtek/HD Audio endpoints.',
+      filename: 'Fix-Audio-And-Mic.bat',
+      downloadLabel: 'Audio & Microphone Fixer (.bat)',
+      generator: generateAudioMicFixScript,
+      psCommand: `sc.exe config Audiosrv start= auto; sc.exe config AudioEndpointBuilder start= auto; Restart-Service AudioEndpointBuilder,Audiosrv -Force -ErrorAction SilentlyContinue; reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\microphone" /v Value /t REG_SZ /d "Allow" /f; reg add "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\microphone" /v Value /t REG_SZ /d "Allow" /f; pnputil.exe /scan-devices; Get-PnpDevice -Class AudioEndpoint,Media -ErrorAction SilentlyContinue | Where-Object { $_.Status -ne 'OK' -and $_.Present -eq $true } | ForEach-Object { Disable-PnpDevice -InstanceId $_.InstanceId -Confirm:$false -ErrorAction SilentlyContinue; Start-Sleep -Milliseconds 800; Enable-PnpDevice -InstanceId $_.InstanceId -Confirm:$false -ErrorAction SilentlyContinue }; Write-Host "[SUCCESS] Windows Audio & Microphone services and permissions repaired!" -ForegroundColor Green; Write-Host "\`nAll tasks finished! Press any key to close this window..." -ForegroundColor Yellow; cmd.exe /c pause | Out-Null`,
+      accentColor: 'rose',
+      icon: <Volume2 className="w-5 h-5" />,
+      steps: [
+        {
+          badge: 'Audio Services',
+          cmd: 'Audiosrv, AudioEndpointBuilder & MMCSS',
+          desc: 'Sets Windows Audio and Endpoint Builder services to Automatic and restarts the sound engine cleanly.'
+        },
+        {
+          badge: 'Mic Privacy',
+          cmd: 'ConsentStore\\microphone -> Allow',
+          desc: 'Unlocks Windows 10/11 microphone privacy registry blocks for both desktop apps and browsers.'
+        },
+        {
+          badge: 'Bus Rescan',
+          cmd: 'pnputil.exe /scan-devices',
+          desc: 'Rescans High Definition Audio, Realtek, and USB headset buses to recover vanished audio outputs.'
+        },
+        {
+          badge: 'Endpoint Reset',
+          cmd: 'Reset AudioEndpoint & Media Devices',
+          desc: 'Automatically resets errored or muted hardware sound endpoints in Device Manager.'
+        }
+      ]
+    },
+    {
+      id: 'ram_disk_lag_fix',
+      number: 'Fix Module #11',
+      title: '100% Disk Usage, High RAM & Slow PC Lag Fixer',
+      subtitle: 'Fixes 100% Disk spike, flushes Standby RAM & stops background lag',
+      description:
+        'Eliminates 100% Disk Usage spikes in Task Manager, frees trapped Working Set RAM across idle background processes, stops SysMain/Telemetry disk thrashing, and removes UI menu delay for instant responsiveness.',
+      filename: 'Fix-High-RAM-Disk-Lag.bat',
+      downloadLabel: '100% Disk & High RAM Lag Fixer (.bat)',
+      generator: generateHighRamDiskLagFixScript,
+      psCommand: `Stop-Service DiagTrack,dmwappushservice,SysMain -Force -ErrorAction SilentlyContinue; Set-Service DiagTrack -StartupType Disabled -ErrorAction SilentlyContinue; Set-Service SysMain -StartupType Manual -ErrorAction SilentlyContinue; reg add "HKCU\\Control Panel\\Desktop" /v MenuShowDelay /t REG_SZ /d "0" /f; Add-Type -MemberDefinition '[DllImport("psapi.dll")] public static extern int EmptyWorkingSet(IntPtr hwProc);' -Name 'MemUtil' -Namespace 'Win32' -ErrorAction SilentlyContinue; Get-Process | Where-Object { $_.MainWindowHandle -eq 0 } | ForEach-Object { try { [void][Win32.MemUtil]::EmptyWorkingSet($_.Handle) } catch {} }; [System.GC]::Collect(); Write-Host "[SUCCESS] 100% Disk Usage stopped & background RAM cache flushed!" -ForegroundColor Green; Write-Host "\`nAll tasks finished! Press any key to close this window..." -ForegroundColor Yellow; cmd.exe /c pause | Out-Null`,
+      accentColor: 'purple',
+      icon: <Gauge className="w-5 h-5" />,
+      steps: [
+        {
+          badge: '100% Disk Fix',
+          cmd: 'Stop SysMain, DiagTrack & dmwappush',
+          desc: 'Stops Superfetch (SysMain) and Telemetry background disk thrashing that causes 100% disk spikes.'
+        },
+        {
+          badge: 'RAM Flush',
+          cmd: 'Win32 EmptyWorkingSet & GC::Collect()',
+          desc: 'Flushes trapped Working Set memory from idle background processes and shows before/after free RAM.'
+        },
+        {
+          badge: 'CPU Wake-ups',
+          cmd: 'GlobalUserDisabled = 1 & SoftLanding = 0',
+          desc: 'Disables background UWP app wake-ups and Windows Tips background CPU polling.'
+        },
+        {
+          badge: 'Zero UI Lag',
+          cmd: 'MenuShowDelay = 0 & HungAppTimeout = 1000',
+          desc: 'Removes desktop context menu latency and speeds up closing of frozen applications.'
+        }
+      ]
+    },
+    {
+      id: 'windows_update_fix',
+      number: 'Fix Module #12',
+      title: 'Windows Update Stuck & Error Fixer',
+      subtitle: 'Fixes Update stuck at 0% & errors 0x80070002 / 0x800f081f / 0x8024402c',
+      description:
+        'Complete Windows Update repair tool that stops stuck update services, clears corrupted BITS queue files, resets SoftwareDistribution and catroot2 folders, re-registers 29 core update DLLs, removes group policy blocks, and restarts update services.',
+      filename: 'Fix-Windows-Update-Errors.bat',
+      downloadLabel: 'Windows Update Error Fixer (.bat)',
+      generator: generateWindowsUpdateFixScript,
+      psCommand: `Stop-Service wuauserv,bits,cryptSvc,msiserver,dosvc -Force -ErrorAction SilentlyContinue; Remove-Item "$env:ALLUSERSPROFILE\\Microsoft\\Network\\Downloader\\qmgr*.dat" -Force -ErrorAction SilentlyContinue; Rename-Item "$env:SystemRoot\\SoftwareDistribution" "SoftwareDistribution.old" -Force -ErrorAction SilentlyContinue; Rename-Item "$env:SystemRoot\\System32\\catroot2" "catroot2.old" -Force -ErrorAction SilentlyContinue; netsh winhttp reset proxy; Start-Service cryptSvc,bits,wuauserv,TrustedInstaller -ErrorAction SilentlyContinue; Write-Host "[SUCCESS] Windows Update components reset and repaired!" -ForegroundColor Green; Write-Host "\`nAll tasks finished! Press any key to close this window..." -ForegroundColor Yellow; cmd.exe /c pause | Out-Null`,
+      accentColor: 'amber',
+      icon: <RefreshCw className="w-5 h-5" />,
+      steps: [
+        {
+          badge: 'Stop Services',
+          cmd: 'wuauserv, bits, cryptSvc & msiserver',
+          desc: 'Safely stops stuck Windows Update, Background Intelligent Transfer, and Cryptographic services.'
+        },
+        {
+          badge: 'Cache Reset',
+          cmd: 'Rename SoftwareDistribution & catroot2',
+          desc: 'Clears corrupted qmgr*.dat BITS queues and resets SoftwareDistribution & catroot2 folders.'
+        },
+        {
+          badge: 'Register DLLs',
+          cmd: 'regsvr32 wuaueng.dll, wups2.dll, wintrust.dll',
+          desc: 'Re-registers 29 core Windows Update and cryptographic verification DLL modules.'
+        },
+        {
+          badge: 'Policy & Proxy',
+          cmd: 'Remove Update Policy Locks & Restart',
+          desc: 'Removes registry update blocks, resets WinHTTP proxy, and restarts TrustedInstaller & Update services.'
+        }
+      ]
+    },
+    {
+      id: 'saved_wifi_passwords',
+      number: 'Fix Module #13',
+      title: 'Saved Wi-Fi Password Viewer & Network Profile Backup Tool',
+      subtitle: 'Reveals all saved Wi-Fi passwords & exports XML profiles to Desktop',
+      description:
+        'Scans all saved Wi-Fi networks on your PC, displays every SSID along with its cleartext Password and Security Type directly in the console, and automatically backs up a Saved-WiFi-Passwords.txt report + XML profiles to your Desktop.',
+      filename: 'View-Saved-WiFi-Passwords.bat',
+      downloadLabel: 'Saved Wi-Fi Password Viewer (.bat)',
+      generator: generateSavedWifiPasswordsScript,
+      psCommand: `$backupDir = Join-Path ([Environment]::GetFolderPath('Desktop')) 'WiFi-Passwords-Backup'; New-Item -ItemType Directory -Path $backupDir -Force | Out-Null; (netsh wlan show profiles) | Select-String 'All User Profile\\s*:\\s*(.+)$' | ForEach-Object { $p = $_.Matches[0].Groups[1].Value.Trim(); $d = netsh wlan show profile name="$p" key=clear; $k = ($d | Select-String 'Key Content\\s*:\\s*(.+)$'); $pass = if ($k) { $k.Matches[0].Groups[1].Value.Trim() } else { '[Open / No Password]' }; Write-Host ("SSID: " + $p + "  -->  Password: " + $pass) -ForegroundColor Cyan }; netsh wlan export profile key=clear folder="$backupDir" | Out-Null; Write-Host "[SUCCESS] All Wi-Fi Passwords displayed & backed up to Desktop\\WiFi-Passwords-Backup!" -ForegroundColor Green; Write-Host "\`nAll tasks finished! Press any key to close this window..." -ForegroundColor Yellow; cmd.exe /c pause | Out-Null`,
+      accentColor: 'emerald',
+      icon: <KeyRound className="w-5 h-5" />,
+      steps: [
+        {
+          badge: 'Show Passwords',
+          cmd: 'netsh wlan show profile name=* key=clear',
+          desc: 'Extracts and prints every saved Wi-Fi SSID, Security Type, and cleartext Password in the console.'
+        },
+        {
+          badge: 'TXT Report',
+          cmd: 'Desktop\\WiFi-Passwords-Backup\\*.txt',
+          desc: 'Saves a clean, readable Saved-WiFi-Passwords.txt file directly on your Desktop for future reference.'
+        },
+        {
+          badge: 'XML Backup',
+          cmd: 'netsh wlan export profile key=clear',
+          desc: 'Exports all saved Wi-Fi XML network profiles so you can restore them on a freshly installed Windows PC.'
+        },
+        {
+          badge: '1-Line Restore',
+          cmd: 'netsh wlan add profile filename=*.xml',
+          desc: 'Includes the exact command to re-import all backed-up Wi-Fi networks in 1 click after formatting Windows.'
+        }
+      ]
     }
   ];
 
@@ -579,6 +773,76 @@ export const PowerToolsTab: React.FC<PowerToolsTabProps> = ({ onNotify, isDark =
         >
           <Share2 className="w-3.5 h-3.5 shrink-0" />
           <span>Shared Printer Registry Fix</span>
+        </button>
+
+        <button
+          onClick={() => setActiveFilter('wifi_bt_missing')}
+          className={`px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+            activeFilter === 'wifi_bt_missing'
+              ? 'bg-cyan-600 text-white shadow-md shadow-cyan-600/25'
+              : isDark
+              ? 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+          }`}
+        >
+          <Bluetooth className="w-3.5 h-3.5 shrink-0" />
+          <span>Wi-Fi & Bluetooth Missing Fix</span>
+        </button>
+
+        <button
+          onClick={() => setActiveFilter('audio_mic_fix')}
+          className={`px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+            activeFilter === 'audio_mic_fix'
+              ? 'bg-rose-600 text-white shadow-md shadow-rose-600/25'
+              : isDark
+              ? 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+          }`}
+        >
+          <Volume2 className="w-3.5 h-3.5 shrink-0" />
+          <span>Audio & Mic Fix</span>
+        </button>
+
+        <button
+          onClick={() => setActiveFilter('ram_disk_lag_fix')}
+          className={`px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+            activeFilter === 'ram_disk_lag_fix'
+              ? 'bg-purple-600 text-white shadow-md shadow-purple-600/25'
+              : isDark
+              ? 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+          }`}
+        >
+          <Gauge className="w-3.5 h-3.5 shrink-0" />
+          <span>100% Disk & High RAM Fix</span>
+        </button>
+
+        <button
+          onClick={() => setActiveFilter('windows_update_fix')}
+          className={`px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+            activeFilter === 'windows_update_fix'
+              ? 'bg-amber-600 text-white shadow-md shadow-amber-600/25'
+              : isDark
+              ? 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+          }`}
+        >
+          <RefreshCw className="w-3.5 h-3.5 shrink-0" />
+          <span>Windows Update Error Fix</span>
+        </button>
+
+        <button
+          onClick={() => setActiveFilter('saved_wifi_passwords')}
+          className={`px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+            activeFilter === 'saved_wifi_passwords'
+              ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+              : isDark
+              ? 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+          }`}
+        >
+          <KeyRound className="w-3.5 h-3.5 shrink-0" />
+          <span>Saved Wi-Fi Passwords</span>
         </button>
       </div>
 
